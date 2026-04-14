@@ -797,6 +797,148 @@ def run(
 
 # ── version ───────────────────────────────────────────────────────────────────
 
+# ── snapshot ──────────────────────────────────────────────────────────────────
+
+
+@main.command()
+@click.option(
+    "--memory", "memory_file", required=True, type=click.Path(exists=True),
+    help="Path to a lineage JSON file written by --memory-out.",
+)
+@click.option(
+    "--generation", "-g", required=True, type=int,
+    help="Generation number to display.",
+)
+@click.option(
+    "--top", default=5, show_default=True,
+    help="Number of top agents to show.",
+)
+@click.option(
+    "--format", "output_format",
+    type=click.Choice(["text", "json"]),
+    default="text", show_default=True,
+    help="Output format.",
+)
+def snapshot(memory_file: str, generation: int, top: int, output_format: str) -> None:
+    """Show the population state at a specific generation.
+
+    Reads MEMORY (a lineage JSON written by --memory-out) and displays the
+    agents alive at GENERATION: their fitness, strategy, temperature, and
+    genome IDs.
+
+    \\b
+    Example:
+        cambrian snapshot --memory run.json --generation 5
+        cambrian snapshot --memory run.json --generation 10 --format json
+    """
+    import statistics as _stats
+
+    from cambrian.memory import EvolutionaryMemory
+
+    mem = EvolutionaryMemory.from_json(Path(memory_file).read_text())
+
+    # Collect all agents at the requested generation
+    nodes = [
+        (nid, attrs)
+        for nid, attrs in mem._graph.nodes(data=True)
+        if attrs.get("generation") == generation
+    ]
+
+    if not nodes:
+        # Fall back: show available generations
+        available = sorted({
+            attrs.get("generation")
+            for _, attrs in mem._graph.nodes(data=True)
+            if attrs.get("generation") is not None
+        })
+        click.echo(
+            f"No agents found at generation {generation}. "
+            f"Available: {available}", err=True
+        )
+        sys.exit(1)
+
+    # Sort by fitness descending
+    nodes.sort(
+        key=lambda x: x[1].get("fitness") or 0.0,
+        reverse=True,
+    )
+
+    if output_format == "json":
+        payload = {
+            "generation": generation,
+            "total_agents": len(nodes),
+            "agents": [
+                {
+                    "agent_id": nid,
+                    "fitness": attrs.get("fitness"),
+                    "genome": attrs.get("genome"),
+                }
+                for nid, attrs in nodes[:top]
+            ],
+        }
+        click.echo(json.dumps(payload, indent=2, ensure_ascii=False))
+        return
+
+    # Text output
+    fitnesses = [attrs.get("fitness") or 0.0 for _, attrs in nodes]
+    mean_fit = _stats.mean(fitnesses) if fitnesses else 0.0
+    best_fit = max(fitnesses) if fitnesses else 0.0
+
+    if _RICH and console is not None:
+        from rich.table import Table
+        tbl = Table(
+            title=f"Population Snapshot — Generation {generation}",
+            show_header=True,
+            header_style="bold cyan",
+        )
+        tbl.add_column("Rank", width=5)
+        tbl.add_column("Agent ID", width=12)
+        tbl.add_column("Fitness", justify="right")
+        tbl.add_column("Model", width=12)
+        tbl.add_column("Temp", justify="right")
+        tbl.add_column("Strategy", width=14)
+        tbl.add_column("Prompt (preview)", width=38)
+
+        for rank, (nid, attrs) in enumerate(nodes[:top], 1):
+            genome = attrs.get("genome") or {}
+            fit = attrs.get("fitness")
+            fit_str = f"{fit:.4f}" if fit is not None else "–"
+            prompt = str(genome.get("system_prompt", ""))
+            preview = (prompt[:35] + "…") if len(prompt) > 38 else prompt
+            tbl.add_row(
+                str(rank),
+                nid[:10],
+                fit_str,
+                str(genome.get("model", "")),
+                f"{genome.get('temperature', 0):.2f}",
+                str(genome.get("strategy", "")),
+                preview,
+            )
+        console.print(tbl)
+        console.print(
+            f"[dim]Total agents: {len(nodes)}  "
+            f"Best: {best_fit:.4f}  Mean: {mean_fit:.4f}[/dim]"
+        )
+    else:
+        click.echo(f"Generation {generation}  |  agents={len(nodes)}  "
+                   f"best={best_fit:.4f}  mean={mean_fit:.4f}")
+        click.echo("-" * 70)
+        for rank, (nid, attrs) in enumerate(nodes[:top], 1):
+            genome = attrs.get("genome") or {}
+            fit = attrs.get("fitness")
+            fit_str = f"{fit:.4f}" if fit is not None else "–"
+            prompt = str(genome.get("system_prompt", ""))[:50]
+            click.echo(
+                f"{rank:2d}. {nid[:10]}  fit={fit_str}  "
+                f"model={genome.get('model', '?')}  "
+                f"temp={genome.get('temperature', 0):.2f}  "
+                f"prompt={prompt!r}"
+            )
+
+
+# ── version ───────────────────────────────────────────────────────────────────
+
+
 @main.command()
 def version() -> None:
     """Print Cambrian version."""
