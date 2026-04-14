@@ -4,6 +4,81 @@ All notable changes to Cambrian are documented here.
 
 ---
 
+## [0.8.0] — Round 8
+
+### Added
+
+#### Competition & Meta-Learning
+- **Self-play** (`cambrian/self_play.py`): Head-to-head agent competition as
+  an additional selection pressure.  `SelfPlayEvaluator` runs two agents on the
+  same task; the winner receives a configurable fitness bonus, the loser a penalty.
+  `TournamentRecord` tracks win/loss/draw across a full round-robin.
+  `run_tournament(population, evaluator, task)` runs all agent pairs and returns
+  a ranked record.
+
+- **Meta-evolution** (`cambrian/meta_evolution.py`): MAML-inspired outer loop
+  that evolves hyperparameters alongside genomes.  `HyperParams` bundles
+  `mutation_rate`, `crossover_rate`, `temperature`, `tournament_k`, `elite_ratio`
+  with `perturb()`, `clamp()`, `to_dict()`/`from_dict()`.
+  `MetaEvolutionEngine` tries `n_candidates` perturbed HP configs every
+  `meta_interval` generations and keeps the best-performing configuration.
+
+- **World model** (`cambrian/world_model.py`): Per-agent predictive model inspired
+  by Dyna-Q / Ha & Schmidhuber 2018.  Each agent accumulates experience in a
+  fixed-capacity buffer; `WorldModel.predict(task)` uses weighted nearest-neighbour
+  (word-level Jaccard) to predict performance.
+  `WorldModelEvaluator` blends raw fitness with prediction accuracy — rewarding
+  agents that understand their own capabilities.
+
+#### Observability
+- **Structured NDJSON logging** (`cambrian/utils/logging.py`): `JSONLogger`
+  writes one JSON object per generation (timestamp, run_id, fitness stats,
+  best agent ID, prompt length, arbitrary extras).  Context-manager-safe,
+  flush-on-write, append mode.  `load_json_log(path)` reads NDJSON files
+  skipping malformed lines.
+
+#### CLI
+- **`cambrian compare RUN1 RUN2`**: Compare two NDJSON evolution run logs on
+  any metric (default `best_fitness`).  Supports `--format text|json`.
+  Reports per-run stats, winner, and fitness delta.
+
+#### Documentation
+- **`docs/QUICKSTART.md`**: End-to-end tutorial from install to custom evaluator,
+  Python API examples, CLI cheat-sheet, troubleshooting.
+- **`docs/FAQ.md`**: Common questions on architecture, LLM support, cost,
+  custom evaluators, Lamarck/stigmergy/NSGA-II/meta-evolution/world-model,
+  deployment, and contributing.
+- **`docs/BENCHMARKS.md`**: HumanEval, SWE-bench Lite, and MMLU placeholder
+  tables with setup descriptions and contributing guidelines.
+
+#### Tests
+- **`tests/test_integration_real.py`** (9 tests): Full 3-generation, 5-agent
+  evolution cycle with a deterministic keyword-based mock backend.  Asserts
+  elitism guarantee (fitness never decreases), population size stability,
+  callback invocation, memory population, and seed diversity.
+- **`tests/test_round8.py`** (70 tests): Unit tests for all Round 8 features —
+  `SelfPlayResult`, `SelfPlayEvaluator`, `run_tournament`, `HyperParams`,
+  `MetaEvolutionEngine`, `WorldModel`, `world_model_fitness`,
+  `WorldModelEvaluator`, `JSONLogger`, `load_json_log`, `cambrian compare` CLI.
+
+### Fixed
+- **Security — sandbox env leak** (`cambrian/utils/sandbox.py`): The subprocess
+  sandbox previously forwarded `os.environ.copy()` to untrusted code, exposing
+  `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and other secrets.  Fixed by stripping
+  all non-whitelisted environment variables before spawning the subprocess.
+  Only `PATH`, `PYTHONPATH`, `SYSTEMROOT`, `TEMP`, `TMP`, `TMPDIR`, `HOME`,
+  `LANG`, `LC_ALL`, `LC_CTYPE` are forwarded.
+
+### Internal
+- Added `cambrian/__main__.py` — `python -m cambrian` now works.
+- Renamed `stats.py::ParetoFront` → `ParetoAnalyzer` to eliminate naming
+  collision with `pareto.py::ParetoFront` (NSGA-II).  Backwards-compatible
+  alias `ParetoFront = ParetoAnalyzer` retained.
+- Updated `__init__.py` to export all 14 primary public symbols.
+- Added `build>=1.0` to `[project.optional-dependencies.dev]` in `pyproject.toml`.
+
+---
+
 ## [0.7.0] — Round 7
 
 ### Added
