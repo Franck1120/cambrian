@@ -9,9 +9,64 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field, asdict
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from cambrian.backends.base import LLMBackend
+
+if TYPE_CHECKING:
+    from cambrian.cli_tools import CLITool
+
+
+@dataclass
+class ToolSpec:
+    """Specification for an agent-invented tool.
+
+    Attributes:
+        name: Unique tool identifier (alphanumeric + underscores).
+        description: What the tool does (shown in system prompt).
+        command_template: Shell command with {input} placeholder.
+        shell: Whether to run in a shell. Default False.
+        timeout: Max seconds. Default 10.0.
+        author_genome_id: ID of the genome that invented this tool.
+    """
+
+    name: str
+    description: str
+    command_template: str
+    shell: bool = False
+    timeout: float = 10.0
+    author_genome_id: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "description": self.description,
+            "command_template": self.command_template,
+            "shell": self.shell,
+            "timeout": self.timeout,
+            "author_genome_id": self.author_genome_id,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "ToolSpec":
+        return cls(
+            name=str(data["name"]),
+            description=str(data["description"]),
+            command_template=str(data["command_template"]),
+            shell=bool(data.get("shell", False)),
+            timeout=float(data.get("timeout", 10.0)),
+            author_genome_id=str(data.get("author_genome_id", "")),
+        )
+
+    def to_cli_tool(self) -> "CLITool":
+        from cambrian.cli_tools import CLITool
+        return CLITool(
+            name=self.name,
+            command_template=self.command_template,
+            description=self.description,
+            timeout=self.timeout,
+            shell=self.shell,
+        )
 
 
 @dataclass
@@ -41,14 +96,21 @@ class Genome:
     model: str = "gpt-4o-mini"
     genome_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     few_shot_examples: list[dict[str, Any]] = field(default_factory=list)
+    tool_specs: list[ToolSpec] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         """Serialise the genome to a plain dictionary."""
-        return asdict(self)
+        base = asdict(self)
+        # asdict recurses into dataclasses — replace tool_specs with our own
+        # serialisation to keep the shape consistent and explicit.
+        base["tool_specs"] = [ts.to_dict() for ts in self.tool_specs]
+        return base
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Genome":
         """Deserialise a genome from a plain dictionary."""
+        raw_specs = data.get("tool_specs", [])
+        tool_specs = [ToolSpec.from_dict(ts) for ts in raw_specs if isinstance(ts, dict)]
         return cls(
             system_prompt=data.get("system_prompt", "You are a helpful AI assistant."),
             tools=data.get("tools", []),
@@ -57,6 +119,7 @@ class Genome:
             model=data.get("model", "gpt-4o-mini"),
             genome_id=data.get("genome_id", str(uuid.uuid4())[:8]),
             few_shot_examples=list(data.get("few_shot_examples", [])),
+            tool_specs=tool_specs,
         )
 
     def token_count(self) -> int:
