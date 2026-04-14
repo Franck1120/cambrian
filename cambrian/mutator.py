@@ -11,10 +11,13 @@ from __future__ import annotations
 import json
 import random
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from cambrian.agent import Agent, Genome
 from cambrian.backends.base import LLMBackend
+
+if TYPE_CHECKING:
+    from cambrian.memory import EvolutionaryMemory
 
 
 _MUTATE_SYSTEM = """You are an expert AI prompt engineer and evolutionary algorithm researcher.
@@ -35,6 +38,7 @@ Focus on:
 3. Fine-tuning the temperature (lower for factual, higher for creative tasks)
 4. Keeping the same model unless there's a strong reason to change it
 5. If few-shot examples are present, reinforce what made them succeed
+6. If stigmergy traces are provided, they represent proven high-scoring patterns — incorporate their insights
 
 Return ONLY the JSON object, no explanation."""
 
@@ -78,10 +82,14 @@ class LLMMutator:
         backend: LLMBackend,
         mutation_temperature: float = 0.6,
         fallback_on_error: bool = True,
+        memory: "EvolutionaryMemory | None" = None,
+        stigmergy_traces: int = 5,
     ) -> None:
         self._backend = backend
         self._mut_temp = mutation_temperature
         self._fallback = fallback_on_error
+        self._memory = memory
+        self._stigmergy_traces = stigmergy_traces
 
     def mutate(self, agent: Agent, task: str = "") -> Agent:
         """Return a new agent with an LLM-improved genome.
@@ -104,6 +112,17 @@ class LLMMutator:
                     f"  - Task: {ex.get('task', '')[:80]}  Score: {ex.get('score', '?')}"
                 )
             few_shot_block = "\n".join(lines) + "\n"
+
+        # Stigmergy: inject top pheromone traces from collective memory
+        if self._memory is not None:
+            traces = self._memory.get_traces(task=task, limit=self._stigmergy_traces)
+            if traces:
+                trace_lines = ["\nStigmergy traces (proven high-scoring patterns):"]
+                for tr in traces:
+                    trace_lines.append(
+                        f"  [score={tr.score:.3f}] {tr.content[:120]}"
+                    )
+                few_shot_block += "\n".join(trace_lines) + "\n"
 
         prompt = _MUTATE_TEMPLATE.format(
             genome_json=genome_json,

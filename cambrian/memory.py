@@ -4,12 +4,25 @@ Tracks the genealogy of every agent across generations, enabling:
 - Querying the top-performing ancestors as seeds for future runs.
 - Tracing the evolutionary path that led to the best agent.
 - Detecting stagnation (when all agents share the same lineage).
+
+Stigmergy support
+-----------------
+In social insect colonies, individuals leave *pheromone traces* on paths they
+have travelled.  Future individuals perceive these traces and bias their
+navigation toward proven routes.
+
+:class:`EvolutionaryMemory` implements an analogous mechanism: when an agent
+performs well, it calls :meth:`add_trace` to deposit a text excerpt (e.g. a
+key sentence from its system prompt) alongside the fitness score that produced
+it.  The :class:`~cambrian.mutator.LLMMutator` queries :meth:`get_traces` and
+injects the top traces into the mutation prompt so that offspring are nudged
+toward high-performing prompt patterns rather than exploring blindly.
 """
 
 from __future__ import annotations
 
 import json
-import uuid
+from dataclasses import dataclass, field
 from typing import Any
 
 try:
@@ -18,6 +31,27 @@ try:
 except ImportError:  # pragma: no cover
     _NX_AVAILABLE = False
     nx = None
+
+
+# ── Stigmergy ─────────────────────────────────────────────────────────────────
+
+
+@dataclass
+class StigmergyTrace:
+    """A pheromone-like trace left by a high-performing agent.
+
+    Attributes:
+        agent_id: The agent that deposited this trace.
+        content: Text excerpt from the agent's genome (e.g. a key sentence
+            from its system prompt that contributed to high fitness).
+        score: The fitness score achieved when this trace was deposited.
+        task: Optional task string for task-specific trace retrieval.
+    """
+
+    agent_id: str
+    content: str
+    score: float
+    task: str = ""
 
 
 class EvolutionaryMemory:
@@ -39,6 +73,7 @@ class EvolutionaryMemory:
         self.name = name
         self._graph: "nx.DiGraph" = nx.DiGraph()
         self._agent_count = 0
+        self._traces: list[StigmergyTrace] = []
 
     # ── Core API ──────────────────────────────────────────────────────────────
 
@@ -114,6 +149,57 @@ class EvolutionaryMemory:
         if agent_id not in ancestors:
             ancestors.append(agent_id)
         return ancestors
+
+    # ── Stigmergy ─────────────────────────────────────────────────────────────
+
+    def add_trace(
+        self,
+        agent_id: str,
+        content: str,
+        score: float,
+        task: str = "",
+    ) -> None:
+        """Deposit a stigmergy trace for *agent_id*.
+
+        Call this after evaluating a high-performing agent to record the
+        prompt excerpt (or any text artifact) that contributed to its success.
+        Traces are stored in descending score order and can be retrieved by
+        :meth:`get_traces` to guide future mutations.
+
+        Args:
+            agent_id: The agent that produced this trace.
+            content: A short text excerpt (typically 1–3 sentences from the
+                agent's system prompt) that encapsulates the effective behaviour.
+            score: The fitness score that justifies the deposit.
+            task: Optional task string for task-specific retrieval.
+        """
+        self._traces.append(
+            StigmergyTrace(agent_id=agent_id, content=content, score=score, task=task)
+        )
+        # Keep sorted by score descending so get_traces is O(1)
+        self._traces.sort(key=lambda t: t.score, reverse=True)
+
+    def get_traces(self, task: str = "", limit: int = 10) -> list[StigmergyTrace]:
+        """Return the top-scoring traces, optionally filtered by *task*.
+
+        If *task* is non-empty, task-specific traces (exact or partial match)
+        are returned first; remaining slots are filled with global top traces.
+
+        Args:
+            task: If non-empty, prefer traces deposited for this task.
+            limit: Maximum number of traces to return. Default ``10``.
+
+        Returns:
+            List of :class:`StigmergyTrace` objects, best-score-first.
+        """
+        if not task:
+            return self._traces[:limit]
+
+        task_lower = task.lower()
+        task_specific = [t for t in self._traces if task_lower in t.task.lower()]
+        other = [t for t in self._traces if task_lower not in t.task.lower()]
+        merged = task_specific + other
+        return merged[:limit]
 
     # ── Statistics ────────────────────────────────────────────────────────────
 
