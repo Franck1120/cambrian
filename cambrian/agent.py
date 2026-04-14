@@ -40,6 +40,7 @@ class Genome:
     temperature: float = 0.7
     model: str = "gpt-4o-mini"
     genome_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
+    few_shot_examples: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         """Serialise the genome to a plain dictionary."""
@@ -55,6 +56,7 @@ class Genome:
             temperature=float(data.get("temperature", 0.7)),
             model=data.get("model", "gpt-4o-mini"),
             genome_id=data.get("genome_id", str(uuid.uuid4())[:8]),
+            few_shot_examples=list(data.get("few_shot_examples", [])),
         )
 
     def token_count(self) -> int:
@@ -118,9 +120,22 @@ class Agent:
         if self.genome.strategy and self.genome.strategy != "default":
             prompt = f"{task}\n\n[Approach: {self.genome.strategy}]"
 
+        system = self.genome.system_prompt
+        # Inject Lamarckian few-shot examples into the system context
+        if self.genome.few_shot_examples:
+            examples_text = "\n".join(
+                f"Example {i+1} (score {ex.get('score', '?')}):\n"
+                f"  Task: {ex.get('task', '')}\n"
+                f"  Response: {ex.get('response', '')}"
+                for i, ex in enumerate(self.genome.few_shot_examples[:3])
+                if ex.get("response")
+            )
+            if examples_text:
+                system = f"{system}\n\n--- Successful examples ---\n{examples_text}"
+
         return self.backend.generate(
             prompt,
-            system=self.genome.system_prompt,
+            system=system,
             temperature=self.genome.temperature,
         )
 

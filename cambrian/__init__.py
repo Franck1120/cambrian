@@ -9,5 +9,6 @@ __author__ = "Cambrian AI Contributors"
 
 from cambrian.agent import Agent, Genome
 from cambrian.evolution import EvolutionEngine
+from cambrian.lamarck import LamarckianAdapter
 
-__all__ = ["Agent", "Genome", "EvolutionEngine", "__version__"]
+__all__ = ["Agent", "Genome", "EvolutionEngine", "LamarckianAdapter", "__version__"]

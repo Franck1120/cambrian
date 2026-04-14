@@ -27,13 +27,14 @@ _MUTATE_TEMPLATE = """Current agent genome:
 
 This agent achieved fitness score: {fitness}
 Task the agent must solve: {task}
-
+{few_shot_block}
 Analyze this genome and return an improved version as JSON.
 Focus on:
 1. Making the system_prompt more effective and specific for the task
 2. Adjusting the strategy to better match the task type
 3. Fine-tuning the temperature (lower for factual, higher for creative tasks)
 4. Keeping the same model unless there's a strong reason to change it
+5. If few-shot examples are present, reinforce what made them succeed
 
 Return ONLY the JSON object, no explanation."""
 
@@ -94,10 +95,21 @@ class LLMMutator:
             not modified.
         """
         genome_json = json.dumps(agent.genome.to_dict(), indent=2)
+
+        few_shot_block = ""
+        if agent.genome.few_shot_examples:
+            lines = ["\nLamarckian examples (proven successes to build on):"]
+            for ex in agent.genome.few_shot_examples[:3]:
+                lines.append(
+                    f"  - Task: {ex.get('task', '')[:80]}  Score: {ex.get('score', '?')}"
+                )
+            few_shot_block = "\n".join(lines) + "\n"
+
         prompt = _MUTATE_TEMPLATE.format(
             genome_json=genome_json,
             fitness=f"{agent.fitness:.4f}" if agent.fitness is not None else "unknown",
             task=task or "general problem solving",
+            few_shot_block=few_shot_block,
         )
 
         try:
