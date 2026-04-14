@@ -6,7 +6,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-419%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-579%20passing-brightgreen)](tests/)
 [![mypy](https://img.shields.io/badge/mypy-strict-blue)](https://mypy-lang.org)
 
 ---
@@ -82,6 +82,34 @@
 | `CausalGraph` | Explicit cause-effect relationship representation in strategies |
 | `CausalStrategyExtractor` | LLM-based extraction of IF-THEN causal relations |
 | `CausalMutator` | Evolves causal graphs alongside genomes |
+
+### Self-Play & Competition
+| Component | What it does |
+|-----------|-------------|
+| `SelfPlayEvaluator` | Head-to-head agent competition; win/loss/draw bonuses applied to fitness |
+| `SelfPlayResult` | Single match result: scores, winner, margin, draw detection |
+| `TournamentRecord` | Win/loss/draw ledger across a round-robin tournament |
+| `run_tournament` | Round-robin: all agent pairs compete; returns ranked `TournamentRecord` |
+
+### Meta-Evolution
+| Component | What it does |
+|-----------|-------------|
+| `MetaEvolutionEngine` | MAML-inspired outer loop: evolves hyperparameters alongside genomes |
+| `HyperParams` | Mutable bundle of `mutation_rate`, `crossover_rate`, `temperature`, `tournament_k`, `elite_ratio` |
+
+### World Model
+| Component | What it does |
+|-----------|-------------|
+| `WorldModelEvaluator` | Wraps any evaluator; rewards agents for accurate self-prediction |
+| `WorldModel` | Per-agent experience buffer with weighted nearest-neighbour prediction |
+| `WorldModelPrediction` | Predicted score + confidence + n_similar |
+| `world_model_fitness` | Blend raw score with prediction accuracy into a single metric |
+
+### Structured Logging
+| Component | What it does |
+|-----------|-------------|
+| `JSONLogger` | NDJSON per-generation logging; context-manager-safe; `log_generation`, `log_run_summary` |
+| `load_json_log` | Read NDJSON evolution log files; skips malformed lines |
 
 ### Multi-Objective
 | Component | What it does |
@@ -183,6 +211,10 @@ cambrian dashboard --port 8501 --log-file run.json
 
 # Distill — pretty-print a saved genome
 cambrian distill best.json
+
+# Compare — compare two NDJSON evolution run logs
+cambrian compare run_a.json run_b.json
+cambrian compare run_a.json run_b.json --metric mean_fitness --format json
 
 # Distill-agent — compress genome for a smaller model
 cambrian distill-agent --agent best.json --target gemma-4-12b --max-tokens 120
@@ -363,6 +395,10 @@ cambrian/
 ├── reward_shaping.py    Clip/Normalise/Potential/Rank/Curiosity shapers
 ├── diffcot.py           DiffCoTReasoner, DiffCoTEvaluator
 ├── causal.py            CausalGraph, CausalStrategyExtractor
+├── tool_creation.py     ToolInventor, ToolPopulationRegistry
+├── self_play.py         SelfPlayEvaluator, run_tournament
+├── meta_evolution.py    MetaEvolutionEngine, HyperParams
+├── world_model.py       WorldModelEvaluator, WorldModel
 ├── export.py            export_genome_json/standalone/mcp/api
 ├── dashboard.py         Streamlit live dashboard
 ├── cli.py               Click CLI entry point
@@ -425,7 +461,7 @@ cd cambrian
 pip install -e ".[dev]"
 
 # Run tests
-pytest tests/ -q                         # 419 tests, ~5s
+pytest tests/ -q                         # 579 tests, ~5s
 
 # Type check
 mypy cambrian/ --strict --ignore-missing-imports
