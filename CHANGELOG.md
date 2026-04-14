@@ -2,72 +2,163 @@
 
 All notable changes to Cambrian are documented here.
 
-Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
-Versioning follows [Semantic Versioning](https://semver.org/).
-
 ---
 
-## [Unreleased]
-
-_Changes not yet released._
-
----
-
-## [0.1.0] — 2026-04-14
+## [0.7.0] — Round 7
 
 ### Added
 
-**Core framework**
-- `Genome` dataclass: evolvable agent specification (system prompt, tools, strategy, temperature, model)
-- `Agent` class: wraps `Genome` with an optional LLM backend; exposes `run()`, `clone()`, `fitness`, `to_dict()`
-- `EvolutionEngine`: full generational loop with tournament selection, elitism, crossover, and mutation; `backend` propagated to all agents
-- `LLMMutator`: LLM-guided genome mutation and crossover; deterministic fallbacks (`_random_tweak`, `_deterministic_crossover`) on error
-- `MAPElites`: 3×3 quality-diversity archive keyed on (prompt-length bucket, temperature bucket)
-- `EvolutionaryMemory`: NetworkX directed-graph lineage tracking; `get_top_ancestors`, `get_lineage`, JSON serialisation
-- `SemanticCache`: SHA-256 keyed LRU cache with TTL and hit-rate introspection
-- `ModelRouter`: complexity-based tier routing (cheap / medium / premium) using token count + regex signals
-- `caveman_compress`: aggressive stopword removal for prompt length reduction
-- `procut_prune`: paragraph-dropping pruner to fit a token budget
+#### Reasoning
+- **DiffCoT** (`cambrian/diffcot.py`): Diffusion-inspired iterative chain-of-thought denoising.
+  `DiffCoTConfig` controls `n_steps`, `noise_level`, and `temperature_schedule` (cosine/linear/constant).
+  `DiffCoTReasoner` runs the denoising loop; `DiffCoTEvaluator` wraps any base evaluator.
+  `make_diffcot_evaluator(base, backend, n_steps)` factory for quick setup.
 
-**Backends**
-- `LLMBackend`: abstract base class with typed `generate(**kwargs: Any)` signature
-- `OpenAICompatBackend`: httpx-based client with exponential back-off; supports OpenAI, Ollama, Groq, LM Studio, vLLM
+- **Causal reasoning** (`cambrian/causal.py`): Explicit cause-effect representation in agent strategies.
+  `CausalEdge` stores cause, effect, strength, and confidence.
+  `CausalGraph` parses IF/THEN, arrow notation, and natural language causal relations.
+  `CausalStrategyExtractor` uses an LLM to extract causal graphs from strategy text.
+  `CausalMutator` evolves causal graphs alongside genomes.
+  `inject_causal_context(genome, graph)` appends a causal context block to the system prompt.
 
-**Evaluators**
-- `CodeEvaluator`: sandboxed subprocess execution; partial-credit line-level scoring
-- `LLMJudgeEvaluator`: 0–10 rubric via judge LLM; JSON parse + integer regex fallback; markdown-fence aware
-- `CompositeEvaluator`: weighted mean or min-aggregate; exception-safe sub-evaluator calls
+- **Tool creation** (`cambrian/tool_creation.py`): Agents invent new CLI tools during evolution.
+  `ToolSpec` dataclass added to `Genome.tool_specs` in `agent.py`.
+  `ToolInventor` prompts an LLM to invent tool specs, validates names, dry-runs commands.
+  `ToolPopulationRegistry` — shared cross-population tool registry with deduplication and top-N ranking.
 
-**CLI** (`cambrian`)
-- `cambrian evolve TASK` — run evolutionary search
-- `cambrian dashboard MEMORY_FILE` — per-generation stats from lineage JSON
-- `cambrian distill GENOME_FILE` — pretty-print a saved genome
-- `cambrian version` — print version
+#### CLI
+- **`cambrian snapshot`**: Show population state at a specific generation from a lineage file.
+  Supports `--format text|json` and `--top N` to limit output.
 
-**Utilities**
-- `run_in_sandbox`: subprocess execution with hard timeout, tempfile-based injection safety
-- `extract_python_code`: fenced code block extraction from LLM output
-- `get_logger`: Rich/plain logging auto-detected by TTY
-- `log_generation_summary`: structured generation log line
+#### Documentation & Examples
+- **`SECURITY.md`**: Comprehensive security guidelines covering subprocess sandboxing, API key
+  management, prompt injection mitigations, ToolInventor safe deployment, and a production checklist.
+- **`examples/evolve_researcher.py`**: Advanced example demonstrating LLM-judge evaluator with a
+  domain-specific rubric, Lamarckian adapter, stigmergy, epigenetics, and multi-objective Pareto
+  analysis.
 
-**Examples**
-- `examples/evolve_fizzbuzz.py` — FizzBuzz evolution with custom partial-credit evaluator
-- `examples/evolve_coding.py` — five-challenge coding benchmark with composite evaluator
-- `examples/evolve_prompt.py` — open-ended Socratic tutor prompt evolution with LLM judge
+#### README
+- Complete rewrite with all 8 feature categories, all 9 CLI commands, and Python API examples
+  for every major subsystem.
 
-**CI / tooling**
-- GitHub Actions: pytest matrix (Python 3.11 + 3.12), ruff lint + format, mypy
-- 76 pytest tests across all modules; zero warnings
-
-### Fixed
-- `Agent.backend` made optional (default `None`) — allows genome/fitness tests without a real LLM
-- `Agent.id` property added as alias for `agent_id`
-- `Agent.to_dict()` method added
-- `EvolutionEngine` now accepts and propagates `backend` to all created agents
-- `evolve_fizzbuzz.py`: `timeout_seconds` corrected to `timeout`
-- Tournament selection statistical threshold lowered to match true expected value (k/n × trials)
+### Internal
+- ruff lint: removed unused `Any`, `re`, `field` imports across 8 files.
 
 ---
 
-[Unreleased]: https://github.com/Franck1120/cambrian/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/Franck1120/cambrian/releases/tag/v0.1.0
+## [0.6.0] — Round 6
+
+### Added
+
+#### Core Evolution
+- **`SpeculativeMutator`** (`cambrian/speculative.py`): Generate K mutations concurrently via
+  `asyncio.gather`, keep the best. `speculate(agent, task, mutator, evaluator, k)` async helper.
+  `SpeculativeResult` reports `best_fitness`, `mean_fitness`, and `improvement_over_mean`.
+
+- **Archipelago / Island model** (`cambrian/archipelago.py`): N isolated populations evolving
+  independently with periodic migration. Supports `ring`, `all-to-all`, and `random` topologies.
+  `Archipelago.evolve()` orchestrates full island evolution with configurable migration rate.
+
+#### Multi-Objective
+- **NSGA-II** (`cambrian/pareto.py`): Full non-dominated sorting + crowding-distance selection.
+  `ObjectiveVector`, `ParetoFront`, `fast_non_dominated_sort`, `crowding_distance`, `nsga2_select`.
+  Built-in objectives: `fitness_objective`, `brevity_objective`, `attach_diversity_scores`.
+
+#### Reward Shaping
+- **`cambrian/reward_shaping.py`**: Composable reward shaping pipeline.
+  `ClipShaper`, `NormalisationShaper` (z-score + min-max, sliding window),
+  `PotentialShaper` (Ng 1999 potential-based), `RankShaper`, `CuriosityShaper` (trigram novelty).
+  `build_shaped_evaluator(base, "clip+normalise+curiosity")` factory.
+
+#### Export & Deployment
+- **`cambrian/export.py`**: Four export formats for evolved agents.
+  `export_genome_json` / `load_genome_json`, `export_standalone` (self-contained Python script),
+  `export_mcp` (MCP server stub with manifest + handler), `export_api` (FastAPI REST application).
+
+#### CLI
+- **`cambrian run`**: Load an evolved agent and run it on a task.
+  `--format text|json` for machine-readable output.
+
+#### Docs
+- **`docs/METHODOLOGY.md`**: Academic references for all 17 techniques, from tournament selection
+  to potential-based reward shaping and stigmergic pheromone traces.
+
+### Tests
+- 97 tests added in `tests/test_round6.py` covering all Round 6 features.
+
+---
+
+## [0.5.0] — Round 5
+
+### Added
+
+#### Agent-to-Agent (A2A)
+- **`cambrian/a2a.py`**: Full A2A protocol.
+  `AgentCard` capability descriptor with domain confidence scores.
+  `A2AMessage` structured request/response envelope.
+  `AgentNetwork` — register agents, route by domain, delegate, broadcast, chain, majority-vote.
+
+#### Tools
+- **`cambrian/cli_tools.py`**: Wrap shell commands as LLM-callable tools.
+  `CLITool` — `{input}` template substitution, configurable `timeout`, `shell=False` safe default.
+  `CLIToolkit` — named collection with text-markup protocol `[TOOL: name | input]`.
+
+#### CLI
+- **`cambrian analyze`**: Deep trajectory, diversity, and lineage analysis with `--top N`.
+- **`cambrian dashboard`**: Streamlit live evolution dashboard with `--port` and `--log-file`.
+- **`cambrian distill`**: Pretty-print a saved genome.
+- **`cambrian distill-agent`**: Compress genome for a smaller model with `--max-tokens`.
+
+#### Evaluators
+- **`VarianceAwareEvaluator`** (`cambrian/evaluators/variance_aware.py`): Multi-trial evaluation
+  with variance penalty to suppress reward hacking.
+- **`BaldwinEvaluator`** (`cambrian/evaluators/baldwin.py`): Multi-trial evaluation with
+  in-context learning bonus for agents that improve across trials.
+
+#### Bio-Inspired
+- **`CoEvolutionEngine`** (`cambrian/coevolution.py`): Adversarial generator/adversary arms race.
+- **`CurriculumScheduler`** (`cambrian/curriculum.py`): Task difficulty progression with thresholds.
+- **`ConstitutionalWrapper`** (`cambrian/constitutional.py`): Critique-revise safety cycles.
+- **`MCTSSelector`** (`cambrian/mcts.py`): UCB1-guided tree search over the mutation tree.
+
+### Tests
+- Tests added for all Round 5 features in `tests/test_round5.py`.
+
+---
+
+## [0.4.0] — Round 4
+
+### Added
+- **`EpigeneticLayer`** and `EpigenomicContext`: Context-dependent system prompt annotations.
+- **`ImmuneMemory`**: SHA-256 fingerprinting to suppress re-evaluation of barren regions.
+- **`LamarckianAdapter`**: Capture successful examples into genome's few-shot examples.
+- **`EvolutionaryMemory`**: NetworkX lineage graph — ancestry tracing, JSON export/import.
+- **`StigmergyTrace`**: Pheromone traces that bias LLM mutation toward high-scoring regions.
+- **`DiversityTracker`**: Per-generation entropy, temperature, and prompt std stats.
+- **`FitnessLandscape`**: 2D fitness grid over temperature x token-length.
+- **`LLMJudgeEvaluator`**: Judge LLM scores agent responses against a custom rubric.
+- **`CompositeEvaluator`**: Weighted average of multiple evaluators.
+- **`AnthropicBackend`**: Native Anthropic Claude backend via the `anthropic` SDK.
+- **`GeminiBackend`**: Google Gemini backend via `google-genai`.
+
+---
+
+## [0.3.0] — Round 3
+
+### Added
+- **`EvolutionEngine`**: Full generational loop with tournament selection, elitism, crossover,
+  mutation.
+- **`LLMMutator`**: LLM reads genome + fitness and writes an improved version.
+- **`OpenAICompatBackend`**: OpenAI-compatible backend (OpenAI, Ollama, Groq, vLLM).
+- **`CodeEvaluator`**: Subprocess sandbox for code evaluation with partial-credit scoring.
+- **CLI**: `cambrian evolve`, `cambrian stats`, `cambrian version`.
+
+---
+
+## [0.1.0] — Initial Release
+
+### Added
+- `Genome` and `Agent` dataclasses.
+- `Evaluator` ABC.
+- `LLMBackend` ABC.
+- Minimal `EvolutionEngine` skeleton.
