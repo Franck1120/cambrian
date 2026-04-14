@@ -538,6 +538,128 @@ def analyze(memory_file: str, top: int) -> None:
                 )
 
 
+# ── distill-agent ─────────────────────────────────────────────────────────────
+
+@main.command("distill-agent")
+@click.option(
+    "--agent", "agent_file", required=True, type=click.Path(exists=True),
+    help="Path to the evolved genome JSON (written by --output).",
+)
+@click.option(
+    "--target", required=True,
+    help="Target model identifier for the distilled agent (e.g. gemma-4-12b, llama3.2).",
+)
+@click.option(
+    "--base-url",
+    default="https://api.openai.com/v1",
+    show_default=True,
+    envvar="CAMBRIAN_BASE_URL",
+    help="OpenAI-compatible API base URL for the distillation backend.",
+)
+@click.option(
+    "--api-key", default=None, envvar="OPENAI_API_KEY",
+    help="API key for the distillation backend.",
+)
+@click.option(
+    "--output", "-o", default=None,
+    help="Path to save the distilled genome JSON. Defaults to <agent_file>.distilled.json",
+)
+@click.option(
+    "--max-tokens", default=150, show_default=True,
+    help="Target prompt length (in tokens) for the distilled agent.",
+)
+def distill_agent(
+    agent_file: str,
+    target: str,
+    base_url: str,
+    api_key: str | None,
+    output: str | None,
+    max_tokens: int,
+) -> None:
+    """Distil an evolved genome to run efficiently on a smaller target model.
+
+    Reads the agent genome from AGENT_FILE, uses an LLM to compress and
+    adapt the system prompt for the TARGET model's capabilities, then saves
+    the distilled genome.
+
+    \\b
+    Example:
+        cambrian distill-agent --agent best.json --target gemma-4-12b --max-tokens 120
+    """
+    from cambrian.compress import caveman_compress, procut_prune
+
+    if api_key is None:
+        api_key = os.environ.get("OPENAI_API_KEY", "")
+
+    data = json.loads(Path(agent_file).read_text())
+    from cambrian.agent import Genome as _Genome
+    source_genome = _Genome.from_dict(data)
+
+    click.echo(f"Source genome: model={source_genome.model}  tokens={source_genome.token_count()}")
+    click.echo(f"Target model : {target}  max_tokens={max_tokens}")
+    click.echo("")
+
+    distilled_genome = _Genome.from_dict(source_genome.to_dict())
+    distilled_genome.model = target
+    distilled_genome.genome_id = source_genome.genome_id + "-d"
+
+    # Step 1: structural compression (remove stopwords + filler)
+    compressed_prompt = caveman_compress(source_genome.system_prompt)
+    distilled_genome.system_prompt = compressed_prompt
+
+    # Step 2: paragraph pruning to budget
+    distilled_genome = procut_prune(distilled_genome, max_tokens=max_tokens)
+
+    # Step 3: LLM-assisted adaptation (if backend available)
+    if api_key:
+        try:
+            backend = _make_backend(target, base_url, api_key)
+            adapt_prompt = (
+                f"You are adapting a system prompt originally written for a large LLM "
+                f"({source_genome.model}) to work well on a smaller model ({target}).\n\n"
+                f"Original prompt:\n{source_genome.system_prompt}\n\n"
+                f"Compressed draft:\n{distilled_genome.system_prompt}\n\n"
+                f"Requirements:\n"
+                f"- Keep under {max_tokens} tokens (~{max_tokens * 4} characters)\n"
+                f"- Preserve the core intent and instructions\n"
+                f"- Use simple, direct language suitable for a smaller model\n"
+                f"- Remove meta-commentary, verbose explanations, nested conditionals\n\n"
+                "Output ONLY the adapted system prompt, no preamble."
+            )
+            adapted = backend.generate(adapt_prompt, temperature=0.2)
+            if adapted and len(adapted) // 4 <= max_tokens * 1.5:
+                distilled_genome.system_prompt = adapted.strip()
+                click.echo("LLM-assisted adaptation applied.")
+        except Exception as exc:
+            click.echo(f"LLM adaptation skipped ({exc.__class__.__name__}): {exc}", err=True)
+    else:
+        click.echo("No API key: using structural compression only.")
+
+    # Clamp temperature for smaller models (they're more sensitive)
+    if distilled_genome.temperature > 0.9:
+        distilled_genome.temperature = min(distilled_genome.temperature, 0.8)
+
+    final_tokens = distilled_genome.token_count()
+    reduction = (1 - final_tokens / max(source_genome.token_count(), 1)) * 100
+
+    if _RICH and console is not None:
+        console.print(Panel(
+            f"[bold]Source:[/bold] {source_genome.model}  {source_genome.token_count()} tokens\n"
+            f"[bold]Target:[/bold] {target}  {final_tokens} tokens  "
+            f"([green]-{reduction:.0f}%[/green] reduction)\n\n"
+            f"[bold]Distilled prompt:[/bold]\n{distilled_genome.system_prompt}",
+            title="Distillation Complete",
+            border_style="green",
+        ))
+    else:
+        click.echo(f"Tokens: {source_genome.token_count()} → {final_tokens} (-{reduction:.0f}%)")
+        click.echo(f"Distilled prompt: {distilled_genome.system_prompt[:200]}")
+
+    out_path = output or agent_file.replace(".json", f".distilled.{target}.json")
+    Path(out_path).write_text(json.dumps(distilled_genome.to_dict(), indent=2))
+    click.echo(f"\nDistilled genome saved to {out_path}")
+
+
 # ── version ───────────────────────────────────────────────────────────────────
 
 @main.command()
