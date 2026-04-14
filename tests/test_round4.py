@@ -662,10 +662,10 @@ class TestParetoFront:
         assert s["total"] == 2
 
     def test_repr(self) -> None:
-        from cambrian.stats import ParetoFront
+        from cambrian.stats import ParetoAnalyzer
 
-        front = ParetoFront()
-        assert "ParetoFront" in repr(front)
+        front = ParetoAnalyzer()
+        assert "ParetoAnalyzer" in repr(front)
 
 
 # ── DiversityTracker ──────────────────────────────────────────────────────────

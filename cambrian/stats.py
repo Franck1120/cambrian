@@ -2,10 +2,12 @@
 
 Provides three analysis tools:
 
-``ParetoFront``
+``ParetoAnalyzer``
     Multi-objective Pareto front: identifies agents that are not dominated
     by any other on *all* objectives simultaneously.  Useful for understanding
     trade-offs (e.g., fitness vs. prompt brevity).
+
+    Note: for NSGA-II incremental selection use :class:`~cambrian.pareto.ParetoFront`.
 
 ``DiversityTracker``
     Tracks population diversity over time using several complementary metrics:
@@ -52,7 +54,7 @@ class ParetoPoint:
     dominated_by: list[str] = field(default_factory=list)
 
 
-class ParetoFront:
+class ParetoAnalyzer:
     """Compute and query the Pareto front of a population.
 
     Two objectives are supported by default:
@@ -67,9 +69,13 @@ class ParetoFront:
         objectives: List of objective names to compute.  Default
             ``["fitness", "brevity"]``.
 
+    .. note::
+        For NSGA-II incremental non-dominated selection use
+        :class:`~cambrian.pareto.ParetoFront` instead.
+
     Example::
 
-        front = ParetoFront()
+        front = ParetoAnalyzer()
         front.compute(population)
         pareto_agents = front.pareto_agents()
         print(f"Pareto front: {len(pareto_agents)} agents")
@@ -168,16 +174,20 @@ class ParetoFront:
         for i, p in enumerate(points):
             p.dominated_by = []
             for j, q in enumerate(points):
-                if i != j and ParetoFront._dominates(q, p):
+                if i != j and ParetoAnalyzer._dominates(q, p):
                     p.dominated_by.append(q.agent_id)
             p.is_pareto = len(p.dominated_by) == 0
 
     def __repr__(self) -> str:
         s = self.summary()
         return (
-            f"ParetoFront(pareto={s.get('pareto_count')}/{s.get('total')}, "
+            f"ParetoAnalyzer(pareto={s.get('pareto_count')}/{s.get('total')}, "
             f"objectives={self._objective_names})"
         )
+
+
+# Backwards-compatible alias — deprecated, use ParetoAnalyzer
+ParetoFront = ParetoAnalyzer
 
 
 # ── Diversity Tracker ─────────────────────────────────────────────────────────
