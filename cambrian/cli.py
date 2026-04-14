@@ -940,6 +940,119 @@ def snapshot(memory_file: str, generation: int, top: int, output_format: str) ->
 
 
 @main.command()
+@click.argument("run1", metavar="RUN1")
+@click.argument("run2", metavar="RUN2")
+@click.option(
+    "--format",
+    "output_format",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output format.",
+)
+@click.option("--metric", default="best_fitness", help="Metric to compare (default: best_fitness).")
+def compare(run1: str, run2: str, output_format: str, metric: str) -> None:
+    """Compare two evolution run logs written by JSONLogger.
+
+    \b
+    RUN1 and RUN2 are NDJSON log files (one JSON object per line).
+
+    Example:
+        cambrian compare run_a.json run_b.json
+        cambrian compare run_a.json run_b.json --metric mean_fitness --format json
+    """
+    from cambrian.utils.logging import load_json_log
+
+    try:
+        entries_a = load_json_log(run1)
+        entries_b = load_json_log(run2)
+    except FileNotFoundError as exc:
+        click.echo(f"Error: {exc}", err=True)
+        sys.exit(1)
+
+    if not entries_a or not entries_b:
+        click.echo("Error: one or both log files are empty.", err=True)
+        sys.exit(1)
+
+    # Filter to generation entries only
+    gens_a = [e for e in entries_a if "generation" in e and "event" not in e]
+    gens_b = [e for e in entries_b if "generation" in e and "event" not in e]
+
+    run_id_a = entries_a[0].get("run_id", Path(run1).stem)
+    run_id_b = entries_b[0].get("run_id", Path(run2).stem)
+
+    def _extract(entries: list[dict[str, Any]], key: str) -> list[float]:
+        return [float(e.get(key, 0.0)) for e in entries]
+
+    vals_a = _extract(gens_a, metric)
+    vals_b = _extract(gens_b, metric)
+
+    final_a = vals_a[-1] if vals_a else 0.0
+    final_b = vals_b[-1] if vals_b else 0.0
+    best_a = max(vals_a) if vals_a else 0.0
+    best_b = max(vals_b) if vals_b else 0.0
+    winner = run_id_a if best_a >= best_b else run_id_b
+    delta = abs(best_a - best_b)
+
+    if output_format == "json":
+        payload = {
+            "metric": metric,
+            "run_a": {
+                "id": run_id_a,
+                "file": run1,
+                "generations": len(gens_a),
+                "final": round(final_a, 6),
+                "best": round(best_a, 6),
+                "values": [round(v, 6) for v in vals_a],
+            },
+            "run_b": {
+                "id": run_id_b,
+                "file": run2,
+                "generations": len(gens_b),
+                "final": round(final_b, 6),
+                "best": round(best_b, 6),
+                "values": [round(v, 6) for v in vals_b],
+            },
+            "winner": winner,
+            "delta": round(delta, 6),
+        }
+        click.echo(json.dumps(payload, indent=2))
+        return
+
+    # Text output
+    if _RICH and console:
+        table = Table(title=f"Evolution Comparison — {metric}", show_lines=True)
+        table.add_column("Metric", style="bold")
+        table.add_column(run_id_a, style="cyan")
+        table.add_column(run_id_b, style="magenta")
+        table.add_row("File", run1, run2)
+        table.add_row("Generations", str(len(gens_a)), str(len(gens_b)))
+        table.add_row(f"Final {metric}", f"{final_a:.4f}", f"{final_b:.4f}")
+        table.add_row(f"Best {metric}", f"{best_a:.4f}", f"{best_b:.4f}")
+        table.add_row("Winner", "✓" if run_id_a == winner else "", "✓" if run_id_b == winner else "")
+        table.add_row("Δ (best)", f"{delta:.4f}", "")
+        console.print(table)
+
+        # Per-generation breakdown
+        gen_table = Table(title="Per-Generation Values", show_lines=False)
+        gen_table.add_column("Gen", style="dim")
+        gen_table.add_column(run_id_a, style="cyan")
+        gen_table.add_column(run_id_b, style="magenta")
+        for i in range(max(len(vals_a), len(vals_b))):
+            a_val = f"{vals_a[i]:.4f}" if i < len(vals_a) else "-"
+            b_val = f"{vals_b[i]:.4f}" if i < len(vals_b) else "-"
+            gen_table.add_row(str(i), a_val, b_val)
+        console.print(gen_table)
+    else:
+        click.echo(f"\nComparison — {metric}")
+        click.echo(f"{'':20s}  {run_id_a:>12s}  {run_id_b:>12s}")
+        click.echo("-" * 50)
+        click.echo(f"{'Generations':20s}  {len(gens_a):>12d}  {len(gens_b):>12d}")
+        click.echo(f"{'Final ' + metric:20s}  {final_a:>12.4f}  {final_b:>12.4f}")
+        click.echo(f"{'Best ' + metric:20s}  {best_a:>12.4f}  {best_b:>12.4f}")
+        click.echo(f"\nWinner: {winner}  (Δ={delta:.4f})")
+
+
+@main.command()
 def version() -> None:
     """Print Cambrian version."""
     click.echo(f"Cambrian {__version__}")
