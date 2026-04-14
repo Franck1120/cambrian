@@ -164,6 +164,18 @@ def main() -> None:
     "--seed", default=None, type=int,
     help="Random seed for reproducibility.",
 )
+@click.option(
+    "--tournament-k", default=3, show_default=True,
+    help="Tournament size for parent selection.",
+)
+@click.option(
+    "--compress-every", default=0, show_default=True,
+    help="Apply prompt compression every N generations (0 = off).",
+)
+@click.option(
+    "--compress-tokens", default=256, show_default=True,
+    help="Max token budget when compressing prompts.",
+)
 def evolve(
     task: str,
     model: str,
@@ -179,6 +191,9 @@ def evolve(
     output: str | None,
     memory_out: str | None,
     seed: int | None,
+    tournament_k: int,
+    compress_every: int,
+    compress_tokens: int,
 ) -> None:
     """Run evolutionary optimisation for TASK.
 
@@ -212,7 +227,10 @@ def evolve(
         population_size=population,
         mutation_rate=mutation_rate,
         crossover_rate=crossover_rate,
+        tournament_k=tournament_k,
         seed=seed,
+        compress_interval=compress_every,
+        compress_max_tokens=compress_tokens,
     )
 
     initial_prompt = seed_prompt or (
@@ -347,6 +365,177 @@ def distill(genome_file: str) -> None:
         ))
     else:
         click.echo(json.dumps(data, indent=2))
+
+
+# ── analyze ───────────────────────────────────────────────────────────────────
+
+@main.command()
+@click.argument("memory_file", type=click.Path(exists=True))
+@click.option(
+    "--top", default=5, show_default=True,
+    help="Number of top agents to show in the lineage section.",
+)
+def analyze(memory_file: str, top: int) -> None:
+    """Deep analysis of an evolution run from a lineage JSON file.
+
+    MEMORY_FILE is the path written by --memory-out during an evolve run.
+
+    Shows:
+    \b
+      - Per-generation fitness trajectory (best + mean)
+      - Diversity metrics (unique strategies, temperature spread)
+      - Full lineage of the best agent
+      - Stagnation detection
+    """
+    import statistics as _stats
+
+    from cambrian.memory import EvolutionaryMemory
+
+    data = Path(memory_file).read_text()
+    mem = EvolutionaryMemory.from_json(data)
+    gen_stats = mem.generation_stats()
+
+    if not gen_stats:
+        click.echo("No data in lineage file.", err=True)
+        return
+
+    # ── Fitness trajectory ────────────────────────────────────────────────────
+    if _RICH and console is not None:
+        tbl = Table(
+            title=f"Evolution Analysis — {mem.name}",
+            show_header=True,
+            header_style="bold cyan",
+        )
+        tbl.add_column("Gen", justify="right")
+        tbl.add_column("Best", justify="right")
+        tbl.add_column("Mean", justify="right")
+        tbl.add_column("Delta", justify="right")
+        tbl.add_column("Agents", justify="right")
+        tbl.add_column("Trend")
+
+        prev_best = 0.0
+        for gen, s in sorted(gen_stats.items()):
+            best = s["best"]
+            delta = best - prev_best
+            delta_str = f"[green]+{delta:.4f}[/]" if delta > 0 else f"[red]{delta:.4f}[/]"
+            bar_len = int(best * 20)
+            bar = "█" * bar_len + "░" * (20 - bar_len)
+            tbl.add_row(
+                str(gen),
+                f"{best:.4f}",
+                f"{s['mean']:.4f}",
+                delta_str,
+                str(int(s["count"])),
+                bar,
+            )
+            prev_best = best
+
+        console.print(tbl)
+    else:
+        click.echo(f"\nEvolution Analysis — {mem.name}")
+        click.echo("-" * 56)
+        prev_best = 0.0
+        for gen, s in sorted(gen_stats.items()):
+            delta = s["best"] - prev_best
+            click.echo(
+                f"Gen {gen:3d}  best={s['best']:.4f}  mean={s['mean']:.4f}"
+                f"  delta={delta:+.4f}  n={int(s['count'])}"
+            )
+            prev_best = s["best"]
+
+    # ── Diversity metrics ─────────────────────────────────────────────────────
+    all_agents = list(mem._graph.nodes(data=True))
+    strategies: list[str] = []
+    temperatures: list[float] = []
+    prompt_lengths: list[int] = []
+
+    for _, attrs in all_agents:
+        g = attrs.get("genome") or {}
+        if isinstance(g, dict):
+            s = g.get("strategy", "")
+            if s:
+                strategies.append(s)
+            t = g.get("temperature")
+            if t is not None:
+                temperatures.append(float(t))
+            p = g.get("system_prompt", "")
+            if p:
+                prompt_lengths.append(len(p) // 4)
+
+    diversity_lines = []
+    unique_strats = set(strategies)
+    diversity_lines.append(f"Unique strategies : {', '.join(sorted(unique_strats)) or 'n/a'}")
+    if temperatures:
+        diversity_lines.append(
+            f"Temperature range : {min(temperatures):.2f} – {max(temperatures):.2f}"
+            f"  (mean={_stats.mean(temperatures):.2f}"
+            + (f", stdev={_stats.stdev(temperatures):.2f}" if len(temperatures) > 1 else "")
+            + ")"
+        )
+    if prompt_lengths:
+        diversity_lines.append(
+            f"Prompt tokens     : {min(prompt_lengths)} – {max(prompt_lengths)}"
+            f"  (mean={int(_stats.mean(prompt_lengths))})"
+        )
+
+    # Stagnation: count gens where best didn't improve by >0.001
+    gens_sorted = sorted(gen_stats.items())
+    stagnant = sum(
+        1 for i in range(1, len(gens_sorted))
+        if gens_sorted[i][1]["best"] - gens_sorted[i - 1][1]["best"] < 0.001
+    )
+    diversity_lines.append(
+        f"Stagnant gens     : {stagnant}/{len(gens_sorted) - 1}"
+        + (" [WARNING: consider increasing mutation rate]" if stagnant > len(gens_sorted) // 2 else "")
+    )
+
+    if _RICH and console is not None:
+        console.print(Panel("\n".join(diversity_lines), title="Diversity Metrics", border_style="yellow"))
+    else:
+        click.echo("\nDiversity Metrics")
+        click.echo("-" * 40)
+        for line in diversity_lines:
+            click.echo(f"  {line}")
+
+    # ── Lineage of best agent ─────────────────────────────────────────────────
+    top_agents = mem.get_top_ancestors(n=top)
+    if top_agents:
+        best_id = top_agents[0]["agent_id"]
+        lineage = mem.get_lineage(best_id)
+        lineage_str = " → ".join(aid[:8] for aid in lineage)
+
+        if _RICH and console is not None:
+            console.print(Panel(
+                f"[bold]Best agent:[/bold] {best_id[:10]}  "
+                f"fitness={top_agents[0].get('fitness', 0):.4f}\n\n"
+                f"[bold]Lineage ({len(lineage)} ancestors):[/bold]\n{lineage_str}",
+                title=f"Top {top} Agents & Lineage",
+                border_style="green",
+            ))
+
+            top_tbl = Table(show_header=True, header_style="bold magenta")
+            top_tbl.add_column("Rank")
+            top_tbl.add_column("Agent ID")
+            top_tbl.add_column("Fitness", justify="right")
+            top_tbl.add_column("Generation", justify="right")
+            for rank, a in enumerate(top_agents, 1):
+                top_tbl.add_row(
+                    str(rank),
+                    a["agent_id"][:12],
+                    f"{a.get('fitness', 0):.4f}",
+                    str(a.get("generation", "?")),
+                )
+            console.print(top_tbl)
+        else:
+            click.echo(f"\nBest agent: {best_id[:10]}  fitness={top_agents[0].get('fitness', 0):.4f}")
+            click.echo(f"Lineage ({len(lineage)} ancestors): {lineage_str}")
+            click.echo("\nTop agents:")
+            for rank, a in enumerate(top_agents, 1):
+                click.echo(
+                    f"  {rank}. {a['agent_id'][:10]}  "
+                    f"fitness={a.get('fitness', 0):.4f}  "
+                    f"gen={a.get('generation', '?')}"
+                )
 
 
 # ── version ───────────────────────────────────────────────────────────────────
