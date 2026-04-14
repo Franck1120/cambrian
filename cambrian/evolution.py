@@ -8,8 +8,10 @@ tracking.
 
 from __future__ import annotations
 
+import json
 import random
 import time
+from pathlib import Path
 from typing import Any, Callable
 
 from cambrian.agent import Agent, Genome
@@ -44,6 +46,11 @@ class EvolutionEngine:
         memory_name: Label for the :class:`~cambrian.memory.EvolutionaryMemory`
             run. Default ``"default"``.
         seed: Optional random seed for reproducibility.
+        compress_interval: Every this many generations, apply
+            :func:`~cambrian.compress.procut_prune` to all agents to prevent
+            prompt bloat. ``0`` disables auto-compression. Default ``0``.
+        compress_max_tokens: Token budget passed to ``procut_prune``.
+            Default ``256``.
     """
 
     def __init__(
@@ -59,6 +66,8 @@ class EvolutionEngine:
         use_map_elites: bool = True,
         memory_name: str = "default",
         seed: int | None = None,
+        compress_interval: int = 0,
+        compress_max_tokens: int = 256,
     ) -> None:
         self._evaluator = evaluator
         self._mutator = mutator
@@ -69,6 +78,8 @@ class EvolutionEngine:
         self._elite_n = max(1, int(population_size * elite_ratio))
         self._k = tournament_k
         self._use_map_elites = use_map_elites
+        self._compress_interval = compress_interval
+        self._compress_max_tokens = compress_max_tokens
 
         if seed is not None:
             random.seed(seed)
@@ -211,6 +222,11 @@ class EvolutionEngine:
             population = self.evolve_generation(population, task)
             self._update_best(population)
 
+            # Auto-compress prompts every compress_interval generations
+            if self._compress_interval > 0 and gen % self._compress_interval == 0:
+                population = self._compress_population(population)
+                logger.info("Gen %d: prompt auto-compression applied", gen)
+
             stats = self._generation_stats(population)
             logger.info(
                 "Gen %d/%d — best=%.4f mean=%.4f",
@@ -308,7 +324,76 @@ class EvolutionEngine:
         contestants = random.sample(population, k)
         return max(contestants, key=lambda a: a.fitness or 0.0)
 
+    # ── Population persistence ────────────────────────────────────────────────
+
+    def save_population(self, path: str | Path, population: list[Agent]) -> None:
+        """Serialise *population* to a JSON file at *path*.
+
+        The saved file is a JSON array of agent dicts compatible with
+        :meth:`load_population`.  Each entry includes the genome,
+        fitness, generation, and agent id.
+
+        Args:
+            path: Destination file path (created or overwritten).
+            population: List of agents to serialise.
+        """
+        data = [agent.to_dict() for agent in population]
+        Path(path).write_text(json.dumps(data, indent=2, default=str))
+        logger.info("Saved %d agents to %s", len(population), path)
+
+    def load_population(self, path: str | Path) -> list[Agent]:
+        """Deserialise a population from a JSON file written by :meth:`save_population`.
+
+        Loaded agents have their genome, fitness, and generation restored.
+        The engine's current backend is attached to each loaded agent.
+
+        Args:
+            path: Path to a JSON file produced by :meth:`save_population`.
+
+        Returns:
+            List of :class:`~cambrian.agent.Agent` objects ready for use.
+
+        Raises:
+            FileNotFoundError: If *path* does not exist.
+            ValueError: If the file cannot be parsed as a valid population.
+        """
+        raw = Path(path).read_text()
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Cannot parse population file {path}: {exc}") from exc
+
+        if not isinstance(data, list):
+            raise ValueError(f"Population file must be a JSON array, got {type(data).__name__}")
+
+        population: list[Agent] = []
+        for entry in data:
+            genome = Genome.from_dict(entry.get("genome", {}))
+            agent = Agent(
+                genome=genome,
+                backend=self._backend,
+                agent_id=entry.get("id"),
+            )
+            if entry.get("fitness") is not None:
+                agent._fitness = float(entry["fitness"])
+            agent._generation = int(entry.get("generation", 0))
+            population.append(agent)
+
+        logger.info("Loaded %d agents from %s", len(population), path)
+        return population
+
     # ── Internals ─────────────────────────────────────────────────────────────
+
+    def _compress_population(self, population: list[Agent]) -> list[Agent]:
+        """Apply procut_prune to all agents to prevent prompt bloat."""
+        from cambrian.compress import procut_prune
+        compressed = []
+        for agent in population:
+            new_genome = procut_prune(agent.genome, max_tokens=self._compress_max_tokens)
+            if new_genome.system_prompt != agent.genome.system_prompt:
+                agent.genome = new_genome
+            compressed.append(agent)
+        return compressed
 
     def _update_best(self, population: list[Agent]) -> None:
         for agent in population:
