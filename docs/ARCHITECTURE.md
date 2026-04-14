@@ -33,10 +33,19 @@ fitness evaluation, and a growing library of bio-inspired pressures.
 │  │ GeminiBackend│  │ Composite    │  │  Epigenetics  │  │ FitnessLand. │  │
 │  └──────────────┘  │ VarianceAware│  │  ImmuneMemory │  └──────────────┘  │
 │                    │ BaldwinEval  │  │  MCTS         │                     │
-│                    └──────────────┘  │  Co-Evolution │  ┌──────────────┐  │
-│                                      │  Curriculum   │  │ Memory/Graph │  │
-│                                      │  Constitutional│  │ (memory.py)  │  │
-│                                      └──────────────┘  └──────────────┘  │
+│                    │ DiffCoTEval  │  │  Co-Evolution │  ┌──────────────┐  │
+│                    │ WorldModelEv.│  │  Curriculum   │  │ Memory/Graph │  │
+│                    └──────────────┘  │  Constitutional│  │ (memory.py)  │  │
+│                                      │  Self-Play    │  └──────────────┘  │
+│  ┌──────────────┐                    │  MetaEvolution│                     │
+│  │  Reasoning   │                    └──────────────┘  ┌──────────────┐  │
+│  │              │                                       │  Structured  │  │
+│  │ DiffCoT      │  ┌──────────────┐                    │  Logging     │  │
+│  │ CausalGraph  │  │  Tools       │                    │ (JSONLogger) │  │
+│  │ CausalMutator│  │              │                    └──────────────┘  │
+│  └──────────────┘  │ CLITool      │                                       │
+│                    │ ToolInventor │                                       │
+│                    └──────────────┘                                       │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -277,6 +286,132 @@ Factories:
   make_reasoning_curriculum() # 5 stages: arithmetic → Tower of Hanoi
 ```
 
+### DiffCoT Reasoning (`cambrian/diffcot.py`)
+
+Diffusion-inspired iterative chain-of-thought denoising:
+
+```
+DiffCoTConfig
+ ├── n_steps: int                    # denoising iterations (default 3)
+ ├── noise_level: float              # perturbation intensity [0.0, 1.0]
+ └── temperature_schedule: str       # "cosine" | "linear" | "constant"
+
+DiffCoTReasoner
+ └── reason(agent, task, backend) → str
+
+DiffCoTEvaluator(base_evaluator, reasoner)
+ └── evaluate(agent, task) → float   # runs DiffCoT, then base evaluator
+
+make_diffcot_evaluator(base, backend, n_steps) → DiffCoTEvaluator
+```
+
+The denoiser starts at high temperature (exploration) and anneals toward
+zero, producing progressively cleaner chain-of-thought reasoning.
+
+### Causal Reasoning (`cambrian/causal.py`)
+
+Explicit cause-effect representation in agent strategies:
+
+```
+CausalEdge(cause, effect, strength, confidence)
+
+CausalGraph
+ ├── from_text(text) → CausalGraph   # parse IF/THEN, →, "causes" patterns
+ ├── edges: list[CausalEdge]
+ └── to_prompt_block() → str
+
+CausalStrategyExtractor(backend)
+ └── extract(strategy_text) → CausalGraph
+
+CausalMutator(backend)
+ └── mutate_with_causal(agent, task) → Agent
+
+inject_causal_context(genome, graph) → Genome
+```
+
+### Tool Creation (`cambrian/tool_creation.py`)
+
+Agents invent new CLI tools during evolution:
+
+```
+ToolSpec(name, description, command_template, input_schema)
+
+ToolInventor(backend, max_tools_per_agent)
+ └── invent_tool(agent, task) → ToolInventionResult
+
+ToolPopulationRegistry
+ ├── register(tool_spec)
+ ├── top_tools(n) → list[ToolSpec]
+ └── deduplicate()
+```
+
+`ToolSpec` objects are stored in `Genome.tool_specs` and survive mutation/crossover.
+
+### Self-Play (`cambrian/self_play.py`)
+
+Head-to-head agent competition as an additional selection pressure:
+
+```
+SelfPlayResult(agent_a_id, agent_b_id, score_a, score_b, winner_id, margin, task)
+ ├── is_draw → bool
+ └── loser_id() → str | None
+
+SelfPlayEvaluator(base_evaluator, win_bonus, loss_penalty, draw_bonus)
+ ├── evaluate(agent, task) → float
+ └── compete(a, b, task) → SelfPlayResult   # applies win/loss fitness delta
+
+TournamentRecord
+ ├── wins / losses / draws / total_score per agent
+ ├── ranking() → list[(agent_id, win_rate)]
+ └── win_rate(agent_id) → float
+
+run_tournament(population, evaluator, task) → TournamentRecord
+```
+
+### Meta-Evolution (`cambrian/meta_evolution.py`)
+
+MAML-inspired outer loop that evolves hyperparameters alongside genomes:
+
+```
+HyperParams(mutation_rate, crossover_rate, temperature, tournament_k, elite_ratio)
+ ├── clamp() → HyperParams          # clip all values to valid ranges
+ ├── perturb(scale, rng) → HyperParams   # Gaussian perturbation
+ ├── to_dict() / from_dict()
+ └── fitness_history: list[float]
+
+MetaEvolutionEngine
+ ├── evolve(seed_genomes, task, n_generations, meta_interval, on_generation) → Agent
+ ├── hp: HyperParams                # current hyperparameters (updated each meta-step)
+ └── hp_history: list[HyperParams]  # all configurations tried
+```
+
+At every `meta_interval` generations, `n_candidates` perturbed HP configs are
+tried on one quick evaluation step.  The best-performing config is kept.
+
+### World Model (`cambrian/world_model.py`)
+
+Per-agent predictive model inspired by Dyna-Q / Ha & Schmidhuber 2018:
+
+```
+WorldModelPrediction(predicted_score, confidence, n_similar)
+ └── is_uncertain → bool    # confidence < 0.5
+
+WorldModel(buffer_size, default_score, decay)
+ ├── update(task, score)             # add experience
+ ├── predict(task) → WorldModelPrediction
+ └── experience_count() → int
+
+WorldModelEvaluator(base_evaluator, accuracy_weight, buffer_size, decay, min_confidence_for_blend)
+ ├── evaluate(agent, task) → float   # blend raw score + prediction accuracy
+ ├── get_model(agent_id) → WorldModel | None
+ └── prediction_errors() → dict[str, float]
+
+world_model_fitness(raw_score, prediction_error, accuracy_weight) → float
+```
+
+Agents that **predict their own performance accurately** receive a fitness
+bonus — creating selective pressure for self-aware agents.
+
 ### Constitutional AI (`cambrian/constitutional.py`)
 
 ```
@@ -335,11 +470,13 @@ Methods:
 ## CLI Commands
 
 ```
-cambrian evolve TASK        Run evolution (many flags for pop size, gens, etc.)
-cambrian dashboard          Streamlit live dashboard (--port, --log-file)
+cambrian evolve TASK        Run evolution (pop size, gens, mutation, crossover flags)
+cambrian run --agent FILE   Load evolved genome, run on a task
 cambrian analyze MEMORY     Deep analysis: trajectory, diversity, lineage
-cambrian stats MEMORY       Quick text summary of a lineage file
-cambrian distill GENOME     Display best genome from a lineage file
+cambrian snapshot --memory  Show population state at a specific generation
+cambrian compare RUN1 RUN2  Compare two NDJSON evolution log files
+cambrian dashboard          Streamlit live dashboard (--port, --log-file)
+cambrian distill GENOME     Pretty-print a saved genome JSON
 cambrian distill-agent      Compress evolved genome for a smaller model
 cambrian version            Print version
 ```
@@ -363,9 +500,16 @@ cambrian/
 ├── coevolution.py       CoEvolutionEngine
 ├── curriculum.py        CurriculumScheduler, CurriculumStage
 ├── constitutional.py    ConstitutionalWrapper
-├── stats.py             ParetoFront, DiversityTracker, FitnessLandscape
+├── stats.py             ParetoAnalyzer, DiversityTracker, FitnessLandscape
+├── diffcot.py           DiffCoTConfig, DiffCoTReasoner, DiffCoTEvaluator
+├── causal.py            CausalEdge, CausalGraph, CausalMutator, inject_causal_context
+├── tool_creation.py     ToolSpec, ToolInventor, ToolPopulationRegistry
+├── self_play.py         SelfPlayEvaluator, SelfPlayResult, TournamentRecord, run_tournament
+├── meta_evolution.py    HyperParams, MetaEvolutionEngine
+├── world_model.py       WorldModel, WorldModelEvaluator, WorldModelPrediction
 ├── dashboard.py         Streamlit dashboard (_build_app, run_dashboard)
-├── cli.py               Click CLI entry point
+├── cli.py               Click CLI entry point (9 commands)
+├── __main__.py          python -m cambrian entry point
 ├── backends/
 │   ├── base.py          LLMBackend ABC
 │   ├── openai_compat.py OpenAICompatBackend (httpx)
@@ -378,7 +522,8 @@ cambrian/
 │   ├── variance_aware.py VarianceAwareEvaluator + build_diversified_evaluator
 │   └── baldwin.py       BaldwinEvaluator
 └── utils/
-    └── logging.py       get_logger
+    ├── logging.py       get_logger, JSONLogger, load_json_log
+    └── sandbox.py       run_in_sandbox (API-key-safe), extract_python_code
 ```
 
 ---
