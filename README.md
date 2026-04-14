@@ -6,60 +6,136 @@
 
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-76%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-419%20passing-brightgreen)](tests/)
+[![mypy](https://img.shields.io/badge/mypy-strict-blue)](https://mypy-lang.org)
 
 ---
 
 ## How it works
 
 ```
-                          ┌─────────────────────────────────────────────────┐
-                          │                 Cambrian Loop                   │
-                          │                                                 │
-  Seed genomes ──────────►│  POPULATION  (N agents, each with a Genome)    │
-  (system prompts,        │      │                                          │
-   temperature, model)   │      ▼                                          │
-                          │  EVALUATE  ──► CodeEvaluator  (sandbox exec)   │
-                          │              ► LLMJudgeEvaluator (0-10 rubric) │
-                          │              ► CompositeEvaluator (weighted)    │
-                          │      │                                          │
-                          │      ▼                                          │
-                          │  MAP-ELITES ARCHIVE  (diversity grid)           │
-                          │      │                                          │
-                          │      ▼                                          │
-                          │  SELECT  ◄── Tournament selection (k=3)         │
-                          │      │       Elitism (top N% survive unchanged) │
-                          │      ▼                                          │
-                          │  MUTATE / CROSSOVER  ◄── LLMMutator            │
-                          │  (LLM improves prompts;  fallback: deterministic│
-                          │   sentence-interleave + temperature tweak)      │
-                          │      │                                          │
-                          │      └──────────────► next generation ─────────┘
-                          └─────────────────────────────────────────────────┘
-                                  │
-                                  ▼
-                          Best agent + lineage graph (JSON)
+  Seed genomes ──────►  POPULATION (N agents, each with a Genome)
+  (prompts, temp,              │
+   model, tools)               ▼
+                          EVALUATE  ── CodeEvaluator / LLMJudge / Composite /
+                                       Baldwin / DiffCoT / Constitutional
+                               │
+                               ▼
+                          BIO-PRESSURES
+                          ├── Epigenetics   (context-dependent expression)
+                          ├── Stigmergy     (pheromone traces → mutation bias)
+                          ├── Immune System (suppress barren genome regions)
+                          └── Lamarck       (capture successful examples)
+                               │
+                               ▼
+                          SELECT  ─── Tournament (k=3) + Elitism
+                          or NSGA-II (multi-objective Pareto)
+                          or MCTS   (UCB1-guided tree search)
+                               │
+                               ▼
+                          MUTATE / CROSSOVER ─── LLMMutator
+                          ├── Speculative execution (K parallel candidates)
+                          ├── Reward shaping (clip / normalise / potential)
+                          └── Tool invention (agents invent new CLI tools)
+                               │
+                               └──────────────► next generation
 ```
-
-Every generation, the LLM mutator *reads* the current prompt, understands why it scored well or poorly, and *writes* an improved version. This turns the genetic search from a random walk into a directed hill-climb powered by the LLM's knowledge.
 
 ---
 
 ## Features
 
+### Core Evolution
 | Component | What it does |
 |-----------|-------------|
-| `EvolutionEngine` | Full generational loop: tournament selection, elitism, crossover, mutation, MAP-Elites archiving |
-| `LLMMutator` | Sends the current genome + fitness to an LLM, receives an improved genome back |
-| `MAPElites` | 3×3 diversity grid keyed on (prompt-length, temperature) — prevents population collapse |
-| `EvolutionaryMemory` | NetworkX directed-graph lineage: trace any agent's ancestry, export to JSON |
-| `CodeEvaluator` | Runs agent-generated code in a subprocess sandbox; partial-credit line scoring |
-| `LLMJudgeEvaluator` | Judge LLM scores responses 0–10 against a custom rubric |
-| `CompositeEvaluator` | Combine multiple evaluators (weighted mean or min) to resist reward hacking |
-| `ModelRouter` | Routes tasks to cheap / medium / premium model tiers by complexity |
-| `SemanticCache` | SHA-256 LRU cache with TTL — avoid redundant API calls across generations |
-| `OpenAICompatBackend` | Works with OpenAI, Ollama, Groq, LM Studio, vLLM — any OAI-compat API |
-| CLI (`cambrian`) | `evolve`, `dashboard`, `distill`, `version` commands with Rich terminal UI |
+| `EvolutionEngine` | Full generational loop: tournament selection, elitism, crossover, mutation |
+| `LLMMutator` | LLM reads the genome + fitness and writes an improved version |
+| `EvolutionaryMemory` | NetworkX lineage graph — trace ancestry, export/import JSON |
+| `SpeculativeMutator` | Generate K mutations in parallel (asyncio), keep the best |
+| `Archipelago` | Multi-island evolution with ring / all-to-all / random migration |
+
+### Evaluators
+| Component | What it does |
+|-----------|-------------|
+| `CodeEvaluator` | Runs agent code in a subprocess sandbox; partial-credit scoring |
+| `LLMJudgeEvaluator` | Judge LLM scores responses against a custom rubric |
+| `CompositeEvaluator` | Weighted average of multiple evaluators |
+| `VarianceAwareEvaluator` | Penalise inconsistent agents (anti-reward-hacking) |
+| `BaldwinEvaluator` | Multi-trial evaluation with in-context learning bonus |
+| `DiffCoTEvaluator` | Iterative chain-of-thought denoising before scoring |
+
+### Bio-Inspired Modules
+| Component | What it does |
+|-----------|-------------|
+| `LamarckianAdapter` | Capture successful examples into genome's few-shot examples |
+| `EpigeneticLayer` | Context-dependent system prompt annotations at runtime |
+| `ImmuneMemory` | SHA-256 fingerprinting; suppress re-evaluation of barren regions |
+| `MCTSSelector` | UCB1-guided tree search over the mutation tree |
+| `CoEvolutionEngine` | Adversarial generator/adversary arms race |
+| `CurriculumScheduler` | Task difficulty progression with thresholds |
+| `ConstitutionalWrapper` | Critique-revise safety cycles before scoring |
+
+### Reasoning Modules
+| Component | What it does |
+|-----------|-------------|
+| `DiffCoTReasoner` | Diffusion-inspired iterative chain-of-thought denoising |
+| `CausalGraph` | Explicit cause-effect relationship representation in strategies |
+| `CausalStrategyExtractor` | LLM-based extraction of IF-THEN causal relations |
+| `CausalMutator` | Evolves causal graphs alongside genomes |
+
+### Multi-Objective
+| Component | What it does |
+|-----------|-------------|
+| `ParetoFront` | Incremental non-dominated set |
+| `fast_non_dominated_sort` | NSGA-II O(M·N²) dominance ranking |
+| `nsga2_select` | Full NSGA-II selection with crowding distance |
+| `ObjectiveVector` | Per-agent multi-objective scores (fitness, brevity, diversity) |
+
+### Reward Shaping
+| Component | What it does |
+|-----------|-------------|
+| `ClipShaper` | Clamp fitness to [min, max] |
+| `NormalisationShaper` | Online z-score or min-max normalisation |
+| `PotentialShaper` | Potential-based shaping (Ng 1999) |
+| `RankShaper` | Convert scores to fractional rank |
+| `CuriosityShaper` | Intrinsic motivation bonus for novel genomes |
+
+### Agent-to-Agent (A2A)
+| Component | What it does |
+|-----------|-------------|
+| `AgentNetwork` | Route, delegate, broadcast, chain tasks across agent populations |
+| `AgentCard` | Capability descriptor for domain-based routing |
+| `A2AMessage` | Structured request/response envelope |
+
+### Tools
+| Component | What it does |
+|-----------|-------------|
+| `CLITool` / `CLIToolkit` | Wrap any shell command as an LLM-callable tool |
+| `ToolInventor` | LLM invents new tool specs during evolution |
+| `ToolPopulationRegistry` | Shared registry of population-invented tools |
+| `ToolSpec` | Typed tool specification stored in `Genome.tool_specs` |
+
+### Export & Deployment
+| Component | What it does |
+|-----------|-------------|
+| `export_genome_json` | Save/load evolved genome |
+| `export_standalone` | Self-contained Python script |
+| `export_mcp` | MCP server stub (manifest + handler) |
+| `export_api` | FastAPI REST application |
+
+### Analytics
+| Component | What it does |
+|-----------|-------------|
+| `ParetoFront` | Non-dominated Pareto archive |
+| `DiversityTracker` | Per-generation entropy, temperature and prompt std |
+| `FitnessLandscape` | 2D fitness grid (temperature × token-length) |
+
+### Backends
+| Backend | Class | SDK |
+|---------|-------|-----|
+| OpenAI / Ollama / Groq / vLLM | `OpenAICompatBackend` | httpx |
+| Anthropic Claude | `AnthropicBackend` | `anthropic` |
+| Google Gemini | `GeminiBackend` | `google-genai` |
 
 ---
 
@@ -68,62 +144,51 @@ Every generation, the LLM mutator *reads* the current prompt, understands why it
 ### Install
 
 ```bash
-# From PyPI (once published):
-pip install cambrian-ai
-
-# From source (recommended for development):
+# From source (recommended):
 git clone https://github.com/Franck1120/cambrian.git
 cd cambrian
 pip install -e ".[dev]"
 ```
 
 ### Requirements
-
 - Python 3.11+
 - An OpenAI-compatible API key (or a local Ollama instance)
 
 ---
 
-## Quickstart
-
-### 1. Evolve via the CLI
+## CLI Commands
 
 ```bash
-export OPENAI_API_KEY=sk-...
-
+# Evolve — run evolutionary search
 cambrian evolve "Write a Python function that reverses a string" \
-    --model gpt-4o-mini \
-    --generations 8 \
-    --population 6 \
-    --output best_genome.json \
-    --memory-out lineage.json
-```
+    --model gpt-4o-mini --generations 10 --population 8 \
+    --output best.json --memory-out lineage.json
 
-Watch the generation table update in real time:
+# Run — load an evolved agent and run it on a task
+cambrian run --agent best.json "What is the Riemann hypothesis?"
+cambrian run --agent best.json --format json "Explain entropy."
 
-```
-  Gen  1  best=0.4800  mean=0.3200
-  Gen  2  best=0.6400  mean=0.4750
-  Gen  3  best=0.8000  mean=0.6300
-  ...
-```
+# Snapshot — show population state at a specific generation
+cambrian snapshot --memory lineage.json --generation 5
+cambrian snapshot --memory lineage.json --generation 10 --format json
 
-### 2. Inspect results
+# Stats — text summary of a lineage file
+cambrian stats lineage.json
 
-```bash
-# Pretty-print the winning genome
-cambrian distill best_genome.json
+# Analyze — deep trajectory + diversity + lineage analysis
+cambrian analyze lineage.json --top 5
 
-# Per-generation fitness table from lineage
-cambrian dashboard lineage.json
-```
+# Dashboard — Streamlit live evolution dashboard
+cambrian dashboard --port 8501 --log-file run.json
 
-### 3. Use a local Ollama model
+# Distill — pretty-print a saved genome
+cambrian distill best.json
 
-```bash
-CAMBRIAN_BASE_URL=http://localhost:11434/v1 OPENAI_API_KEY=ollama \
-    cambrian evolve "Explain recursion to a 10-year-old" \
-    --model llama3.2 --generations 5 --population 4
+# Distill-agent — compress genome for a smaller model
+cambrian distill-agent --agent best.json --target gemma-4-12b --max-tokens 120
+
+# Version
+cambrian version
 ```
 
 ---
@@ -146,54 +211,110 @@ evaluator = CodeEvaluator(expected_output="Hello, world!")
 engine = EvolutionEngine(
     evaluator=evaluator,
     mutator=mutator,
-    backend=backend,          # agents need backend to call agent.run()
+    backend=backend,
     population_size=6,
     mutation_rate=0.8,
-    seed=42,                  # reproducibility
+    seed=42,
 )
 
 seed = Genome(system_prompt="You are a Python expert. Output code only.")
 best = engine.evolve(seed_genomes=[seed], task="Print Hello, world!", n_generations=5)
-
-print(f"Best fitness  : {best.fitness:.4f}")
-print(f"Best prompt   : {best.genome.system_prompt}")
+print(f"Best fitness: {best.fitness:.4f}")
 ```
 
-### With a generation callback
+### Multi-objective evolution (NSGA-II)
 
 ```python
-def log_gen(gen: int, population: list) -> None:
-    scores = [a.fitness or 0 for a in population]
-    print(f"Gen {gen}  best={max(scores):.3f}  mean={sum(scores)/len(scores):.3f}")
+from cambrian.pareto import ObjectiveVector, brevity_objective, fitness_objective, nsga2_select
 
-engine.evolve(seed_genomes=[seed], task="...", n_generations=10, on_generation=log_gen)
+vectors = [
+    ObjectiveVector(a.id, scores={
+        "perf": fitness_objective(a),
+        "brevity": brevity_objective(a),
+    })
+    for a in population
+]
+selected = nsga2_select(population, vectors, target_size=50)
 ```
 
-### CompositeEvaluator (anti-reward-hacking)
+### Agent-to-Agent delegation
 
 ```python
-from cambrian.evaluators.composite import CompositeEvaluator
-from cambrian.evaluators.code import CodeEvaluator
-from cambrian.evaluators.llm_judge import LLMJudgeEvaluator
+from cambrian.a2a import AgentCard, AgentNetwork
 
-evaluator = CompositeEvaluator(
-    evaluators=[
-        CodeEvaluator(expected_output="FizzBuzz output..."),
-        LLMJudgeEvaluator(judge_backend=backend, rubric_extension="Prefer clean code."),
-    ],
-    weights=[0.7, 0.3],   # normalised automatically
-    aggregate="mean",
+network = AgentNetwork()
+network.register(code_agent, AgentCard(domains=["python", "code"], confidence=0.9))
+network.register(math_agent, AgentCard(domains=["math", "logic"], confidence=0.85))
+
+result = network.delegate("Implement binary search in Python.")
+print(result.result)
+```
+
+### Reward shaping
+
+```python
+from cambrian.reward_shaping import build_shaped_evaluator
+
+shaped = build_shaped_evaluator(my_evaluator, "clip+normalise+curiosity")
+```
+
+### DiffCoT iterative reasoning
+
+```python
+from cambrian.diffcot import DiffCoTConfig, make_diffcot_evaluator
+
+config = DiffCoTConfig(n_steps=3, noise_level=0.2, temperature_schedule="cosine")
+diffcot_eval = make_diffcot_evaluator(base_evaluator, backend, n_steps=3)
+```
+
+### Causal reasoning
+
+```python
+from cambrian.causal import CausalGraph, inject_causal_context
+
+graph = CausalGraph.from_text(
+    "IF the problem is complex THEN use step-by-step reasoning. "
+    "IF output is code THEN include docstrings."
 )
+enriched_genome = inject_causal_context(agent.genome, graph)
 ```
 
-### Load a saved genome
+### Tool invention
 
 ```python
-import json
-from cambrian.agent import Genome
+from cambrian.tool_creation import ToolInventor, ToolPopulationRegistry
 
-genome = Genome.from_dict(json.load(open("best_genome.json")))
-print(genome.system_prompt)
+inventor = ToolInventor(backend, max_tools_per_agent=3)
+registry = ToolPopulationRegistry()
+
+result = inventor.invent_tool(agent, task="count words in text")
+if result and result.success:
+    registry.register(result.tool_spec)
+```
+
+### Export evolved agent
+
+```python
+from cambrian.export import export_genome_json, export_standalone, export_mcp
+
+export_genome_json(best, "best.json")       # reload with cambrian run
+export_standalone(best, "my_agent.py")      # self-contained script
+export_mcp(best, "mcp_server/")            # MCP server stub
+```
+
+### Island model (Archipelago)
+
+```python
+from cambrian.archipelago import Archipelago
+
+arch = Archipelago(
+    engine_factory=lambda: EvolutionEngine(...),
+    n_islands=4,
+    island_size=20,
+    migration_interval=5,
+    topology="ring",
+)
+best = arch.evolve(seed_genomes=seeds, task="...", n_generations=40)
 ```
 
 ---
@@ -205,10 +326,12 @@ print(genome.system_prompt)
 | [`examples/evolve_fizzbuzz.py`](examples/evolve_fizzbuzz.py) | FizzBuzz with custom partial-credit scoring |
 | [`examples/evolve_coding.py`](examples/evolve_coding.py) | 5-challenge composite coding benchmark |
 | [`examples/evolve_prompt.py`](examples/evolve_prompt.py) | Open-ended Socratic tutor prompt optimisation |
+| [`examples/evolve_researcher.py`](examples/evolve_researcher.py) | Research agent: LLM judge + Lamarck + Pareto |
 
 ```bash
-python examples/evolve_coding.py --generations 6 --population 8
-python examples/evolve_prompt.py --generations 5 --output tutor.json
+python examples/evolve_researcher.py \
+    --topic "quantum computing applications in cryptography" \
+    --generations 15 --population 12
 ```
 
 ---
@@ -217,71 +340,80 @@ python examples/evolve_prompt.py --generations 5 --output tutor.json
 
 ```
 cambrian/
-├── __init__.py              Public exports: Agent, Genome, EvolutionEngine
-├── agent.py                 Genome dataclass + Agent (run, clone, fitness, to_dict)
-├── evaluator.py             Abstract Evaluator base class
-├── evolution.py             EvolutionEngine — the main evolutionary loop
-├── mutator.py               LLMMutator — mutate + crossover + fallbacks
-├── diversity.py             MAPElites — 3x3 quality-diversity archive
-├── memory.py                EvolutionaryMemory — NetworkX lineage graph
-├── cache.py                 SemanticCache — SHA-256 LRU with TTL
-├── router.py                ModelRouter — complexity-based tier routing
-├── compress.py              caveman_compress + procut_prune
-├── cli.py                   Click CLI (evolve / dashboard / distill / version)
+├── agent.py             Genome (+ ToolSpec), Agent
+├── evolution.py         EvolutionEngine (main loop)
+├── mutator.py           LLMMutator (mutation + stigmergy)
+├── evaluator.py         Evaluator ABC
+├── memory.py            EvolutionaryMemory + StigmergyTrace
+├── compress.py          caveman_compress, procut_prune
+├── lamarck.py           LamarckianAdapter
+├── epigenetics.py       EpigeneticLayer, EpigenomicContext
+├── immune.py            ImmuneMemory, fingerprint()
+├── mcts.py              MCTSNode, MCTSSelector
+├── coevolution.py       CoEvolutionEngine
+├── curriculum.py        CurriculumScheduler, CurriculumStage
+├── constitutional.py    ConstitutionalWrapper
+├── stats.py             ParetoFront, DiversityTracker, FitnessLandscape
+├── a2a.py               AgentNetwork, AgentCard, A2AMessage
+├── cli_tools.py         CLITool, CLIToolkit
+├── tool_creation.py     ToolInventor, ToolPopulationRegistry
+├── pareto.py            NSGA-II, ObjectiveVector, ParetoFront
+├── archipelago.py       Island, Archipelago
+├── speculative.py       speculate(), SpeculativeMutator
+├── reward_shaping.py    Clip/Normalise/Potential/Rank/Curiosity shapers
+├── diffcot.py           DiffCoTReasoner, DiffCoTEvaluator
+├── causal.py            CausalGraph, CausalStrategyExtractor
+├── export.py            export_genome_json/standalone/mcp/api
+├── dashboard.py         Streamlit live dashboard
+├── cli.py               Click CLI entry point
 ├── backends/
-│   ├── base.py              Abstract LLMBackend (typed generate signature)
-│   └── openai_compat.py     OpenAI-compatible httpx backend, exponential back-off
+│   ├── base.py          LLMBackend ABC
+│   ├── openai_compat.py OpenAICompatBackend
+│   ├── anthropic.py     AnthropicBackend
+│   └── gemini.py        GeminiBackend
 ├── evaluators/
-│   ├── code.py              CodeEvaluator — sandbox execution + partial scoring
-│   ├── llm_judge.py         LLMJudgeEvaluator — 0-10 rubric, JSON parse + fallback
-│   └── composite.py         CompositeEvaluator — weighted mean / min-aggregate
+│   ├── code.py          CodeEvaluator
+│   ├── llm_judge.py     LLMJudgeEvaluator
+│   ├── composite.py     CompositeEvaluator
+│   ├── variance_aware.py VarianceAwareEvaluator
+│   └── baldwin.py       BaldwinEvaluator
 └── utils/
-    ├── logging.py           Rich / plain adaptive logging
-    └── sandbox.py           run_in_sandbox + extract_python_code
-
-examples/
-├── evolve_fizzbuzz.py
-├── evolve_coding.py
-└── evolve_prompt.py
-
-scripts/
-└── benchmark.py             Per-generation wall-clock timing (no API calls)
-
-tests/
-├── test_agent.py            Genome + Agent (11 tests)
-├── test_evaluator.py        LLMJudgeEvaluator + CompositeEvaluator (10 tests)
-├── test_evolution.py        EvolutionEngine integration (13 tests)
-└── test_modules.py          Cache / compress / router / diversity / memory (42 tests)
+    └── logging.py       get_logger
 ```
 
 ---
 
 ## Configuration
 
-| Environment variable | Default | Purpose |
-|---------------------|---------|---------|
-| `OPENAI_API_KEY` | — | API key (also `CAMBRIAN_API_KEY`) |
-| `CAMBRIAN_BASE_URL` | `https://api.openai.com/v1` | Override API endpoint |
-| `CAMBRIAN_LOG_LEVEL` | `INFO` | Log level (`DEBUG`, `WARNING`, …) |
+| Environment variable | Purpose |
+|---------------------|---------|
+| `OPENAI_API_KEY` | API key for OpenAI-compatible backends |
+| `CAMBRIAN_BASE_URL` | Override API base URL (Ollama, Groq, etc.) |
+| `ANTHROPIC_API_KEY` | Anthropic Claude backend |
+| `GEMINI_API_KEY` / `GOOGLE_API_KEY` | Google Gemini backend |
+| `CAMBRIAN_LOG_LEVEL` | Log level (`DEBUG`, `INFO`, `WARNING`) |
 
 ---
 
-## Roadmap
+## Security
 
-- [ ] Async evaluation (parallel agent runs per generation)
-- [ ] Multi-objective evolution (Pareto front)
-- [ ] Tool-use genomes (function-calling agents)
-- [ ] Web UI dashboard (live generation chart)
-- [ ] Anthropic Claude backend
-- [ ] Google Gemini backend
-- [ ] Distributed evaluation (Ray / Celery)
-- [ ] Prompt distillation: automatically compress evolved prompts
+See [SECURITY.md](SECURITY.md) for:
+- Subprocess sandboxing guidelines
+- API key management
+- Prompt injection mitigations
+- `ToolInventor` safe deployment
+- Production deployment checklist
 
 ---
 
-## Contributing
+## Documentation
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). All contributions welcome — new backends, evaluators, examples, and tests especially appreciated.
+| Document | Content |
+|----------|---------|
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Full component diagram and reference |
+| [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) | Academic references for all 17 techniques |
+| [`SECURITY.md`](SECURITY.md) | Security model and sandboxing guidelines |
+| [`CHANGELOG.md`](CHANGELOG.md) | Version history |
 
 ---
 
@@ -291,7 +423,15 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). All contributions welcome — new backen
 git clone https://github.com/Franck1120/cambrian.git
 cd cambrian
 pip install -e ".[dev]"
-pytest tests/ -v           # run test suite (76 tests, ~1s)
+
+# Run tests
+pytest tests/ -q                         # 419 tests, ~5s
+
+# Type check
+mypy cambrian/ --strict --ignore-missing-imports
+
+# Lint
+ruff check cambrian/
 ```
 
 ---

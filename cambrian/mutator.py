@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import random
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from cambrian.agent import Agent, Genome
 from cambrian.backends.base import LLMBackend

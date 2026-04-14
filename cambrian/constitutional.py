@@ -46,7 +46,7 @@ Usage::
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Callable
 
 from cambrian.agent import Agent
 from cambrian.utils.logging import get_logger
