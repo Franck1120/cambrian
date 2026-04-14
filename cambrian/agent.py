@@ -73,14 +73,16 @@ class Agent:
 
     Args:
         genome: The agent's genetic specification.
-        backend: LLM backend used to generate responses.
+        backend: LLM backend used to generate responses. Optional — if ``None``
+            the agent can still be inspected and mutated, but :meth:`run` will
+            raise :exc:`RuntimeError`.
         agent_id: Unique identifier, auto-generated if not supplied.
     """
 
     def __init__(
         self,
         genome: Genome,
-        backend: LLMBackend,
+        backend: "LLMBackend | None" = None,
         agent_id: str | None = None,
     ) -> None:
         self.genome = genome
@@ -88,6 +90,12 @@ class Agent:
         self.agent_id: str = agent_id or str(uuid.uuid4())[:8]
         self._fitness: float | None = None
         self._generation: int = 0
+
+    # Convenience alias used throughout the codebase
+    @property
+    def id(self) -> str:
+        """Alias for :attr:`agent_id`."""
+        return self.agent_id
 
     def run(self, task: str) -> str:
         """Generate a response to *task* using this agent's genome + backend.
@@ -97,7 +105,15 @@ class Agent:
 
         Returns:
             The LLM's text response.
+
+        Raises:
+            RuntimeError: If no backend was provided at construction time.
         """
+        if self.backend is None:
+            raise RuntimeError(
+                "Agent has no backend — pass a LLMBackend to Agent() or "
+                "EvolutionEngine(backend=...)"
+            )
         prompt = task
         if self.genome.strategy and self.genome.strategy != "default":
             prompt = f"{task}\n\n[Approach: {self.genome.strategy}]"
@@ -107,6 +123,15 @@ class Agent:
             system=self.genome.system_prompt,
             temperature=self.genome.temperature,
         )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialise agent state (id, fitness, genome) to a plain dict."""
+        return {
+            "id": self.agent_id,
+            "generation": self._generation,
+            "fitness": self._fitness,
+            "genome": self.genome.to_dict(),
+        }
 
     @property
     def fitness(self) -> float | None:
@@ -127,11 +152,12 @@ class Agent:
         self._generation = int(value)
 
     def clone(self) -> "Agent":
-        """Return a deep copy of this agent with a fresh agent_id."""
+        """Return a deep copy of this agent with a fresh agent_id and no fitness."""
         new_genome = Genome.from_dict(self.genome.to_dict())
         new_genome.genome_id = str(uuid.uuid4())[:8]
         clone = Agent(new_genome, self.backend)
         clone._generation = self._generation
+        # fitness intentionally NOT copied — clone must be re-evaluated
         return clone
 
     def __repr__(self) -> str:

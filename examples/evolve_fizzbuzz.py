@@ -107,6 +107,7 @@ def main(args: argparse.Namespace) -> None:
     engine = EvolutionEngine(
         evaluator=fb_eval,
         mutator=mutator,
+        backend=backend,
         population_size=args.population,
         mutation_rate=0.8,
         crossover_rate=0.3,

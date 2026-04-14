@@ -208,6 +208,7 @@ def evolve(
     engine = EvolutionEngine(
         evaluator=evaluator,
         mutator=mutator,
+        backend=backend,
         population_size=population,
         mutation_rate=mutation_rate,
         crossover_rate=crossover_rate,

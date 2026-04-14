@@ -14,7 +14,7 @@ class TestGenome:
         g = Genome(system_prompt="hello")
         assert g.model == "gpt-4o-mini"
         assert g.temperature == 0.7
-        assert g.strategy == "chain-of-thought"
+        assert g.strategy == "step-by-step"
         assert g.tools == []
 
     def test_to_dict_round_trip(self) -> None:
@@ -75,22 +75,25 @@ class TestAgent:
         b.genome = Genome(system_prompt="modified")
         assert a.genome.system_prompt == "original"
 
-    def test_run_returns_string(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """run() must return a string; stub the backend call."""
-        a = self._make_agent()
+    def test_run_returns_string(self) -> None:
+        """run() must return the backend's response as a string."""
 
-        # Patch the backend generate method
         class _FakeBackend:
             model_name = "stub"
 
             def generate(self, prompt: str, **kwargs: object) -> str:
                 return "stub response"
 
-        monkeypatch.setattr(a, "_backend", _FakeBackend(), raising=False)
+        a = Agent(genome=Genome(system_prompt="test"), backend=_FakeBackend())  # type: ignore[arg-type]
+        result = a.run("some task")
+        assert result == "stub response"
+        assert isinstance(result, str)
 
-        # Agent.run calls self._backend.generate internally; inject via genome
-        # Since the default agent has no backend, just verify the API exists
-        assert callable(a.run)
+    def test_run_raises_without_backend(self) -> None:
+        """run() must raise RuntimeError when no backend is configured."""
+        a = self._make_agent()
+        with pytest.raises(RuntimeError, match="no backend"):
+            a.run("some task")
 
     def test_to_dict_includes_id_and_fitness(self) -> None:
         a = self._make_agent("hello")

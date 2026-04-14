@@ -13,6 +13,7 @@ import time
 from typing import Any, Callable
 
 from cambrian.agent import Agent, Genome
+from cambrian.backends.base import LLMBackend
 from cambrian.diversity import MAPElites
 from cambrian.memory import EvolutionaryMemory
 from cambrian.mutator import LLMMutator
@@ -27,6 +28,9 @@ class EvolutionEngine:
     Args:
         evaluator: Callable ``(agent, task) -> float`` that scores an agent.
         mutator: :class:`~cambrian.mutator.LLMMutator` for genome modification.
+        backend: LLM backend attached to every agent created by the engine.
+            When ``None`` (default), agents are created without a backend —
+            valid only if the evaluator does not call ``agent.run()``.
         population_size: Number of agents maintained per generation. Default 10.
         mutation_rate: Probability that an agent is mutated each generation.
             Range ``[0.0, 1.0]``. Default ``0.8``.
@@ -46,6 +50,7 @@ class EvolutionEngine:
         self,
         evaluator: Callable[[Agent, str], float],
         mutator: LLMMutator,
+        backend: "LLMBackend | None" = None,
         population_size: int = 10,
         mutation_rate: float = 0.8,
         crossover_rate: float = 0.3,
@@ -57,6 +62,7 @@ class EvolutionEngine:
     ) -> None:
         self._evaluator = evaluator
         self._mutator = mutator
+        self._backend = backend
         self._pop_size = population_size
         self._mut_rate = mutation_rate
         self._xo_rate = crossover_rate
@@ -112,13 +118,13 @@ class EvolutionEngine:
         population: list[Agent] = []
         for i in range(self._pop_size):
             genome = seed_genomes[i % len(seed_genomes)]
-            agent = Agent(genome=genome)
             # Slightly diversify temperature for duplicates
             if i >= len(seed_genomes):
                 data = genome.to_dict()
                 delta = random.uniform(-0.15, 0.15)
                 data["temperature"] = max(0.1, min(1.5, data["temperature"] + delta))
-                agent = Agent(genome=Genome.from_dict(data))
+                genome = Genome.from_dict(data)
+            agent = Agent(genome=genome, backend=self._backend)
             population.append(agent)
 
         return population
