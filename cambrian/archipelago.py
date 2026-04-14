@@ -104,6 +104,8 @@ class Island:
         n_replace = min(len(migrants), len(self.population))
         for i, migrant in enumerate(migrants[:n_replace]):
             clone = migrant.clone()
+            if migrant.fitness is not None:
+                clone.fitness = migrant.fitness  # preserve fitness across migration
             self.population[i] = clone
         logger.debug(
             "Island %d received %d migrants", self.island_id, n_replace

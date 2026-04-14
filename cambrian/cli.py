@@ -769,7 +769,8 @@ def run(
     if temperature is not None:
         genome.temperature = temperature
 
-    click.echo(f"Agent: {genome.genome_id}  model={genome.model}  temp={genome.temperature}", err=True)
+    if output_format != "json":
+        click.echo(f"Agent: {genome.genome_id}  model={genome.model}  temp={genome.temperature}", err=True)
 
     backend = _make_backend(genome.model, base_url, api_key)
     from cambrian.agent import Agent as _Agent
