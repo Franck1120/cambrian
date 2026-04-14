@@ -695,6 +695,108 @@ def dashboard(port: int, log_file: str, no_browser: bool) -> None:
         raise click.ClickException(str(exc)) from exc
 
 
+# ── run ───────────────────────────────────────────────────────────────────────
+
+
+@main.command()
+@click.option(
+    "--agent", "agent_file", required=True, type=click.Path(exists=True),
+    help="Path to an evolved genome JSON file (written by --output or export_genome_json).",
+)
+@click.argument("task")
+@click.option(
+    "--base-url",
+    default="https://api.openai.com/v1",
+    show_default=True,
+    envvar="CAMBRIAN_BASE_URL",
+    help="OpenAI-compatible API base URL.",
+)
+@click.option(
+    "--api-key", default=None, envvar="OPENAI_API_KEY",
+    help="API key. Falls back to OPENAI_API_KEY env var.",
+)
+@click.option(
+    "--model", default=None,
+    help="Override the genome's model (e.g. to route to a different backend).",
+)
+@click.option(
+    "--temperature", default=None, type=float,
+    help="Override the genome's sampling temperature.",
+)
+@click.option(
+    "--max-tokens", default=1024, show_default=True,
+    help="Max tokens for the agent response.",
+)
+@click.option(
+    "--format", "output_format",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    show_default=True,
+    help="Output format: plain text or JSON envelope.",
+)
+def run(
+    agent_file: str,
+    task: str,
+    base_url: str,
+    api_key: str | None,
+    model: str | None,
+    temperature: float | None,
+    max_tokens: int,
+    output_format: str,
+) -> None:
+    """Run an evolved agent on TASK.
+
+    Loads the genome from AGENT_FILE and runs it on TASK using the configured
+    backend.  Prints the agent's response to stdout.
+
+    \\b
+    Example:
+        cambrian run --agent best.json "What is the Riemann hypothesis?"
+        cambrian run --agent best.json --format json "Explain entropy."
+    """
+    from cambrian.export import load_genome_json
+
+    if api_key is None:
+        api_key = os.environ.get("OPENAI_API_KEY", "")
+
+    if not api_key:
+        click.echo("Error: no API key. Set OPENAI_API_KEY or pass --api-key.", err=True)
+        sys.exit(1)
+
+    genome = load_genome_json(agent_file)
+    if model:
+        genome.model = model
+    if temperature is not None:
+        genome.temperature = temperature
+
+    click.echo(f"Agent: {genome.genome_id}  model={genome.model}  temp={genome.temperature}", err=True)
+
+    backend = _make_backend(genome.model, base_url, api_key)
+    from cambrian.agent import Agent as _Agent
+    agent_obj = _Agent(genome=genome, backend=backend)
+
+    t0 = time.monotonic()
+    try:
+        result = agent_obj.run(task)
+    except Exception as exc:
+        click.echo(f"Error running agent: {exc}", err=True)
+        sys.exit(1)
+    latency = (time.monotonic() - t0) * 1000
+
+    if output_format == "json":
+        payload = {
+            "result": result,
+            "task": task,
+            "agent_id": agent_obj.id,
+            "genome_id": genome.genome_id,
+            "model": genome.model,
+            "latency_ms": round(latency, 2),
+        }
+        click.echo(json.dumps(payload, indent=2, ensure_ascii=False))
+    else:
+        click.echo(result)
+
+
 # ── version ───────────────────────────────────────────────────────────────────
 
 @main.command()
