@@ -53,7 +53,6 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import Any
 
 from cambrian.agent import Agent
 from cambrian.utils.logging import get_logger
@@ -274,9 +273,6 @@ def nsga2_select(
     if not population:
         return []
     target_size = min(target_size, len(population))
-
-    # Index vectors by agent_id for lookup
-    vec_by_id: dict[str, ObjectiveVector] = {v.agent_id: v for v in vectors}
 
     fronts = fast_non_dominated_sort(vectors)
     for front in fronts:
