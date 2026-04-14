@@ -1,6 +1,9 @@
 """Abstract base class for LLM backends."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from typing import Any
 
 
 class LLMBackend(ABC):
@@ -11,7 +14,7 @@ class LLMBackend(ABC):
     """
 
     @abstractmethod
-    def generate(self, prompt: str, **kwargs) -> str:
+    def generate(self, prompt: str, **kwargs: Any) -> str:
         """Generate a completion for *prompt*.
 
         Args:

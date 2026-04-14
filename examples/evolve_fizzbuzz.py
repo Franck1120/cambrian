@@ -102,7 +102,7 @@ def main(args: argparse.Namespace) -> None:
     )
 
     mutator = LLMMutator(backend=backend, mutation_temperature=0.5)
-    fb_eval = FizzBuzzEvaluator(timeout_seconds=5, expected_output=_EXPECTED_OUTPUT)
+    fb_eval = FizzBuzzEvaluator(timeout=5.0, expected_output=_EXPECTED_OUTPUT)
 
     engine = EvolutionEngine(
         evaluator=fb_eval,

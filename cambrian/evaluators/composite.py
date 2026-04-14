@@ -61,7 +61,18 @@ class CompositeEvaluator(Evaluator):
         self._aggregate = aggregate
 
     def evaluate(self, agent: "Agent", task: str) -> float:
-        """Run all sub-evaluators and return the composite fitness score."""
+        """Run all sub-evaluators on *agent* and return the composite score.
+
+        Sub-evaluator exceptions are caught and scored as ``0.0`` so a single
+        broken evaluator cannot abort the entire evolutionary loop.
+
+        Args:
+            agent: The agent to score.
+            task: The task description forwarded to each sub-evaluator.
+
+        Returns:
+            Normalised fitness score in ``[0.0, 1.0]``.
+        """
         scores: list[float] = []
         for evaluator in self._evaluators:
             try:

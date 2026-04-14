@@ -72,7 +72,16 @@ def log_generation_summary(
     diversity: float,
     **extra: Any,
 ) -> None:
-    """Log a one-line summary for a completed evolution generation."""
+    """Log a one-line summary for a completed evolution generation.
+
+    Args:
+        logger: Logger instance to write to.
+        generation: Current generation number (0-indexed).
+        best_fitness: Highest fitness score in this generation.
+        avg_fitness: Mean fitness across the population.
+        diversity: Behavioural diversity metric (e.g. MAP-Elites coverage).
+        **extra: Additional key=value pairs appended to the log line.
+    """
     parts = [
         f"gen={generation}",
         f"best={best_fitness:.4f}",

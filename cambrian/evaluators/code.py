@@ -45,7 +45,28 @@ class CodeEvaluator(Evaluator):
         self._partial_match = partial_match
 
     def evaluate(self, agent: "Agent", task: str) -> float:
-        """Run the agent on *task*, execute the code, and return a score."""
+        """Run *agent* on *task*, execute the produced code, return a score.
+
+        Scoring table:
+
+        +---------------------+-------+
+        | Outcome             | Score |
+        +=====================+=======+
+        | Timeout             | 0.0   |
+        | Exception / crash   | 0.1   |
+        | Runs, no expected   | 0.8   |
+        | Partial line match  | 0.3–0.7 |
+        | Exact match         | 1.0   |
+        +---------------------+-------+
+
+        Args:
+            agent: Agent to evaluate. Its :meth:`~cambrian.agent.Agent.run`
+                method is called with *task* to produce code.
+            task: The coding task description.
+
+        Returns:
+            Fitness score in ``[0.0, 1.0]``.
+        """
         response = agent.run(task)
         code = extract_python_code(response)
 

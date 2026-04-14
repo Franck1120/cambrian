@@ -67,6 +67,7 @@ class OpenAICompatBackend(LLMBackend):
 
     @property
     def model_name(self) -> str:
+        """Canonical model identifier as passed to the API (e.g. ``"gpt-4o-mini"``)."""
         return self._model
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
