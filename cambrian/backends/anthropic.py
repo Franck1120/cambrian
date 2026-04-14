@@ -122,7 +122,7 @@ class AnthropicBackend(LLMBackend):
                 # Extract text from the first content block
                 for block in message.content:
                     if hasattr(block, "text"):
-                        return block.text.strip()
+                        return str(block.text).strip()
                 return ""
 
             except anthropic.RateLimitError as exc:

@@ -17,7 +17,7 @@ try:
     _NX_AVAILABLE = True
 except ImportError:  # pragma: no cover
     _NX_AVAILABLE = False
-    nx = None  # type: ignore[assignment]
+    nx = None
 
 
 class EvolutionaryMemory:
@@ -120,7 +120,7 @@ class EvolutionaryMemory:
     @property
     def total_agents(self) -> int:
         """Total number of agents ever registered."""
-        return self._graph.number_of_nodes()
+        return int(self._graph.number_of_nodes())
 
     def generation_stats(self) -> dict[int, dict[str, float]]:
         """Per-generation fitness statistics.

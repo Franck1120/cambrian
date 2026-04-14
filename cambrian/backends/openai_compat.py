@@ -106,7 +106,7 @@ class OpenAICompatBackend(LLMBackend):
                     )
                 if response.status_code == 200:
                     data = response.json()
-                    return data["choices"][0]["message"]["content"].strip()
+                    return str(data["choices"][0]["message"]["content"]).strip()
 
                 # Retryable errors
                 if response.status_code in (429, 500, 502, 503, 504):

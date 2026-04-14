@@ -51,10 +51,10 @@ class CompositeEvaluator(Evaluator):
             )
         self._evaluators = evaluators
         if weights is None:
-            total = len(evaluators)
-            self._weights = [1.0 / total] * total
+            n = len(evaluators)
+            self._weights = [1.0 / n] * n
         else:
-            total = sum(weights)
+            total = sum(weights, 0.0)
             self._weights = [w / total for w in weights]
         if aggregate not in ("mean", "min"):
             raise ValueError("aggregate must be 'mean' or 'min'")

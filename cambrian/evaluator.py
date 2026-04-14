@@ -32,5 +32,9 @@ class Evaluator(ABC):
             Fitness score in ``[0.0, 1.0]``.  Higher = better.
         """
 
+    def __call__(self, agent: "Agent", task: str) -> float:
+        """Alias for :meth:`evaluate`, making evaluator instances callable."""
+        return self.evaluate(agent, task)
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"

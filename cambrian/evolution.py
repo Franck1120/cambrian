@@ -273,6 +273,7 @@ class EvolutionEngine:
 
         # Fill remaining slots
         while len(next_gen) < self._pop_size:
+            parents_used: list[str]
             if random.random() < self._xo_rate and len(population) >= 2:
                 parent_a = self.tournament_selection(population)
                 parent_b = self.tournament_selection(population)
@@ -282,6 +283,7 @@ class EvolutionEngine:
                         break
                     parent_b = self.tournament_selection(population)
                 child = self._mutator.crossover(parent_a, parent_b, task)
+                parents_used = [parent_a.id, parent_b.id]
             else:
                 parent = self.tournament_selection(population)
                 if random.random() < self._mut_rate:
@@ -289,13 +291,9 @@ class EvolutionEngine:
                 else:
                     child = parent.clone()
                     child._fitness = None
+                parents_used = [parent.id]
 
             # Register in memory
-            parents_used = (
-                [parent_a.id, parent_b.id]
-                if "parent_a" in dir()
-                else [parent.id]  # type: ignore[name-defined]
-            )
             self._memory.add_agent(
                 agent_id=child.id,
                 generation=self._generation,
