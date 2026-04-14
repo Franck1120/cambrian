@@ -180,7 +180,7 @@ def build_diversified_evaluator(
     from cambrian.evaluators.llm_judge import LLMJudgeEvaluator
 
     code_ev = CodeEvaluator(expected_output=expected_output)
-    judge_ev = LLMJudgeEvaluator(backend=backend, task_description=task_description)
+    judge_ev = LLMJudgeEvaluator(judge_backend=backend)
 
     def _conciseness_ev(agent: Agent, task: str) -> float:
         """Score based on prompt conciseness (shorter = better, up to a point)."""

@@ -59,7 +59,7 @@ def _make_evaluator(
     """Return a simple evaluator: LLMJudge if judge backend available, else stub."""
     if judge_backend is not None:
         from cambrian.evaluators.llm_judge import LLMJudgeEvaluator
-        return LLMJudgeEvaluator(backend=judge_backend, task_description=task)
+        return LLMJudgeEvaluator(judge_backend=judge_backend)
 
     # Minimal stub — returns 0 so the loop still runs during demos / tests
     def _stub(agent: Any, _task: str) -> float:  # noqa: ANN001
