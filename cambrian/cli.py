@@ -290,14 +290,15 @@ def evolve(
         click.echo(f"Lineage graph written to {mem_path}")
 
 
-# ── dashboard ─────────────────────────────────────────────────────────────────
+# ── stats (legacy text summary) ───────────────────────────────────────────────
 
 @main.command()
 @click.argument("memory_file", type=click.Path(exists=True))
-def dashboard(memory_file: str) -> None:
-    """Display statistics from a saved lineage JSON file.
+def stats(memory_file: str) -> None:
+    """Display text statistics from a saved lineage JSON file.
 
     MEMORY_FILE is the path written by --memory-out during an evolve run.
+    For a live Streamlit dashboard use: cambrian dashboard --log-file FILE
     """
     from cambrian.memory import EvolutionaryMemory
 
@@ -658,6 +659,40 @@ def distill_agent(
     out_path = output or agent_file.replace(".json", f".distilled.{target}.json")
     Path(out_path).write_text(json.dumps(distilled_genome.to_dict(), indent=2))
     click.echo(f"\nDistilled genome saved to {out_path}")
+
+
+# ── dashboard ─────────────────────────────────────────────────────────────────
+
+
+@main.command()
+@click.option(
+    "--port", default=8501, show_default=True,
+    help="TCP port for the Streamlit server.",
+)
+@click.option(
+    "--log-file", default="cambrian_log.json", show_default=True,
+    help="Path to the evolution log JSON written by the evolution engine.",
+)
+@click.option(
+    "--no-browser", is_flag=True, default=False,
+    help="Do not open a browser tab automatically.",
+)
+def dashboard(port: int, log_file: str, no_browser: bool) -> None:
+    """Launch the Streamlit live evolution dashboard.
+
+    Reads LOG_FILE (a JSON log written by the evolution engine) and displays
+    fitness trajectory, top agents, fitness landscape, and more.
+
+    \\b
+    Example:
+        cambrian dashboard --port 8501 --log-file my_run.json
+    """
+    try:
+        from cambrian.dashboard import run_dashboard
+        click.echo(f"Starting dashboard on http://localhost:{port} ...")
+        run_dashboard(port=port, log_file=log_file, open_browser=not no_browser)
+    except ImportError as exc:
+        raise click.ClickException(str(exc)) from exc
 
 
 # ── version ───────────────────────────────────────────────────────────────────
