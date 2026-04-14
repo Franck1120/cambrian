@@ -2,6 +2,14 @@
 
 Runs code in an isolated subprocess with a hard timeout so that runaway
 loops or infinite recursion cannot hang the evaluation loop.
+
+Security model
+--------------
+Only a minimal whitelist of environment variables is forwarded to the
+subprocess.  This prevents agent-generated code from reading API keys,
+credentials, or other secrets present in the parent process environment.
+The set ``_SANDBOX_SAFE_KEYS`` defines exactly which variables are passed.
+``extra_env`` can add further variables explicitly if needed.
 """
 
 from __future__ import annotations
@@ -12,6 +20,21 @@ import textwrap
 import tempfile
 import os
 from dataclasses import dataclass
+
+# Environment variables forwarded to the sandbox subprocess.
+# Everything NOT in this set (including all API keys) is stripped.
+_SANDBOX_SAFE_KEYS: frozenset[str] = frozenset({
+    "PATH",
+    "PYTHONPATH",
+    "SYSTEMROOT",   # Windows: required for subprocess to start
+    "TEMP",
+    "TMP",
+    "TMPDIR",       # Unix fallback
+    "HOME",         # some libraries need this
+    "LANG",
+    "LC_ALL",
+    "LC_CTYPE",
+})
 
 
 @dataclass
@@ -56,7 +79,11 @@ def run_in_sandbox(
         tmp.write(textwrap.dedent(code))
         tmp_path = tmp.name
 
-    env = os.environ.copy()
+    # Strip all secrets from the environment — only forward safe vars.
+    # This prevents agent code from reading OPENAI_API_KEY etc.
+    env: dict[str, str] = {
+        k: v for k, v in os.environ.items() if k in _SANDBOX_SAFE_KEYS
+    }
     if extra_env:
         env.update(extra_env)
 
