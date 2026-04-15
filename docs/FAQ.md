@@ -127,6 +127,68 @@ rate, temperature) alongside the agent genomes.  Every `meta_interval`
 generations, the engine tries perturbed configurations and keeps whichever
 improves mean population fitness.
 
+### What is NSGA-II and multi-objective evolution?
+
+NSGA-II (Non-Dominated Sorting Genetic Algorithm II) lets you evolve agents
+across multiple objectives at once — for example, maximising response quality
+while keeping prompts concise.  Agents are ranked into *Pareto fronts*: a
+front-0 agent is not dominated by any other agent on any objective.  NSGA-II
+combines rank and *crowding distance* so survivors are spread across the
+trade-off surface rather than collapsed to one corner.
+
+```python
+from cambrian.pareto import (
+    ObjectiveVector, fast_non_dominated_sort, crowding_distance, nsga2_select,
+)
+vectors = [ObjectiveVector(agent_id=a.id, scores={"quality": q, "brevity": b})
+           for a, q, b in zip(population, qualities, brevities)]
+fronts = fast_non_dominated_sort(vectors)
+for front in fronts:
+    crowding_distance(front)
+survivors = nsga2_select(population, vectors, target_size=10)
+```
+
+See `examples/demo_multi_objective.py` for a complete runnable example.
+
+### What is the EpigeneticLayer?
+
+`EpigeneticLayer` wraps an agent's genome with context-sensitive annotations
+injected at runtime — without modifying the underlying genome.  Rules are
+lambda functions `(Genome, EpigenomicContext) -> str | None`.  Common rules:
+
+- Inject the task description into the prompt at generation 0.
+- Add "You are in the early exploration phase" when `ctx.is_early`.
+- Append the population's mean fitness trend so the agent adapts to competition.
+
+```python
+from cambrian.epigenetics import EpigeneticLayer, EpigenomicContext, make_standard_layer
+
+layer = make_standard_layer()
+ctx = EpigenomicContext(generation=3, task="Write Python code",
+                        population_mean_fitness=0.6, total_generations=20)
+enriched_prompt = layer.express(agent.genome, ctx)
+```
+
+### What is CurriculumScheduler?
+
+`CurriculumScheduler` advances the training task automatically when the
+population crosses a fitness threshold — like curriculum learning in deep RL.
+Start agents on easy tasks, then unlock harder ones only when the population
+is ready.
+
+```python
+from cambrian.curriculum import CurriculumStage, CurriculumScheduler
+
+scheduler = CurriculumScheduler([
+    CurriculumStage(task="Simple arithmetic", difficulty=0.1, threshold=0.7),
+    CurriculumStage(task="Algebra word problems", difficulty=0.5, threshold=0.8),
+    CurriculumStage(task="Calculus proofs", difficulty=0.9, threshold=0.9),
+])
+# After each generation:
+scheduler.advance(population_fitness_scores)
+current_task = scheduler.current_task()
+```
+
 ### What is the world model?
 
 `WorldModelEvaluator` gives each agent a lightweight predictor of its own
