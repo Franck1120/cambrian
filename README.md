@@ -83,6 +83,37 @@
 | `CausalStrategyExtractor` | LLM-based extraction of IF-THEN causal relations |
 | `CausalMutator` | Evolves causal graphs alongside genomes |
 
+### Forge Mode — Executable Artifact Evolution
+| Component | What it does |
+|-----------|-------------|
+| `CodeGenome` | Evolvable Python code with version tracking and LOC count |
+| `CodeEvaluator` | Runs test cases in a subprocess sandbox; scores by pass rate + LOC efficiency + runtime |
+| `CodeMutator` | LLM rewrites code; strips markdown fences; falls back on error |
+| `CodeEvolutionEngine` | Generational loop for code; early exit on perfect fitness |
+| `Pipeline` | Ordered list of `PipelineStep` objects as an evolvable genome |
+| `PipelineRunner` | Chains step outputs sequentially; empty pipeline returns "" |
+| `PipelineEvaluator` | Scores pipeline final output with a custom `score_fn` |
+| `PipelineMutator` | LLM adds/removes/reorders steps; supports crossover |
+| `PipelineEvolutionEngine` | Generational loop for pipelines |
+
+### Adaptive Pressures
+| Component | What it does |
+|-----------|-------------|
+| `DreamPhase` | Recombines past `Experience` objects into synthetic scenarios; blends fitness signal |
+| `Experience` | Task, response, score triple for experience replay |
+| `QuorumSensor` | Monitors Shannon entropy; auto-adjusts `mutation_rate` and `elite_n` toward a target |
+| `QuorumState` | Entropy, mutation rate, elite_n snapshot per generation |
+
+### Ensemble & Reflexion
+| Component | What it does |
+|-----------|-------------|
+| `MixtureOfAgents` | N agents answer independently; aggregator LLM synthesises a final answer |
+| `MoAResult` | Individual answers + synthesised final answer |
+| `QuantumTunneler` | Replaces non-elite agents with random genomes at `tunnel_prob`; escapes local optima |
+| `TunnelEvent` | Metadata for each tunneling event |
+| `ReflexionAgent` | Generate → critique → revise loop (Shinn et al. 2023); early-exit on "EXCELLENT" |
+| `ReflexionEvaluator` | Applies Reflexion before scoring; uses proxy agent for improved response |
+
 ### Self-Play & Competition
 | Component | What it does |
 |-----------|-------------|
@@ -191,6 +222,11 @@ pip install -e ".[dev]"
 cambrian evolve "Write a Python function that reverses a string" \
     --model gpt-4o-mini --generations 10 --population 8 \
     --output best.json --memory-out lineage.json
+
+# Forge — evolve Python code or pipelines (Forge mode)
+cambrian forge "Read two integers from stdin and print their sum" \
+    --mode code --test-case "3 4|7" --test-case "10 20|30"
+cambrian forge "Summarise a news article in 3 sentences" --mode pipeline
 
 # Run — load an evolved agent and run it on a task
 cambrian run --agent best.json "What is the Riemann hypothesis?"
@@ -359,6 +395,11 @@ best = arch.evolve(seed_genomes=seeds, task="...", n_generations=40)
 | [`examples/evolve_coding.py`](examples/evolve_coding.py) | 5-challenge composite coding benchmark |
 | [`examples/evolve_prompt.py`](examples/evolve_prompt.py) | Open-ended Socratic tutor prompt optimisation |
 | [`examples/evolve_researcher.py`](examples/evolve_researcher.py) | Research agent: LLM judge + Lamarck + Pareto |
+| [`examples/evolve_forge_code.py`](examples/evolve_forge_code.py) | Forge mode: evolve Python code for integer summing |
+| [`examples/evolve_with_quorum.py`](examples/evolve_with_quorum.py) | Quorum Sensing: auto-regulate diversity via entropy |
+| [`examples/evolve_with_dream.py`](examples/evolve_with_dream.py) | Dream Phase: memory consolidation for generalisation |
+| [`examples/evolve_with_moa.py`](examples/evolve_with_moa.py) | Mixture of Agents + Quantum Tunneling |
+| [`examples/evolve_with_reflexion.py`](examples/evolve_with_reflexion.py) | Reflexion: generate → critique → revise loop |
 
 ```bash
 python examples/evolve_researcher.py \
@@ -396,6 +437,12 @@ cambrian/
 ├── diffcot.py           DiffCoTReasoner, DiffCoTEvaluator
 ├── causal.py            CausalGraph, CausalStrategyExtractor
 ├── tool_creation.py     ToolInventor, ToolPopulationRegistry
+├── code_genome.py       CodeGenome, CodeEvaluator, CodeMutator, CodeEvolutionEngine
+├── pipeline.py          Pipeline, PipelineStep, PipelineRunner, PipelineMutator, PipelineEvolutionEngine
+├── dream.py             DreamPhase, DreamScenario, Experience
+├── quorum.py            QuorumSensor, QuorumState
+├── moa.py               MixtureOfAgents, QuantumTunneler, TunnelEvent
+├── reflexion.py         ReflexionAgent, ReflexionEvaluator, ReflexionResult
 ├── self_play.py         SelfPlayEvaluator, run_tournament
 ├── meta_evolution.py    MetaEvolutionEngine, HyperParams
 ├── world_model.py       WorldModelEvaluator, WorldModel
