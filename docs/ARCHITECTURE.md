@@ -1,6 +1,6 @@
 # Cambrian — Architecture Reference
 
-> Version: 0.18.0 · Last updated: 2026-04-14
+> Version: 0.19.0 · Last updated: 2026-04-15
 
 ---
 
@@ -507,6 +507,23 @@ cambrian/
 ├── self_play.py         SelfPlayEvaluator, SelfPlayResult, TournamentRecord, run_tournament
 ├── meta_evolution.py    HyperParams, MetaEvolutionEngine
 ├── world_model.py       WorldModel, WorldModelEvaluator, WorldModelPrediction
+├── symbiosis.py         SymbioticFuser, SymbioticPair (Tier 3)
+├── hormesis.py          HormesisAdapter, HormesisEvent (Tier 3)
+├── apoptosis.py         ApoptosisController, ApoptosisEvent (Tier 3)
+├── catalysis.py         CatalysisEngine, CatalystSelector, CatalysisEvent (Tier 3)
+├── llm_cascade.py       LLMCascade, CascadeLevel, CascadeResult (Tier 3)
+├── ensemble.py          AgentEnsemble, BoostingEnsemble (Tier 3)
+├── glossolalia.py       GlossaloliaReasoner, GlossaloliaEvaluator (Tier 3)
+├── inference_scaling.py BestOfN, BeamSearch, KeywordScorer (Tier 3)
+├── transfer.py          TransferAdapter, TransferBank (Tier 4)
+├── tabu.py              TabuList, TabuMutator, TabuEntry (Tier 4)
+├── annealing.py         AnnealingSchedule, AnnealingSelector (Tier 4)
+├── red_team.py          RedTeamAgent, RobustnessEvaluator, RedTeamSession (Tier 4)
+├── zeitgeber.py         ZeitgeberClock, ZeitgeberScheduler (Tier 4)
+├── hgt.py               HGTransfer, HGTPool, HGTPlasmid (Tier 4)
+├── transgenerational.py TransgenerationalRegistry, EpigeneMark (Tier 4)
+├── immune_memory.py     ImmuneCortex, BCellMemory, TCellMemory (Tier 4)
+├── neuromodulation.py   NeuromodulatorBank, NeuroState, *Modulator (Tier 4)
 ├── dashboard.py         Streamlit dashboard (_build_app, run_dashboard)
 ├── cli.py               Click CLI entry point (9 commands)
 ├── __main__.py          python -m cambrian entry point

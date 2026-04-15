@@ -6,7 +6,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-781%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-1194%20passing-brightgreen)](tests/)
 [![mypy](https://img.shields.io/badge/mypy-strict-blue)](https://mypy-lang.org)
 
 ---
@@ -157,6 +157,31 @@
 | `ParetoFront` | Non-dominated Pareto archive |
 | `DiversityTracker` | Per-generation entropy, temperature and prompt std |
 | `FitnessLandscape` | 2D fitness grid (temperature × token-length) |
+
+### Tier 3 — Advanced Bio-Inspired Techniques
+| Component | What it does |
+|-----------|-------------|
+| `SymbioticFuser` | LLM-guided endosymbiosis: merges genomes of compatible (high-fitness + high-distance) agents |
+| `HormesisAdapter` | Graduated stress response: mild/moderate/severe stimulation based on fitness gap |
+| `ApoptosisController` | Programmed removal of chronically poor agents; optional clone replacement from best survivor |
+| `CatalysisEngine` | Catalyst agent injects strategy context into peer mutation prompts |
+| `LLMCascade` | Intelligent tiered routing across model sizes; escalates when confidence is below threshold |
+| `AgentEnsemble` | Weighted majority vote across agent population; `BoostingEnsemble` adds AdaBoost-style weight updates |
+| `GlossaloliaReasoner` | Two-phase latent monologue → structured synthesis (high-temp unconstrained → low-temp harvest) |
+| `BestOfN` / `BeamSearch` | Inference-time compute scaling: best-of-N sampling and tree-based beam search |
+
+### Tier 4 — Cutting-Edge Bio-Inspired Techniques
+| Component | What it does |
+|-----------|-------------|
+| `TransferAdapter` | Adapts a source genome to a new task domain at light/medium/heavy intensity |
+| `TabuList` / `TabuMutator` | Bi-gram fingerprint prevents revisiting recent genome regions (tabu search) |
+| `AnnealingSchedule` / `AnnealingSelector` | Metropolis acceptance with linear/exponential/cosine cooling |
+| `RedTeamSession` | Adversarial attack generation + `RobustnessEvaluator` combined score |
+| `ZeitgeberScheduler` | Sinusoidal circadian oscillator modulates mutation rate and acceptance threshold |
+| `HGTransfer` / `HGTPool` | Horizontal Gene Transfer: sentence-level genome fragments shared across domain pool |
+| `TransgenerationalRegistry` | Heritable `EpigeneMark`s that decay per generation and inject into offspring genomes |
+| `ImmuneCortex` | B-cell (fast exact recall) + T-cell (adaptive seed) memory for high-fitness genomes |
+| `NeuromodulatorBank` | Four biologically-inspired modulators (dopamine, serotonin, acetylcholine, noradrenaline) dynamically adjust mutation rate and selection pressure |
 
 ### Backends
 | Backend | Class | SDK |
@@ -476,7 +501,7 @@ cd cambrian
 pip install -e ".[dev]"
 
 # Run tests
-pytest tests/ -q                         # 579 tests, ~5s
+pytest tests/ -q                         # 1194 tests, ~8s
 
 # Type check
 mypy cambrian/ --strict --ignore-missing-imports

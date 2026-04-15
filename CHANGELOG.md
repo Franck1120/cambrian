@@ -4,6 +4,157 @@ All notable changes to Cambrian are documented here.
 
 ---
 
+## [0.13.0] — Tier 4 Part 2: Immune Memory & Neuromodulation
+
+### Added
+
+#### B/T-cell Immune Memory (Technique 65)
+- **`cambrian/immune_memory.py`** — `BCellMemory`: stores high-fitness
+  (genome, task) pairs; `recall(task)` returns the best Jaccard match above
+  a configurable similarity threshold (fast path — analogous to antibody
+  recognition).  `TCellMemory`: adaptive lookup returning the most similar
+  stored cell even below the B-cell threshold, useful for seeding evolution
+  from a related starting point.  `ImmuneCortex`: coordinator that gates
+  storage on fitness thresholds and checks B-cell first, T-cell second,
+  returning a typed `RecallResult`.
+
+#### Neuromodulation (Technique 66)
+- **`cambrian/neuromodulation.py`** — Four biologically-inspired modulators:
+  `DopamineModulator` (rising fitness → exploit), `SerotoninModulator`
+  (low diversity → explore), `AcetylcholineModulator` (high variance →
+  lower selection pressure), `NoradrenalineModulator` (stagnation →
+  exploration spike).  `NeuromodulatorBank` aggregates all four and
+  produces clamped `mutation_rate` and `selection_pressure` via
+  `modulate(population, generation)`.
+
+#### Exports
+- `cambrian.__init__`: exported `ImmuneCortex`, `BCellMemory`, `TCellMemory`,
+  `MemoryCell`, `RecallResult`, `NeuromodulatorBank`, `NeuroState`,
+  `DopamineModulator`, `SerotoninModulator`, `AcetylcholineModulator`,
+  `NoradrenalineModulator` (11 new symbols).
+
+### Tests
+- 83 new tests across `test_immune_memory.py` (44) and
+  `test_neuromodulation.py` (39).
+- Full suite: **1194 passed**.
+
+---
+
+## [0.12.0] — Tier 4 Part 1: Transfer, Tabu, Annealing, Red Teaming, Zeitgeber, HGT, Transgenerational
+
+### Added
+
+#### Transfer Learning (Technique 57)
+- **`cambrian/transfer.py`** — `TransferAdapter(backend, intensity)`: adapts a
+  source genome to a target task via LLM at light/medium/heavy intensity.
+  `TransferBank(max_per_domain)`: registers agents by domain; `best_for(domain)`
+  retrieves the highest-fitness source genome.
+
+#### Tabu Search (Technique 58)
+- **`cambrian/tabu.py`** — `TabuList(max_size)`: FIFO bi-gram fingerprint list
+  (SHA-256 hex[:16]) preventing revisitation of recent genome regions.
+  `TabuMutator(base_mutator, tabu_list, max_retries)`: retries mutation up to
+  `max_retries` times; `tabu_hit_rate` property for monitoring.
+
+#### Simulated Annealing (Technique 59)
+- **`cambrian/annealing.py`** — `AnnealingSchedule(T_max, T_min, n_steps,
+  schedule_type)`: linear, exponential, and cosine cooling curves.
+  `AnnealingSelector.step(current_fitness, candidate_fitness)`: Metropolis
+  acceptance criterion; tracks `acceptance_rate` and full history.
+
+#### Red Teaming (Technique 60)
+- **`cambrian/red_team.py`** — `RedTeamAgent(backend, n_attacks)`: LLM-generated
+  adversarial attacks with JSON parsing and fallback perturbations.
+  `RobustnessEvaluator(judge_backend)`: scores agent robustness 0–1 via regex.
+  `RedTeamSession.run(agent, task)` → `RobustnessReport` combining normal and
+  adversarial performance.
+
+#### Zeitgeber (Technique 61)
+- **`cambrian/zeitgeber.py`** — `ZeitgeberClock(period, amplitude, phase_offset)`:
+  sinusoidal circadian oscillator; `exploration_factor()` ∈ [0.5-amp/2, 0.5+amp/2].
+  `ZeitgeberScheduler`: maps oscillator to `mutation_rate` and `threshold`
+  via configurable base values and ranges.
+
+#### Horizontal Gene Transfer (Technique 62)
+- **`cambrian/hgt.py`** — `HGTransfer(n_sentences, mode, fitness_threshold)`:
+  extracts sentence-level genome fragments (plasmids) from high-fitness donors;
+  injects via prefix/suffix/replace modes.  `HGTPool(max_plasmids)`: domain-tagged
+  plasmid pool with `contribute()`, `draw()`, `best_for()`.
+
+#### Transgenerational Epigenetics (Technique 64)
+- **`cambrian/transgenerational.py`** — `EpigeneMark`: named annotation with
+  strength and decay.  `TransgenerationalRegistry`: records marks, decays them
+  per generation, inherits top-N to offspring with additional decay,
+  injects context into genome system prompt.
+
+#### Exports
+- All Tier 4 Part 1 symbols added to `cambrian.__init__`.
+
+### Tests
+- 141 new tests across 7 test files.
+- Full suite: **1111 passed** before Tier 4 Part 2.
+
+---
+
+## [0.11.0] — Tier 3: Symbiosis, Hormesis, Apoptosis, Catalysis, LLM Cascade, Ensemble, Glossolalia, Inference Scaling
+
+### Added
+
+#### Symbiotic Fusion (Technique 51)
+- **`cambrian/symbiosis.py`** — `SymbioticFuser(backend, fitness_threshold,
+  min_distance)`: LLM-driven endosymbiosis — merges genomes of compatible
+  host/donor pairs (high fitness AND low word overlap). Falls back to
+  naive concatenation on LLM failure.  `fuse_best_pair(population, task)`.
+
+#### Hormesis (Technique 52)
+- **`cambrian/hormesis.py`** — `HormesisAdapter(backend, stress_threshold)`:
+  graduated stress response — mild (temperature boost), moderate (hint
+  injection), severe (LLM re-prompt).  `stimulate_population(population, task)`.
+
+#### Apoptosis (Technique 53)
+- **`cambrian/apoptosis.py`** — `ApoptosisController(stagnation_window,
+  min_fitness, grace_period)`: programmed removal of chronically poor agents;
+  tracks fitness history per agent; optionally replaces removed agents with
+  clones of the best survivor.
+
+#### Catalysis (Technique 54)
+- **`cambrian/catalysis.py`** — `CatalystSelector.select(population)`: picks
+  catalyst by composite fitness+vocab+strategy score.  `CatalysisEngine.
+  catalyse(target, catalyst, task)`: temporarily augments target prompt with
+  catalyst context; always restores via `finally`.
+
+#### LLM Cascade (Technique 55)
+- **`cambrian/llm_cascade.py`** — `LLMCascade(levels)`: routes queries through
+  a tiered list of `CascadeLevel` (backend + confidence_fn + threshold);
+  escalates when confidence is too low.  Built-in scorers: `hedging_confidence`,
+  `length_confidence`.
+
+#### Ensemble / Boosting (Technique 56)
+- **`cambrian/ensemble.py`** — `AgentEnsemble`: weighted majority vote across
+  agents.  `BoostingEnsemble(AgentEnsemble)`: AdaBoost-style weight updates.
+  Scorers: `exact_match_scorer`, `substring_scorer`.
+
+#### Glossolalia (Technique 49)
+- **`cambrian/glossolalia.py`** — `GlossaloliaReasoner`: two-phase latent
+  monologue → structured synthesis; configurable temperature differential.
+  `GlossaloliaEvaluator(Evaluator)`: wraps an inner evaluator for use in
+  evolution loops.
+
+#### Inference-time Scaling (Technique 50)
+- **`cambrian/inference_scaling.py`** — `BestOfN`: generate N candidates,
+  return highest-scoring.  `BeamSearch`: beam_width × branching_factor tree
+  search with configurable n_steps.  Scorers: `length_scorer`,
+  `KeywordScorer`, `SelfConsistencyScorer`.
+
+#### Exports
+- All Tier 3 symbols added to `cambrian.__init__`.
+
+### Tests
+- 152 new tests across 8 test files.
+- Full suite grows to **970 passed** (before Tier 4).
+
+---
+
 ## [0.10.0] — Round 10
 
 ### Added
