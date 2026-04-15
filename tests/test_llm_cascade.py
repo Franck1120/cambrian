@@ -169,8 +169,8 @@ class TestQuery:
     def test_temperature_override(self) -> None:
         b = MagicMock()
         b.generate.return_value = "ok"
-        l = CascadeLevel(backend=b, confidence_threshold=0.0, temperature=0.5)
-        cascade = LLMCascade(levels=[l])
+        level = CascadeLevel(backend=b, confidence_threshold=0.0, temperature=0.5)
+        cascade = LLMCascade(levels=[level])
         cascade.query("sys", "user", temperature=0.9)
         _, kwargs = b.generate.call_args
         assert kwargs.get("temperature") == 0.9
@@ -178,8 +178,8 @@ class TestQuery:
     def test_backend_error_uses_empty_response(self) -> None:
         b = MagicMock()
         b.generate.side_effect = RuntimeError("API down")
-        l = CascadeLevel(backend=b, confidence_threshold=0.0)
-        cascade = LLMCascade(levels=[l])
+        level = CascadeLevel(backend=b, confidence_threshold=0.0)
+        cascade = LLMCascade(levels=[level])
         response, idx = cascade.query("sys", "user")
         assert response == ""
         assert idx == 0

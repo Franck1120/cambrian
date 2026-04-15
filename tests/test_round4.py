@@ -17,7 +17,6 @@ import json
 import math
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -169,7 +168,7 @@ class TestMCTSSelector:
         assert len(result) == 2  # capped at max_children
 
     def test_expand_at_max_depth_returns_empty(self) -> None:
-        from cambrian.mcts import MCTSSelector, MCTSNode
+        from cambrian.mcts import MCTSSelector
 
         sel = MCTSSelector(mutator=_make_mutator(), max_depth=0)
         a = _make_agent()
@@ -560,8 +559,6 @@ class TestConstitutionalWrapper:
     def test_all_ok_critiques_skips_revision(self) -> None:
         """When all critiques return OK, no revision call is made."""
         from cambrian.constitutional import ConstitutionalWrapper
-
-        revision_calls: list[str] = []
 
         class _OKBackend:
             model_name = "ok"
