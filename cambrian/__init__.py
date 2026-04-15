@@ -115,6 +115,13 @@ from cambrian.inference_scaling import (
 from cambrian.transfer import TransferAdapter, TransferBank, TransferRecord
 from cambrian.tabu import TabuList, TabuMutator, TabuEntry
 from cambrian.annealing import AnnealingSchedule, AnnealingSelector, AnnealingEvent
+from cambrian.red_team import (
+    RedTeamAgent,
+    RobustnessEvaluator,
+    RedTeamSession,
+    RobustnessReport,
+    AttackResult,
+)
 
 __all__ = [
     # Core
@@ -203,6 +210,11 @@ __all__ = [
     "AnnealingSchedule",
     "AnnealingSelector",
     "AnnealingEvent",
+    "RedTeamAgent",
+    "RobustnessEvaluator",
+    "RedTeamSession",
+    "RobustnessReport",
+    "AttackResult",
     # Meta
     "__version__",
 ]
