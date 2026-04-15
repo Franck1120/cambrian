@@ -33,7 +33,7 @@ from cambrian.backends.openai_compat import OpenAICompatBackend
 from cambrian.evaluators.code import CodeEvaluator
 from cambrian.evolution import EvolutionEngine
 from cambrian.mutator import LLMMutator
-from cambrian.utils.logging import get_logger, log_generation_summary
+from cambrian.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -74,7 +74,7 @@ class FizzBuzzEvaluator(CodeEvaluator):
         if returncode != 0 or not stdout.strip():
             return 0.1 if stderr else 0.0
 
-        actual_lines = [l.strip() for l in stdout.strip().splitlines()]
+        actual_lines = [line.strip() for line in stdout.strip().splitlines()]
         expected_lines = _EXPECTED_OUTPUT.splitlines()
 
         if actual_lines == expected_lines:
@@ -132,7 +132,7 @@ def main(args: argparse.Namespace) -> None:
         generation_log.append((gen, best, mean))
         print(f"  Gen {gen:2d}  best={best:.4f}  mean={mean:.4f}")
 
-    print(f"\nCambrian FizzBuzz Example")
+    print("\nCambrian FizzBuzz Example")
     print(f"Model: {args.model}  |  Population: {args.population}  |  Generations: {args.generations}")
     print(f"Task: {_TASK[:80]}...")
     print()
@@ -145,7 +145,7 @@ def main(args: argparse.Namespace) -> None:
     )
 
     print("\n" + "=" * 60)
-    print(f"Evolution complete!")
+    print("Evolution complete!")
     print(f"Best fitness : {best.fitness:.4f}")
     print(f"Model        : {best.genome.model}")
     print(f"Temperature  : {best.genome.temperature:.2f}")

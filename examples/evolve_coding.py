@@ -29,7 +29,6 @@ import argparse
 import os
 import sys
 from dataclasses import dataclass
-from typing import Callable
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -231,15 +230,13 @@ def main(args: argparse.Namespace) -> None:
         model=args.model,
     )
 
-    print(f"\nCambrian — Multi-Challenge Coding Benchmark")
+    print("\nCambrian — Multi-Challenge Coding Benchmark")
     print(f"Model: {args.model}  |  Challenges: {len(_CHALLENGES)}")
     print(f"Generations: {args.generations}  |  Population: {args.population}")
     print()
     for ch in _CHALLENGES:
         print(f"  [{ch.name}] weight={ch.weight}")
     print()
-
-    challenge_best: dict[str, float] = {c.name: 0.0 for c in _CHALLENGES}
 
     def _on_gen(gen: int, population: list) -> None:
         scores = [a.fitness or 0.0 for a in population]
@@ -255,7 +252,7 @@ def main(args: argparse.Namespace) -> None:
     )
 
     print("\n" + "=" * 64)
-    print(f"Evolution complete!")
+    print("Evolution complete!")
     print(f"Best composite fitness : {best.fitness:.4f}")
     print(f"Model                  : {best.genome.model}")
     print(f"Temperature            : {best.genome.temperature:.2f}")

@@ -10,7 +10,6 @@ import asyncio
 import json
 import math
 import tempfile
-import time
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -606,15 +605,25 @@ class TestSpeculate:
         mock_mutator = MagicMock()
         mock_mutator.mutate.side_effect = mock_mutate
 
-        result = asyncio.run(
-            speculate(
-                agent=base_agent,
-                task="task",
-                mutator=mock_mutator,
-                evaluator=score_fn,
-                k=3,
+        import sys
+
+        if sys.platform == "win32":
+            loop = asyncio.SelectorEventLoop()
+            asyncio.set_event_loop(loop)
+        else:
+            loop = asyncio.new_event_loop()
+        try:
+            result = loop.run_until_complete(
+                speculate(
+                    agent=base_agent,
+                    task="task",
+                    mutator=mock_mutator,
+                    evaluator=score_fn,
+                    k=3,
+                )
             )
-        )
+        finally:
+            loop.close()
         assert result.k == 3
         assert result.best_fitness == pytest.approx(0.7, abs=0.01)
 
@@ -629,15 +638,25 @@ class TestSpeculate:
         mock_mutator = MagicMock()
         mock_mutator.mutate.side_effect = bad_mutate
 
-        result = asyncio.run(
-            speculate(
-                agent=base_agent,
-                task="task",
-                mutator=mock_mutator,
-                evaluator=lambda a, t: 0.5,
-                k=2,
+        import sys
+
+        if sys.platform == "win32":
+            loop2 = asyncio.SelectorEventLoop()
+            asyncio.set_event_loop(loop2)
+        else:
+            loop2 = asyncio.new_event_loop()
+        try:
+            result = loop2.run_until_complete(
+                speculate(
+                    agent=base_agent,
+                    task="task",
+                    mutator=mock_mutator,
+                    evaluator=lambda a, t: 0.5,
+                    k=2,
+                )
             )
-        )
+        finally:
+            loop2.close()
         assert result.winner is not None
 
 

@@ -40,7 +40,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from cambrian.agent import Agent, Genome
 from cambrian.backends.openai_compat import OpenAICompatBackend
 from cambrian.epigenetics import EpigenomicContext, make_standard_layer
-from cambrian.evaluators.composite import CompositeEvaluator
 from cambrian.evaluators.llm_judge import LLMJudgeEvaluator
 from cambrian.evaluators.variance_aware import VarianceAwareEvaluator
 from cambrian.evolution import EvolutionEngine
@@ -234,7 +233,7 @@ def main() -> None:
         )
 
     # ── Run evolution ─────────────────────────────────────────────────────────
-    print(f"\nCambrian Research Agent Evolution")
+    print("\nCambrian Research Agent Evolution")
     print(f"Topic     : {topic}")
     print(f"Model     : {args.model}")
     print(f"Generations: {args.generations}  Population: {args.population}")
@@ -268,7 +267,7 @@ def main() -> None:
               f"prompt_len={len(pa.genome.system_prompt)}")
 
     # ── Save results ──────────────────────────────────────────────────────────
-    print(f"\n--- Best Agent ---")
+    print("\n--- Best Agent ---")
     print(f"Fitness  : {best.fitness:.4f}")
     print(f"Model    : {best.genome.model}")
     print(f"Strategy : {best.genome.strategy}")
@@ -288,7 +287,7 @@ def main() -> None:
         print(f"Standalone script exported to {args.export_script}")
 
     # ── Test the best agent ───────────────────────────────────────────────────
-    print(f"\n--- Running best agent on task ---")
+    print("\n--- Running best agent on task ---")
     response = best.run(task)
     print(response[:500] + ("..." if len(response) > 500 else ""))
 

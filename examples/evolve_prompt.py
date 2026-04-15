@@ -236,7 +236,7 @@ def main(args: argparse.Namespace) -> None:
 
     task = "Answer student questions using the Socratic method."
 
-    print(f"\nCambrian — Socratic Tutor Prompt Evolution")
+    print("\nCambrian — Socratic Tutor Prompt Evolution")
     print(f"Agent model  : {args.model}")
     print(f"Judge model  : {args.judge_model or args.model}")
     print(f"Generations  : {args.generations}  |  Population: {args.population}")
@@ -257,11 +257,11 @@ def main(args: argparse.Namespace) -> None:
     )
 
     print("\n" + "=" * 64)
-    print(f"Evolution complete!")
+    print("Evolution complete!")
     print(f"Best Socratic quality: {best.fitness:.4f} / 1.0")
     print(f"Model        : {best.genome.model}")
     print(f"Temperature  : {best.genome.temperature:.2f}")
-    print(f"\nOptimised system prompt:\n")
+    print("\nOptimised system prompt:\n")
     print(best.genome.system_prompt)
     print("=" * 64)
 
@@ -270,9 +270,9 @@ def main(args: argparse.Namespace) -> None:
         out.write_text(json.dumps(best.genome.to_dict(), indent=2))
         print(f"\nBest genome saved to {out}")
         print("Usage:")
-        print(f"  from cambrian.agent import Genome")
+        print("  from cambrian.agent import Genome")
         print(f"  g = Genome.from_dict(json.load(open('{out}')))")
-        print(f"  # Pass g.system_prompt to your chat API as the system message.")
+        print("  # Pass g.system_prompt to your chat API as the system message.")
 
 
 if __name__ == "__main__":
