@@ -3,7 +3,7 @@ Cambrian — Evolutionary AI Agent Framework.
 
 Evolve AI agents autonomously through genetic algorithms and LLM-guided mutation.
 
-Quick start::
+Quick start (Evolve mode)::
 
     from cambrian import Agent, Genome, EvolutionEngine
     from cambrian.mutator import LLMMutator
@@ -18,6 +18,18 @@ Quick start::
     )
     best = engine.evolve([Genome(system_prompt="You are a Python expert.")],
                          task="Print hello", n_generations=5)
+
+Quick start (Forge mode — code evolution)::
+
+    from cambrian.code_genome import CodeEvolutionEngine, CodeGenome
+
+    engine = CodeEvolutionEngine(backend=backend, population_size=6)
+    best = engine.evolve(
+        seed=CodeGenome(description="reverse a string"),
+        task="Write a Python function reverse(s: str) -> str",
+        test_cases=[{"input": "hello", "expected": "olleh"}],
+        n_generations=8,
+    )
 """
 
 __version__ = "0.1.0"
@@ -43,6 +55,28 @@ from cambrian.tool_creation import ToolInventor, ToolPopulationRegistry
 from cambrian.self_play import SelfPlayEvaluator, TournamentRecord, run_tournament
 from cambrian.meta_evolution import MetaEvolutionEngine, HyperParams
 from cambrian.world_model import WorldModelEvaluator, WorldModel, world_model_fitness
+
+# Round 9 — Forge mode (code + pipeline evolution)
+from cambrian.code_genome import (
+    CodeGenome,
+    CodeAgent,
+    CodeMutator,
+    CodeEvaluator as CodeGenomeEvaluator,
+    CodeEvolutionEngine,
+)
+from cambrian.pipeline import (
+    PipelineStep,
+    Pipeline,
+    PipelineMutator,
+    PipelineEvaluator,
+    PipelineEvolutionEngine,
+)
+
+# Round 10 — Dream, Quorum, MoA, Reflexion, Quantum Tunneling
+from cambrian.dream import DreamPhase
+from cambrian.quorum import QuorumSensor
+from cambrian.moa import MixtureOfAgents, QuantumTunneler
+from cambrian.reflexion import ReflexionEvaluator
 
 __all__ = [
     # Core
@@ -74,6 +108,24 @@ __all__ = [
     "WorldModelEvaluator",
     "WorldModel",
     "world_model_fitness",
+    # Forge mode — Code evolution
+    "CodeGenome",
+    "CodeAgent",
+    "CodeMutator",
+    "CodeGenomeEvaluator",
+    "CodeEvolutionEngine",
+    # Forge mode — Pipeline evolution
+    "PipelineStep",
+    "Pipeline",
+    "PipelineMutator",
+    "PipelineEvaluator",
+    "PipelineEvolutionEngine",
+    # Dream, Quorum, MoA, Reflexion, Quantum Tunneling
+    "DreamPhase",
+    "QuorumSensor",
+    "MixtureOfAgents",
+    "QuantumTunneler",
+    "ReflexionEvaluator",
     # Meta
     "__version__",
 ]

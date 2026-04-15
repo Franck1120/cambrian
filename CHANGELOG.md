@@ -4,6 +4,95 @@ All notable changes to Cambrian are documented here.
 
 ---
 
+## [0.10.0] — Round 10
+
+### Added
+
+#### Dream Phase (Technique 16)
+- **`cambrian/dream.py`** — `DreamPhase`: GraphRAG-style offline recombination of
+  high-fitness ancestor genomes from the lineage graph.  `should_dream(gen)` fires
+  every configurable interval of generations.  `dream(task, n_offspring)` queries
+  the lineage, formats an experience context, and asks the LLM to synthesise novel
+  genome variants.  `dream_count` tracks total dream events.
+
+#### Quorum Sensing (Technique 15)
+- **`cambrian/quorum.py`** — `QuorumSensor`: Shannon entropy of the fitness
+  distribution auto-regulates mutation rate.  Low diversity → boost;
+  high diversity → decay.  Configurable thresholds, boost/decay factors, and
+  rate clamps.  Per-call history tracking and `reset()`.
+
+#### Mixture of Agents (Technique 36)
+- **`cambrian/moa.py`** — `MixtureOfAgents`: Runs N agents on the same task,
+  then an aggregator LLM synthesises the best answer from all responses.
+  Handles individual failures gracefully; falls back to longest response on
+  aggregator failure.
+
+#### Quantum Tunneling (Technique 17)
+- **`cambrian/moa.py`** — `QuantumTunneler`: Stochastic large-jump mutation.
+  With probability `tunnel_prob`, replaces an agent's genome with a fully
+  randomised variant (temperature, strategy, optional LLM-generated prompt).
+  `tunnel_all()` applies to an entire population.
+
+#### Reflexion (Technique 35)
+- **`cambrian/reflexion.py`** — `ReflexionEvaluator`: generate → reflect →
+  revise loop for `n_reflections` cycles.  Critique LLM returns CRITIQUE/SCORE
+  format; revision LLM improves the response.  Early exit on perfect score.
+
+#### Exports
+- `cambrian.__init__`: exposed `DreamPhase`, `QuorumSensor`, `MixtureOfAgents`,
+  `QuantumTunneler`, `ReflexionEvaluator` (40 total exports).
+
+### Tests
+- 86 new tests across `test_dream.py`, `test_quorum.py`, `test_moa_reflexion.py`.
+- Full suite: **781 passed**.
+
+---
+
+## [0.9.0] — Round 9
+
+### Added
+
+#### PRD
+- **`docs/PRD.md`** — Full Product Requirements Document: Evolve + Forge modes,
+  57-technique inventory, UI spec (CLI/Dashboard/Python API), data models,
+  timeline, cost model, non-goals.
+
+#### Forge Mode — Code Evolution (Techniques 39–43)
+- **`cambrian/code_genome.py`** — `CodeGenome` (executable Python as evolvable
+  artifact), `CodeAgent` (fitness tracking), `CodeMutator` (LLM rewrite +
+  crossover), `CodeEvaluator` (sandbox test-case scoring: empty→0.0,
+  error→0.1, partial→0.1+0.9×k/N, perfect→1.0), `CodeEvolutionEngine`
+  (full generational loop with elitism, tournament, crossover).
+
+#### Forge Mode — Pipeline Evolution (Techniques 44–48)
+- **`cambrian/pipeline.py`** — `PipelineStep` (named step with system prompt,
+  role, temperature), `Pipeline` (ordered step list + version counter),
+  `PipelineMutator` (LLM adds/removes/reorders steps; JSON parsing with fence
+  stripping; max_steps enforcement), `PipelineEvaluator` (sequential execution,
+  exact-match or LLM-judge scoring), `PipelineEvolutionEngine`.
+
+#### Forge CLI (Technique 48)
+- **`cambrian forge TASK`** — new CLI command with `--mode code|pipeline`,
+  `--test-case INPUT:EXPECTED`, `--seed-code`, `--seed-pipeline`, `--output`,
+  `--temperature`, `--timeout` options.
+
+#### Dashboard — Two Tabs (Phase 7)
+- **`cambrian/dashboard.py`** — Rebuilt with `st.tabs(["Evolve", "Forge"])`.
+  Evolve tab: fitness trajectory, generation slider, sortable population table,
+  best genome viewer, landscape heatmap.  Forge tab: code viewer (test-case
+  grid, Python export) and pipeline viewer (step expanders, JSON export).
+
+#### Exports
+- `cambrian.__init__`: exposed all Forge mode classes (`CodeGenome`, `CodeAgent`,
+  `CodeMutator`, `CodeGenomeEvaluator`, `CodeEvolutionEngine`, `PipelineStep`,
+  `Pipeline`, `PipelineMutator`, `PipelineEvaluator`, `PipelineEvolutionEngine`).
+
+### Tests
+- 93 new tests across `test_code_genome.py` (47), `test_pipeline.py` (46).
+- Dashboard tests updated for 2-tab `st.tabs()` mock.
+
+---
+
 ## [0.8.0] — Round 8
 
 ### Added

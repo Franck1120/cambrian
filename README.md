@@ -6,7 +6,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-579%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-781%20passing-brightgreen)](tests/)
 [![mypy](https://img.shields.io/badge/mypy-strict-blue)](https://mypy-lang.org)
 
 ---
@@ -187,7 +187,9 @@ pip install -e ".[dev]"
 ## CLI Commands
 
 ```bash
-# Evolve — run evolutionary search
+# ── Evolve mode ──────────────────────────────────────────────────────────────
+
+# Evolve — run evolutionary search (prompt optimisation)
 cambrian evolve "Write a Python function that reverses a string" \
     --model gpt-4o-mini --generations 10 --population 8 \
     --output best.json --memory-out lineage.json
@@ -195,6 +197,19 @@ cambrian evolve "Write a Python function that reverses a string" \
 # Run — load an evolved agent and run it on a task
 cambrian run --agent best.json "What is the Riemann hypothesis?"
 cambrian run --agent best.json --format json "Explain entropy."
+
+# ── Forge mode ───────────────────────────────────────────────────────────────
+
+# Forge — evolve executable Python code (code mode)
+cambrian forge "Write reverse(s: str) -> str" \
+    --test-case "hello:olleh" --test-case "abc:cba" \
+    --generations 8 --population 6 --output forge_best.py
+
+# Forge — evolve a multi-step agent pipeline (pipeline mode)
+cambrian forge "Summarise text concisely" \
+    --mode pipeline --generations 5 --output forge_pipeline.json
+
+# ── Analysis ─────────────────────────────────────────────────────────────────
 
 # Snapshot — show population state at a specific generation
 cambrian snapshot --memory lineage.json --generation 5
@@ -206,7 +221,7 @@ cambrian stats lineage.json
 # Analyze — deep trajectory + diversity + lineage analysis
 cambrian analyze lineage.json --top 5
 
-# Dashboard — Streamlit live evolution dashboard
+# Dashboard — Streamlit live evolution dashboard (2 tabs: Evolve + Forge)
 cambrian dashboard --port 8501 --log-file run.json
 
 # Distill — pretty-print a saved genome
