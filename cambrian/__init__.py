@@ -124,6 +124,11 @@ from cambrian.red_team import (
 )
 from cambrian.zeitgeber import ZeitgeberClock, ZeitgeberScheduler, ZeitgeberState
 from cambrian.hgt import HGTransfer, HGTPool, HGTPlasmid, HGTEvent
+from cambrian.transgenerational import (
+    TransgenerationalRegistry,
+    EpigeneMark,
+    InheritanceRecord,
+)
 
 __all__ = [
     # Core
@@ -224,6 +229,9 @@ __all__ = [
     "HGTPool",
     "HGTPlasmid",
     "HGTEvent",
+    "TransgenerationalRegistry",
+    "EpigeneMark",
+    "InheritanceRecord",
     # Meta
     "__version__",
 ]
