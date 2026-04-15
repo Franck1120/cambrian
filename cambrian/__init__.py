@@ -129,6 +129,21 @@ from cambrian.transgenerational import (
     EpigeneMark,
     InheritanceRecord,
 )
+from cambrian.immune_memory import (
+    ImmuneCortex,
+    BCellMemory,
+    TCellMemory,
+    MemoryCell,
+    RecallResult,
+)
+from cambrian.neuromodulation import (
+    NeuromodulatorBank,
+    NeuroState,
+    DopamineModulator,
+    SerotoninModulator,
+    AcetylcholineModulator,
+    NoradrenalineModulator,
+)
 
 __all__ = [
     # Core
@@ -232,6 +247,19 @@ __all__ = [
     "TransgenerationalRegistry",
     "EpigeneMark",
     "InheritanceRecord",
+    # Tier 4 — B/T-cell Immune Memory
+    "ImmuneCortex",
+    "BCellMemory",
+    "TCellMemory",
+    "MemoryCell",
+    "RecallResult",
+    # Tier 4 — Neuromodulation
+    "NeuromodulatorBank",
+    "NeuroState",
+    "DopamineModulator",
+    "SerotoninModulator",
+    "AcetylcholineModulator",
+    "NoradrenalineModulator",
     # Meta
     "__version__",
 ]
