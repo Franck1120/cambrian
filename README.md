@@ -541,8 +541,13 @@ See [SECURITY.md](SECURITY.md) for:
 
 | Document | Content |
 |----------|---------|
+| [`docs/TUTORIAL.md`](docs/TUTORIAL.md) | Step-by-step tutorial for new users |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Full component diagram and reference |
-| [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) | Academic references for all 17 techniques |
+| [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) | Academic references for all 50 techniques |
+| [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md) | Complete public API reference (130 symbols) |
+| [`docs/COMPARISON.md`](docs/COMPARISON.md) | Feature comparison: Cambrian vs DSPy, DGM, AVO, EvoAgent |
+| [`docs/ENV_VARS.md`](docs/ENV_VARS.md) | All supported environment variables |
+| [`VISION.md`](VISION.md) | Project vision: Era 1 → Era 3, guiding principles |
 | [`SECURITY.md`](SECURITY.md) | Security model and sandboxing guidelines |
 | [`CHANGELOG.md`](CHANGELOG.md) | Version history |
 
@@ -556,7 +561,7 @@ cd cambrian
 pip install -e ".[dev]"
 
 # Run tests
-pytest tests/ -q                         # 1194 tests, ~8s
+pytest tests/ -q                         # 1619 tests, ~9s
 
 # Type check
 mypy cambrian/ --strict --ignore-missing-imports
