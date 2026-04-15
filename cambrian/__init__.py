@@ -78,6 +78,9 @@ from cambrian.quorum import QuorumSensor
 from cambrian.moa import MixtureOfAgents, QuantumTunneler
 from cambrian.reflexion import ReflexionEvaluator
 
+# Tier 3 — Symbiotic Fusion
+from cambrian.symbiosis import SymbioticFuser, SymbioticPair
+
 __all__ = [
     # Core
     "Agent",
@@ -126,6 +129,9 @@ __all__ = [
     "MixtureOfAgents",
     "QuantumTunneler",
     "ReflexionEvaluator",
+    # Tier 3 — Symbiotic Fusion
+    "SymbioticFuser",
+    "SymbioticPair",
     # Meta
     "__version__",
 ]
