@@ -530,7 +530,10 @@ class CodeEvolutionEngine:
         if self._best is None and population:
             self._best = max(population, key=lambda a: a.fitness or 0.0)
 
-        return self._best  # type: ignore[return-value]
+        assert self._best is not None, (
+            "evolve() found no agents — ensure seeds is non-empty"
+        )
+        return self._best
 
     # ── Internals ─────────────────────────────────────────────────────────────
 

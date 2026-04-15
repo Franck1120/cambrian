@@ -333,7 +333,10 @@ class MetaEvolutionEngine:
         if best_agent is None and population:
             best_agent = max(population, key=lambda a: a.fitness or 0.0)
 
-        return best_agent  # type: ignore[return-value]
+        assert best_agent is not None, (
+            "evolve() found no agents — ensure seeds is non-empty"
+        )
+        return best_agent
 
     @property
     def hp_history(self) -> list[HyperParams]:

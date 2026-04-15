@@ -247,7 +247,10 @@ class EvolutionEngine:
             "Evolution complete. Best fitness=%.4f",
             self._best_agent.fitness if self._best_agent else 0.0,
         )
-        return self._best_agent  # type: ignore[return-value]
+        assert self._best_agent is not None, (
+            "evolve() found no agents — ensure seeds is non-empty"
+        )
+        return self._best_agent
 
     def evolve_generation(
         self, population: list[Agent], task: str

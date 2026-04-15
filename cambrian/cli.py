@@ -94,6 +94,7 @@ def _rich_gen_table(gen: int, population: list[Any]) -> "Table":
 # ── CLI root ──────────────────────────────────────────────────────────────────
 
 @click.group()
+@click.version_option(version=__version__, prog_name="Cambrian")
 def main() -> None:
     """Cambrian — LLM-guided evolutionary agent optimisation."""
 
