@@ -145,6 +145,30 @@ from cambrian.neuromodulation import (
     NoradrenalineModulator,
 )
 
+# Tier 5 — Metamorphosis, Ecosystem, Fractal Evolution
+from cambrian.metamorphosis import (
+    MetamorphicPhase,
+    PhaseConfig,
+    MorphEvent,
+    MetamorphosisController,
+    MetamorphicPopulation,
+)
+from cambrian.ecosystem import (
+    EcologicalRole,
+    EcosystemConfig,
+    EcosystemEvent,
+    EcosystemInteraction,
+    EcosystemEvaluator,
+)
+from cambrian.fractal import (
+    FractalScale,
+    ScaleConfig,
+    FractalResult,
+    FractalMutator,
+    FractalPopulation,
+    FractalEvolution,
+)
+
 __all__ = [
     # Core
     "Agent",
@@ -260,6 +284,25 @@ __all__ = [
     "SerotoninModulator",
     "AcetylcholineModulator",
     "NoradrenalineModulator",
+    # Tier 5 — Metamorphosis
+    "MetamorphicPhase",
+    "PhaseConfig",
+    "MorphEvent",
+    "MetamorphosisController",
+    "MetamorphicPopulation",
+    # Tier 5 — Ecosystem
+    "EcologicalRole",
+    "EcosystemConfig",
+    "EcosystemEvent",
+    "EcosystemInteraction",
+    "EcosystemEvaluator",
+    # Tier 5 — Fractal Evolution
+    "FractalScale",
+    "ScaleConfig",
+    "FractalResult",
+    "FractalMutator",
+    "FractalPopulation",
+    "FractalEvolution",
     # Meta
     "__version__",
 ]
