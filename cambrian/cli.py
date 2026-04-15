@@ -287,6 +287,190 @@ def evolve(
         click.echo(f"Lineage graph written to {mem_path}")
 
 
+# ── forge ─────────────────────────────────────────────────────────────────────
+
+@main.command()
+@click.argument("task")
+@click.option(
+    "--mode",
+    type=click.Choice(["code", "pipeline"], case_sensitive=False),
+    default="code",
+    show_default=True,
+    help="Forge mode: 'code' evolves Python code; 'pipeline' evolves step chains.",
+)
+@click.option(
+    "--model", "-m",
+    default="gpt-4o-mini",
+    show_default=True,
+    help="LLM model for mutation and evaluation.",
+)
+@click.option(
+    "--base-url",
+    default="https://api.openai.com/v1",
+    show_default=True,
+    envvar="CAMBRIAN_BASE_URL",
+    help="OpenAI-compatible API base URL.",
+)
+@click.option(
+    "--api-key",
+    default=None,
+    envvar="OPENAI_API_KEY",
+    help="API key. Falls back to OPENAI_API_KEY env var.",
+)
+@click.option(
+    "--generations", "-g", default=8, show_default=True,
+    help="Number of generations to run.",
+)
+@click.option(
+    "--population", "-p", default=6, show_default=True,
+    help="Population size per generation.",
+)
+@click.option(
+    "--output", "-o", default=None,
+    help="Path to write the best result (Python file or JSON).",
+)
+@click.option(
+    "--test-case",
+    "test_cases",
+    multiple=True,
+    help="Test case in 'INPUT|EXPECTED' format (can be repeated). Code mode only.",
+)
+def forge(
+    task: str,
+    mode: str,
+    model: str,
+    base_url: str,
+    api_key: str | None,
+    generations: int,
+    population: int,
+    output: str | None,
+    test_cases: tuple[str, ...],
+) -> None:
+    """Synthesise and evolve code or pipelines to solve TASK (Forge mode).
+
+    TASK is a natural-language description of what to build.
+
+    \b
+    Examples:
+        cambrian forge "Parse a CSV and return the mean of column price" \\
+            --mode code --test-case "a,b\n1,2\n3,4|3.0"
+        cambrian forge "Summarise a news article in 3 sentences" --mode pipeline
+    """
+    if api_key is None:
+        api_key = os.environ.get("OPENAI_API_KEY", "")
+    if not api_key:
+        click.echo(
+            "Error: no API key. Set OPENAI_API_KEY or pass --api-key.", err=True
+        )
+        sys.exit(1)
+
+    backend = _make_backend(model, base_url, api_key)
+
+    click.echo(f"Cambrian Forge v{__version__} — mode={mode}, {generations} generations")
+    click.echo(f"Task: {task[:80]}")
+    click.echo("")
+
+    if mode == "code":
+        from cambrian.code_genome import (
+            CodeEvolutionEngine,
+            CodeGenome,
+            TestCase,
+        )
+        from cambrian.code_genome import CodeEvaluator as _CodeEvaluator
+
+        parsed_tests: list[TestCase] = []
+        for tc_str in test_cases:
+            if "|" in tc_str:
+                inp, exp = tc_str.split("|", 1)
+                parsed_tests.append(TestCase(input_data=inp, expected_output=exp))
+            else:
+                click.echo(
+                    f"Warning: skipping malformed test case (no '|'): {tc_str!r}",
+                    err=True,
+                )
+
+        if not parsed_tests:
+            # No test cases: use a stub evaluator (pass rate always 0)
+            click.echo(
+                "Warning: no --test-case provided. Fitness will be 0.0 "
+                "(pass --test-case INPUT|EXPECTED to enable scoring).",
+                err=True,
+            )
+            parsed_tests = [TestCase(input_data="", expected_output="__stub__")]
+
+        evaluator = _CodeEvaluator(parsed_tests)
+        engine = CodeEvolutionEngine(
+            backend=backend,
+            evaluator=evaluator,
+            population_size=population,
+        )
+        seed = CodeGenome(description=task)
+
+        def _on_gen_code(gen: int, results: list[Any], best: "CodeGenome") -> None:  # type: ignore[misc]
+            best_result = results[0][1] if results else None
+            if best_result:
+                click.echo(
+                    f"  gen={gen:3d}  best_fitness={best_result.fitness:.4f}  "
+                    f"pass={best_result.passed}/{best_result.total}  "
+                    f"loc={best_result.loc}"
+                )
+
+        best_code_genome = engine.evolve(
+            seed, task, n_generations=generations, on_generation=_on_gen_code
+        )
+
+        click.echo("\n[Forge complete]")
+        click.echo(f"Best code ({best_code_genome.loc()} LOC):")
+        click.echo("─" * 60)
+        click.echo(best_code_genome.code[:2000])
+        click.echo("─" * 60)
+
+        if output:
+            out_path = Path(output)
+            out_path.write_text(best_code_genome.code, encoding="utf-8")
+            click.echo(f"Best code written to {out_path}")
+
+    else:
+        # pipeline mode
+        from cambrian.pipeline import Pipeline, PipelineStep, PipelineEvolutionEngine
+
+        def _stub_score(output_text: str, _task: str) -> float:
+            # Without a real evaluator, score by non-emptiness + length heuristic
+            if not output_text.strip():
+                return 0.0
+            return min(1.0, len(output_text.strip()) / 500.0)
+
+        engine_pl = PipelineEvolutionEngine(
+            backend=backend,
+            score_fn=_stub_score,
+            population_size=population,
+        )
+        seed_pl = Pipeline(description=task)
+
+        def _on_gen_pl(gen: int, scored: list[Any], best: "Pipeline") -> None:  # type: ignore[misc]
+            best_score = scored[0][1] if scored else 0.0
+            click.echo(
+                f"  gen={gen:3d}  best_fitness={best_score:.4f}  "
+                f"steps={best.step_count()}"
+            )
+
+        best_pipeline = engine_pl.evolve(
+            seed_pl, task, n_generations=generations, on_generation=_on_gen_pl
+        )
+
+        click.echo("\n[Forge complete]")
+        click.echo(f"Best pipeline ({best_pipeline.step_count()} steps):")
+        for i, step in enumerate(best_pipeline.steps):
+            click.echo(f"  Step {i+1} [{step.role}]: {step.system_prompt[:80]}")
+
+        if output:
+            out_path = Path(output)
+            out_path.write_text(
+                json.dumps(best_pipeline.to_dict(), indent=2), encoding="utf-8"
+            )
+            click.echo(f"Best pipeline written to {out_path}")
+
+
 # ── stats (legacy text summary) ───────────────────────────────────────────────
 
 @main.command()
