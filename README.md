@@ -4,10 +4,11 @@
 
 Cambrian runs a genetic algorithm over LLM agent genomes — system prompts, temperature, strategy, few-shot examples, tools — guided by an LLM mutator. One command. No manual tweaking.
 
+[![PyPI](https://img.shields.io/pypi/v/cambrian-ai)](https://pypi.org/project/cambrian-ai/)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-1973%20passing-brightgreen)](tests/)
-[![Version](https://img.shields.io/badge/version-1.0.3-blue)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-2077%20passing-brightgreen)](tests/)
+[![Version](https://img.shields.io/badge/version-1.0.4-blue)](CHANGELOG.md)
 [![mypy](https://img.shields.io/badge/mypy-0%20errors-blue)](https://mypy-lang.org)
 
 ---
