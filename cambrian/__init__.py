@@ -97,6 +97,11 @@ from cambrian.ensemble import (
     exact_match_scorer,
     substring_scorer,
 )
+from cambrian.glossolalia import (
+    GlossaloliaReasoner,
+    GlossaloliaEvaluator,
+    GlossaloliaResult,
+)
 
 __all__ = [
     # Core
@@ -166,6 +171,9 @@ __all__ = [
     "EnsembleResult",
     "exact_match_scorer",
     "substring_scorer",
+    "GlossaloliaReasoner",
+    "GlossaloliaEvaluator",
+    "GlossaloliaResult",
     # Meta
     "__version__",
 ]
