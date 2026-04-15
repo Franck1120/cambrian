@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 from unittest.mock import MagicMock
 
 import pytest
@@ -167,7 +166,7 @@ class TestDreamPhase:
         assert (agent.fitness or 0.0) <= 1.0
 
     def test_extract_experiences_from_memory(self) -> None:
-        from cambrian.memory import EvolutionaryMemory, StigmergyTrace
+        from cambrian.memory import EvolutionaryMemory
 
         mem = EvolutionaryMemory(name="test")
         mem.add_trace(agent_id="test_agent", content="test experience", score=0.8, task="t")

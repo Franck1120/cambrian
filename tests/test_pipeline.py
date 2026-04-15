@@ -132,7 +132,10 @@ class TestPipelineRunner:
 class TestPipelineEvaluator:
     def _evaluator(self, return_text: str = "good output") -> PipelineEvaluator:
         backend = _mock_backend(return_text)
-        score_fn = lambda output, task: 0.8 if output else 0.0
+
+        def score_fn(output: str, task: str) -> float:
+            return 0.8 if output else 0.0
+
         return PipelineEvaluator(backend, score_fn)
 
     def test_returns_score(self) -> None:

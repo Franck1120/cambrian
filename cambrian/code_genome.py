@@ -46,6 +46,9 @@ class TestCase:
         label: Human-readable label for reporting. Auto-generated if omitted.
     """
 
+    # Prevent pytest from treating this dataclass as a test class.
+    __test__ = False
+
     input_data: str
     expected_output: str
     weight: float = 1.0

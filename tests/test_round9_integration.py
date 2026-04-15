@@ -18,14 +18,13 @@ import pytest
 
 from cambrian.agent import Agent, Genome
 from cambrian.code_genome import (
-    CodeEvaluationResult,
     CodeEvaluator,
     CodeEvolutionEngine,
     CodeGenome,
     TestCase,
 )
 from cambrian.dream import DreamPhase, Experience
-from cambrian.moa import MixtureOfAgents, QuantumTunneler
+from cambrian.moa import QuantumTunneler
 from cambrian.pipeline import (
     Pipeline,
     PipelineEvaluator,
@@ -196,7 +195,6 @@ class TestDreamQuorumIntegration:
         phase = DreamPhase(backend=backend, blend_weight=0.2, n_dreams=2)
 
         agents = [_agent(0.8)]
-        original = agents[0].fitness
         exps = [
             Experience("task", "resp", 0.9),
             Experience("task2", "resp2", 0.7),

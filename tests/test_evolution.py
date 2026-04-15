@@ -17,7 +17,6 @@ class _EchoBackend:
     model_name = "echo"
 
     def generate(self, prompt: str, **kwargs: object) -> str:
-        import json
         import re
 
         m = re.search(r"```(?:json)?\s*([\s\S]+?)```", prompt)
