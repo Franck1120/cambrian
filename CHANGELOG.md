@@ -4,6 +4,40 @@ All notable changes to Cambrian are documented here.
 
 ---
 
+## [1.0.0] — First Stable Release
+
+**Cambrian is feature-complete and production-stable.**
+
+Sixty-six evolutionary techniques across four tiers, 1264 tests, zero mypy
+errors, zero ruff warnings.  This release consolidates the entire development
+arc from the initial genome/agent skeleton through all Tier 3 and Tier 4
+bio-inspired extensions.
+
+### Summary of the full implementation arc
+
+| Version | Round | Highlights |
+|---------|-------|------------|
+| 0.1.0 | 1 | Genome, Agent, Evaluator ABC, LLMBackend ABC |
+| 0.3.0 | 3 | EvolutionEngine, LLMMutator, OpenAICompatBackend, CodeEvaluator, CLI |
+| 0.4.0 | 4 | Epigenetics, ImmuneMemory (fingerprint), LamarckianAdapter, EvolutionaryMemory, Stigmergy, DiversityTracker, FitnessLandscape, LLMJudgeEvaluator, CompositeEvaluator, Anthropic/Gemini backends |
+| 0.5.0 | 5 | A2A protocol, CLITools, advanced CLI (analyze/dashboard/distill), VarianceAwareEvaluator, BaldwinEvaluator, CoEvolution, Curriculum, ConstitutionalAI, MCTSSelector |
+| 0.6.0 | 6 | SpeculativeMutator, Archipelago/Island model, NSGA-II, RewardShaping, Export (JSON/standalone/MCP/FastAPI), `cambrian run` CLI |
+| 0.7.0 | 7 | DiffCoT, CausalReasoning, ToolInventor, `cambrian snapshot` CLI, SECURITY.md |
+| 0.8.0 | 8 | SelfPlay, MetaEvolution, WorldModel, JSONLogger, `cambrian compare` CLI, sandbox env-leak fix |
+| 0.9.0 | 9 | PRD (57-technique inventory), Forge mode (CodeEvolution + PipelineEvolution), Dashboard 2-tab UI, `cambrian forge` CLI |
+| 0.10.0 | 10 | DreamPhase, QuorumSensor, MixtureOfAgents, QuantumTunneler, ReflexionEvaluator |
+| 0.11.0 | Tier 3 | SymbioticFuser, HormesisAdapter, ApoptosisController, CatalysisEngine, LLMCascade, AgentEnsemble/BoostingEnsemble, GlossaloliaReasoner, BestOfN/BeamSearch |
+| 0.12.0 | Tier 4a | TransferAdapter/Bank, TabuList/Mutator, AnnealingSchedule/Selector, RedTeamAgent/RobustnessEvaluator, ZeitgeberClock/Scheduler, HGTransfer/HGTPool, TransgenerationalRegistry |
+| 0.13.0 | Tier 4b | BCellMemory, TCellMemory, ImmuneCortex, NeuromodulatorBank (Dopamine/Serotonin/Acetylcholine/Noradrenaline) |
+
+### This release
+- Bumped `pyproject.toml` version to `1.0.0`; `Development Status :: 5 - Production/Stable`
+- Bumped `cambrian.__version__` to `"1.0.0"`
+- Updated `docs/ARCHITECTURE.md` header to version 0.19.0
+- Full test suite: **1264 passed**, 0 mypy errors, 0 ruff warnings
+
+---
+
 ## [0.13.0] — Tier 4 Part 2: Immune Memory & Neuromodulation
 
 ### Added
