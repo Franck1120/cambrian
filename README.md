@@ -6,7 +6,8 @@
 
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-1194%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-1494%20passing-brightgreen)](tests/)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue)](CHANGELOG.md)
 [![mypy](https://img.shields.io/badge/mypy-strict-blue)](https://mypy-lang.org)
 
 ---
@@ -182,6 +183,17 @@
 | `TransgenerationalRegistry` | Heritable `EpigeneMark`s that decay per generation and inject into offspring genomes |
 | `ImmuneCortex` | B-cell (fast exact recall) + T-cell (adaptive seed) memory for high-fitness genomes |
 | `NeuromodulatorBank` | Four biologically-inspired modulators (dopamine, serotonin, acetylcholine, noradrenaline) dynamically adjust mutation rate and selection pressure |
+
+### Tier 5 — Lifecycle, Ecology, and Fractal Evolution
+| Component | What it does |
+|-----------|-------------|
+| `MetamorphosisController` | Holometabolous lifecycle: LARVA (high exploration) -> CHRYSALIS (LLM reorganisation) -> IMAGO (exploit) |
+| `MetamorphicPopulation` | Orchestrates per-agent phase advancement and chrysalis reorganisation across a generation |
+| `EcosystemInteraction` | 4-role ecological dynamics: HERBIVORE (diversity bonus), PREDATOR (hunt weak), DECOMPOSER (recycle failed), PARASITE (drain strong) |
+| `EcosystemEvaluator` | Blends base evaluator score with ecological fitness delta (configurable weight) |
+| `FractalEvolution` | Recursive multi-scale evolution: macro populations seed meso, meso seed micro; results bubble back up |
+| `FractalMutator` | Scale-aware mutation: MACRO stays broad, MICRO highly localised |
+| `FractalPopulation` | Self-contained population at one fractal scale with its own evaluator and mutator |
 
 ### Backends
 | Backend | Class | SDK |
