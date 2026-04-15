@@ -406,7 +406,7 @@ def forge(
         )
         seed = CodeGenome(description=task)
 
-        def _on_gen_code(gen: int, results: list[Any], best: "CodeGenome") -> None:  # type: ignore[misc]
+        def _on_gen_code(gen: int, results: list[Any], best: "CodeGenome") -> None:
             best_result = results[0][1] if results else None
             if best_result:
                 click.echo(
@@ -447,7 +447,7 @@ def forge(
         )
         seed_pl = Pipeline(description=task)
 
-        def _on_gen_pl(gen: int, scored: list[Any], best: "Pipeline") -> None:  # type: ignore[misc]
+        def _on_gen_pl(gen: int, scored: list[Any], best: "Pipeline") -> None:
             best_score = scored[0][1] if scored else 0.0
             click.echo(
                 f"  gen={gen:3d}  best_fitness={best_score:.4f}  "

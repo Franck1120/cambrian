@@ -286,7 +286,7 @@ class ReflexionEvaluator:
         result = reflexion.run(task)
         # Evaluate using the improved response: create a lightweight proxy agent
         # that overrides run() without monkey-patching the original
-        from cambrian.agent import Agent as _Agent, Genome as _Genome
+        from cambrian.agent import Agent as _Agent
 
         improved_response = result.final_response
 
