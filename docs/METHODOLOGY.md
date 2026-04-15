@@ -1,6 +1,6 @@
 # Cambrian — Methodology & Theoretical Background
 
-> Version: 0.18.0 · Last updated: 2026-04-14
+> Version: 0.9.0 · Last updated: 2026-04-15
 
 This document maps every evolutionary technique implemented in Cambrian to its
 primary academic reference and explains how the theory translates into code.
@@ -26,6 +26,11 @@ primary academic reference and explains how the theory translates into code.
 15. [Agent-to-Agent (A2A) Protocol](#15-agent-to-agent-a2a-protocol)
 16. [Anti-Reward-Hacking](#16-anti-reward-hacking)
 17. [Population Statistics](#17-population-statistics)
+18. [Dream Phase — Memory Consolidation](#18-dream-phase--memory-consolidation)
+19. [Quorum Sensing](#19-quorum-sensing)
+20. [Mixture of Agents](#20-mixture-of-agents)
+21. [Quantum Tunneling](#21-quantum-tunneling)
+22. [Reflexion](#22-reflexion)
 
 ---
 
@@ -423,6 +428,131 @@ In Cambrian (`cambrian/stats.py`):
 > Squillero, G., & Tonda, A. (2016). Divergence of Character and Premature
 > Convergence: A Survey of Methodologies for Promoting Diversity in
 > Evolutionary Optimisation. *Information Sciences*, 329, 782–799.
+
+---
+
+---
+
+## 18. Dream Phase — Memory Consolidation
+
+**Core idea:** During biological sleep, the hippocampus replays recent
+experiences to consolidate memories and improve generalisation.  Cambrian's
+`DreamPhase` mimics this by recombining past `Experience` objects via LLM into
+synthetic "dream scenarios" that are novel but semantically related to the
+original tasks.
+
+In Cambrian (`cambrian/dream.py`):
+- Past experiences (task, response, score) are collected across generations.
+- `DreamPhase.generate_scenario(experiences)` prompts the LLM to create a
+  hybrid scenario by blending N experiences.
+- Agents are evaluated on the dream, and fitness is blended:
+  `new_fitness = (1 - w) * real + w * dream_score`.
+
+**References:**
+
+> Wilson, M.A., & McNaughton, B.L. (1994). Reactivation of Hippocampal Ensemble
+> Memories During Sleep. *Science*, 265(5172), 676–679.
+
+> Schmidhuber, J. (1991). A Possibility for Implementing Curiosity and Boredom
+> in Model-Building Neural Controllers. *Proceedings of the First International
+> Conference on Simulation of Adaptive Behavior*.
+
+> Ha, D., & Schmidhuber, J. (2018). World Models. *arXiv:1803.10122*.
+
+---
+
+## 19. Quorum Sensing
+
+**Core idea:** In bacterial colonies, cells measure population density by
+detecting secreted chemical signals and adjust behaviour collectively.  Cambrian
+uses Shannon entropy of the fitness distribution as an analogous signal: a
+converged population (low entropy) triggers increased mutation rate; a chaotic
+one (high entropy) triggers reduced rate.
+
+In Cambrian (`cambrian/quorum.py`):
+- `QuorumSensor.compute_entropy(fitnesses)` bins fitness into `n_bins` and
+  computes normalised Shannon entropy H(X) / log₂(n_bins) ∈ [0, 1].
+- `update()` adjusts mutation rate via a proportional controller:
+  `new_rate = old_rate + lr × (target_entropy − current_entropy)`.
+- `stagnation_detected()` triggers when entropy variance falls below a
+  threshold over a rolling window.
+
+**References:**
+
+> Miller, M.B., & Bassler, B.L. (2001). Quorum Sensing in Bacteria.
+> *Annual Review of Microbiology*, 55, 165–199.
+
+> Shannon, C.E. (1948). A Mathematical Theory of Communication.
+> *Bell System Technical Journal*, 27(3), 379–423.
+
+---
+
+## 20. Mixture of Agents
+
+**Core idea:** Ensemble methods reduce variance and improve expected performance
+by aggregating multiple independent predictions.  `MixtureOfAgents` runs N
+agents independently and synthesises a final answer via an LLM aggregator.
+
+In Cambrian (`cambrian/moa.py`):
+- N agents run in sequence; each produces an independent answer.
+- An aggregator LLM receives all N answers and synthesises the final response.
+- If the aggregator fails, the longest individual answer is used as a fallback.
+
+**References:**
+
+> Wang, J., Wang, F., Xiong, W., et al. (2024). Mixture-of-Agents Enhances
+> Large Language Model Capabilities. *arXiv:2406.04692*.
+
+> Dietterich, T.G. (2000). Ensemble Methods in Machine Learning.
+> *Lecture Notes in Computer Science*, 1857, 1–15.
+
+---
+
+## 21. Quantum Tunneling
+
+**Core idea:** Quantum tunneling allows particles to pass through potential
+barriers even without sufficient energy.  Analogously, `QuantumTunneler`
+allows the evolutionary search to escape local optima by probabilistically
+replacing non-elite agents with random genomes, independent of fitness.
+
+In Cambrian (`cambrian/moa.py`):
+- With probability `tunnel_prob`, each non-elite agent is replaced with a
+  fresh random genome.
+- Elite agents (top `n_elites`) are always protected.
+- This is more aggressive than standard diversity injection (which is
+  fitness-guided) and prevents permanent convergence to suboptimal basins.
+
+**References:**
+
+> Goldberg, D.E. (1989). *Genetic Algorithms in Search, Optimization, and
+> Machine Learning*. Addison-Wesley.  (Sec. 10.5: Stochastic population
+> replacement as escape from local minima.)
+
+> Szu, H., & Hartley, R. (1987). Fast Simulated Annealing. *Physics Letters A*,
+> 122(3–4), 157–162.  (Tunneling as a metaphor for global optimisation.)
+
+---
+
+## 22. Reflexion
+
+**Core idea:** Verbal reinforcement learning: an agent generates an output,
+a critic (the same or a different LLM) provides verbal feedback, and the agent
+revises its output based on the feedback.  This is applied iteratively.
+
+In Cambrian (`cambrian/reflexion.py`):
+- `ReflexionAgent.run(task)` performs:
+  1. **Generate**: agent produces initial response.
+  2. **Critique**: LLM critiques the response against the task.
+  3. **Revise**: LLM rewrites the response to address the critique.
+  4. Repeat for `n_rounds` rounds or until critique says "EXCELLENT".
+- `ReflexionEvaluator` applies Reflexion before scoring, using a proxy agent
+  that serves the improved response to the base evaluator.
+
+**References:**
+
+> Shinn, N., Cassano, F., Labash, B., Gopinath, A., Narasimhan, K., &
+> Yao, S. (2023). Reflexion: Language Agents with Verbal Reinforcement
+> Learning. *arXiv:2303.11366*.
 
 ---
 
