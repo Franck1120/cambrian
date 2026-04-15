@@ -123,6 +123,7 @@ from cambrian.red_team import (
     AttackResult,
 )
 from cambrian.zeitgeber import ZeitgeberClock, ZeitgeberScheduler, ZeitgeberState
+from cambrian.hgt import HGTransfer, HGTPool, HGTPlasmid, HGTEvent
 
 __all__ = [
     # Core
@@ -219,6 +220,10 @@ __all__ = [
     "ZeitgeberClock",
     "ZeitgeberScheduler",
     "ZeitgeberState",
+    "HGTransfer",
+    "HGTPool",
+    "HGTPlasmid",
+    "HGTEvent",
     # Meta
     "__version__",
 ]
