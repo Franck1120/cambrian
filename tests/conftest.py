@@ -1,16 +1,13 @@
 """Global pytest configuration for Cambrian test suite.
 
-Sets the WindowsSelectorEventLoopPolicy on Windows to prevent socket buffer
-exhaustion (WinError 10055) when many async tests run in the same process.
+On Windows, async event loops should use ProactorEventLoop (the default since
+Python 3.8) which does NOT use socket pairs for self-piping — unlike
+SelectorEventLoop which drains the socket buffer under heavy test load.
+
+We do NOT set WindowsSelectorEventLoopPolicy here because it would cause
+WinError 10055 (socket buffer exhaustion) across the 1500+ test suite.
+The targeted SelectorEventLoop fix in TestSpeculate handles the one test
+that genuinely requires selector semantics.
 """
 
 from __future__ import annotations
-
-import asyncio
-import sys
-
-
-def pytest_configure(config: object) -> None:  # noqa: ARG001
-    """Set a stable asyncio event loop policy before any tests run."""
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
