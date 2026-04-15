@@ -6,7 +6,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-1629%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-1741%20passing-brightgreen)](tests/)
 [![Version](https://img.shields.io/badge/version-1.0.2-blue)](CHANGELOG.md)
 [![mypy](https://img.shields.io/badge/mypy-strict-blue)](https://mypy-lang.org)
 
@@ -548,6 +548,7 @@ See [SECURITY.md](SECURITY.md) for:
 | [`docs/COMPARISON.md`](docs/COMPARISON.md) | Feature comparison: Cambrian vs DSPy, DGM, AVO, EvoAgent |
 | [`docs/ENV_VARS.md`](docs/ENV_VARS.md) | All supported environment variables |
 | [`VISION.md`](VISION.md) | Project vision: Era 1 → Era 3, guiding principles |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Deploy on Render, Docker, Kubernetes |
 | [`SECURITY.md`](SECURITY.md) | Security model and sandboxing guidelines |
 | [`CHANGELOG.md`](CHANGELOG.md) | Version history |
 
@@ -561,7 +562,7 @@ cd cambrian
 pip install -e ".[dev]"
 
 # Run tests
-pytest tests/ -q                         # 1629 tests, ~9s
+pytest tests/ -q                         # 1741 tests, ~9s
 
 # Type check
 mypy cambrian/ --strict --ignore-missing-imports

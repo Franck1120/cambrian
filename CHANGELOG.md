@@ -4,6 +4,36 @@ All notable changes to Cambrian are documented here.
 
 ---
 
+## [1.0.3] — 112 new tests, DEPLOYMENT.md, copyright headers, asyncio fix
+
+**conftest.py, test_export, test_a2a, test_cli_tools, DEPLOYMENT.md.**  
+**1741 tests passing.** Zero mypy errors. Zero ruff warnings.
+
+### Added
+- **`tests/conftest.py`** — reusable fixtures: `mock_backend`, `mock_backend_text`,
+  `sample_genome`, `expert_genome`, `sample_agent`, `scored_agent`, `sample_population`.
+- **`tests/test_export.py`** — 35 tests covering all four export formats (`export_genome_json`,
+  `load_genome_json`, `export_standalone`, `export_mcp`, `export_api`), including Python syntax
+  validation, round-trip JSON integrity, and parent-dir auto-creation.
+- **`tests/test_a2a.py`** — 45 tests covering `AgentCard`, `A2AMessage`, `AgentNetwork`
+  (register, route, delegate, broadcast, chain, majority_vote, summary).
+- **`tests/test_cli_tools.py`** — 32 tests covering `CLITool`, `CLIToolResult`, `CLIToolkit`,
+  and the `make_python_tool` / `make_shell_tool` factories.
+- **`docs/DEPLOYMENT.md`** — deployment guide for Render (Web Service), Docker
+  (Dockerfile + docker-compose), and Kubernetes (Deployment + Service + Ingress + HPA).
+
+### Fixed
+- **`tests/test_round6.py`**: replaced `WindowsSelectorEventLoopPolicy` with
+  `WindowsProactorEventLoopPolicy` in `_run_async` — eliminates `WinError 10055` socket
+  buffer exhaustion when the full 1741-test suite runs on Windows (Proactor uses IOCP,
+  not `socketpair()`). Two previously-failing `TestSpeculate` tests now pass.
+- **`scripts/benchmark.py`**: removed extraneous `f` prefix from 3 plain strings (ruff F541).
+- **Copyright headers**: added `# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT`
+  to 15 files that were missing it (`cambrian/backends/`, `cambrian/evaluators/`,
+  `cambrian/utils/`, `scripts/benchmark.py`).
+
+---
+
 ## [1.0.2] — CLI Round 8, TUTORIAL, Benchmark, Comparison
 
 **New CLI commands, docs, benchmark, VISION, COMPARISON, CLI tests, ENV_VARS.**  
