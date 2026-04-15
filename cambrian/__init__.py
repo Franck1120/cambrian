@@ -111,6 +111,9 @@ from cambrian.inference_scaling import (
     length_scorer,
 )
 
+# Tier 4 — Transfer Learning, Tabu, Annealing, Red Teaming, Zeitgeber, HGT, ...
+from cambrian.transfer import TransferAdapter, TransferBank, TransferRecord
+
 __all__ = [
     # Core
     "Agent",
@@ -188,6 +191,10 @@ __all__ = [
     "KeywordScorer",
     "SelfConsistencyScorer",
     "length_scorer",
+    # Tier 4
+    "TransferAdapter",
+    "TransferBank",
+    "TransferRecord",
     # Meta
     "__version__",
 ]
