@@ -114,6 +114,7 @@ from cambrian.inference_scaling import (
 # Tier 4 — Transfer Learning, Tabu, Annealing, Red Teaming, Zeitgeber, HGT, ...
 from cambrian.transfer import TransferAdapter, TransferBank, TransferRecord
 from cambrian.tabu import TabuList, TabuMutator, TabuEntry
+from cambrian.annealing import AnnealingSchedule, AnnealingSelector, AnnealingEvent
 
 __all__ = [
     # Core
@@ -199,6 +200,9 @@ __all__ = [
     "TabuList",
     "TabuMutator",
     "TabuEntry",
+    "AnnealingSchedule",
+    "AnnealingSelector",
+    "AnnealingEvent",
     # Meta
     "__version__",
 ]
