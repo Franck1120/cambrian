@@ -32,7 +32,7 @@ Quick start (Forge mode — code evolution)::
     )
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "Cambrian AI Contributors"
 
 # Core

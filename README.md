@@ -6,8 +6,8 @@
 
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-1575%20passing-brightgreen)](tests/)
-[![Version](https://img.shields.io/badge/version-1.0.0-blue)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-1583%20passing-brightgreen)](tests/)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue)](CHANGELOG.md)
 [![mypy](https://img.shields.io/badge/mypy-strict-blue)](https://mypy-lang.org)
 
 ---
