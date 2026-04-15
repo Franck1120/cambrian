@@ -29,6 +29,7 @@ Example::
 from __future__ import annotations
 
 import json
+import random
 import re
 import uuid
 from dataclasses import dataclass, field
@@ -521,8 +522,6 @@ class PipelineEvolutionEngine:
         best_pipeline = seed
         best_fitness = -1.0
 
-        import random as _rnd
-
         for gen in range(n_generations):
             # Evaluate all
             scored: list[tuple[Pipeline, float]] = []
@@ -556,10 +555,10 @@ class PipelineEvolutionEngine:
             for pipeline, fitness in remaining:
                 if (
                     len(new_pop) < self._pop_size
-                    and _rnd.random() < self._crossover_rate
+                    and random.random() < self._crossover_rate
                     and len(elites) >= 2
                 ):
-                    parent_b = _rnd.choice(elites[1:])
+                    parent_b = random.choice(elites[1:])
                     child = self._mutator.crossover(elites[0], parent_b)
                 else:
                     child = self._mutator.mutate(pipeline, fitness=fitness)

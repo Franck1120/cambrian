@@ -280,7 +280,7 @@ class QuantumTunneler:
 
             if self._rng.random() < self._prob:
                 # Quantum tunnel: replace with fresh random genome
-                new_genome = self._random_genome(model)
+                new_genome = self._random_genome(model, self._rng)
                 old_fitness = agent.fitness or 0.0
                 new_agent = Agent(
                     genome=new_genome,
@@ -308,8 +308,15 @@ class QuantumTunneler:
         return result
 
     @staticmethod
-    def _random_genome(model: str) -> Genome:
-        """Generate a random genome with diverse parameters."""
+    def _random_genome(model: str, rng: "random.Random | None" = None) -> Genome:
+        """Generate a random genome with diverse parameters.
+
+        Args:
+            model: LLM model identifier for the new genome.
+            rng: Optional :class:`random.Random` instance.  If ``None``, a new
+                unseeded instance is used (non-reproducible).  Pass ``self._rng``
+                for reproducible behaviour when the tunneler is seeded.
+        """
         strategies = [
             "chain-of-thought",
             "step-by-step",
@@ -328,11 +335,11 @@ class QuantumTunneler:
             "You break problems into smaller parts and solve each methodically.",
             "You use analogies and examples to explain complex ideas.",
         ]
-        rng = random.Random()
+        _rng = rng if rng is not None else random.Random()
         return Genome(
-            system_prompt=rng.choice(prompts),
-            strategy=rng.choice(strategies),
-            temperature=round(rng.uniform(0.3, 1.2), 2),
+            system_prompt=_rng.choice(prompts),
+            strategy=_rng.choice(strategies),
+            temperature=round(_rng.uniform(0.3, 1.2), 2),
             model=model,
             genome_id=str(uuid.uuid4())[:8],
         )
