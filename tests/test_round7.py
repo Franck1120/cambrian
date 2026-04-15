@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """tests/test_round7.py — Round 7 feature tests.
 
 Covers:

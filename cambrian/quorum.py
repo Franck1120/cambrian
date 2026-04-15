@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Quorum sensing — Shannon entropy-based adaptive mutation control.
 
 In social insect colonies, *quorum sensing* is the ability of a population to

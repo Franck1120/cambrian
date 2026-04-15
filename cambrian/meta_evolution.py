@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Meta-evolution: MAML-inspired hyperparameter self-tuning.
 
 Instead of fixing ``mutation_rate``, ``crossover_rate``, and ``temperature``

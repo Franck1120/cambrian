@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Ensemble / Adaptive Boosting — Technique 55.
 
 Combines outputs from multiple agents using adaptive weights derived from

@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """tests/test_integration_real.py — Real evolutionary cycle integration test.
 
 Runs a full 3-generation, 5-agent evolution loop using a deterministic mock

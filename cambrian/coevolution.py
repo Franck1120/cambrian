@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Adversarial co-evolution — two populations evolving against each other.
 
 In standard evolution, agents compete only against a fixed fitness function.

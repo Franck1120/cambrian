@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for Round 4 features:
 
 - MCTSSelector: node UCB1, select, expand, backpropagate, best_path, prune

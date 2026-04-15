@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tabu Search — Technique 59.
 
 Tabu Search (Glover 1986) maintains a short-term "tabu list" of recently

@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Cambrian CLI — command-line interface for running evolutionary experiments.
 
 Commands

@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """tests/test_dream.py — Unit tests for the Dream Phase module.
 
 Covers:

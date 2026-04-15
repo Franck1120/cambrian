@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """evolve_researcher.py — Advanced example: evolving a research agent.
 
 This example evolves an AI agent specialised in researching a topic and

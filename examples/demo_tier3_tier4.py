@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tier 3 & Tier 4 Feature Demo -- cambrian.
 
 Demonstrates how to wire together the advanced bio-inspired modules introduced

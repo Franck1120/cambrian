@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """DiffCoT — Diffusion Chain-of-Thought iterative denoising for agent reasoning.
 
 Inspired by diffusion models, DiffCoT improves an agent's answer through

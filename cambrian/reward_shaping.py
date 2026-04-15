@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Reward shaping for Cambrian — transform raw fitness scores to guide evolution.
 
 Raw fitness values from evaluators are often noisy, non-stationary, or

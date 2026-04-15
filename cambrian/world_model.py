@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """World model — agents predict action outcomes before executing them.
 
 Inspired by Dyna-Q / model-based reinforcement learning and "world models"

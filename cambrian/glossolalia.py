@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Glossolalia Emergente — Technique 56.
 
 Named after the phenomenon of "speaking in tongues", this technique invites

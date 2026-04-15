@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Causal reasoning layer for Cambrian agents.
 
 Allows agents to explicitly represent cause-effect relationships in their

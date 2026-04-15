@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Neuromodulation — Technique 66.
 
 Inspired by neuromodulatory systems (dopamine, serotonin, acetylcholine,

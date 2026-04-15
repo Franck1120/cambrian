@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Round 6 test suite — A2A, CLI tools, Pareto/NSGA-II, Archipelago,
 Speculative execution, Reward shaping, Export, CLI run command.
 

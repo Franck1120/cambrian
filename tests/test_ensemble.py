@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.ensemble — AgentEnsemble and BoostingEnsemble."""
 from __future__ import annotations
 

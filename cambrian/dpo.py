@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Direct Preference Optimization (DPO) selector and trainer for Cambrian.
 
 This module provides two complementary tools for applying DPO-style preference

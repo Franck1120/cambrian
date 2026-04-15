@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for Round 8 CLI commands: meta-evolve and tournament.
 
 Verifies that:

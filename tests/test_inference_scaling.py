@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.inference_scaling — BestOfN, BeamSearch, scorers."""
 from __future__ import annotations
 

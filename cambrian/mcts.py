@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Monte Carlo Tree Search for strategic mutation selection.
 
 Standard tournament selection is memoryless — it picks parents uniformly at

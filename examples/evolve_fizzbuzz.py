@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 #!/usr/bin/env python3
 """Evolve an agent that can write correct FizzBuzz code.
 

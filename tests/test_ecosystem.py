@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.ecosystem — EcologicalRole, EcosystemConfig,
 EcosystemEvent, EcosystemInteraction, and EcosystemEvaluator."""
 

@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Red Teaming — Technique 61.
 
 Adversarial red teaming: a ``RedTeamAgent`` generates challenging,

@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Horizontal Gene Transfer (HGT) — Technique 63.
 
 In bacteria, HGT allows a cell to acquire genetic material directly from

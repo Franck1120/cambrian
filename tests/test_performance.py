@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Performance benchmarks: verify evolutionary loop scalability with mock backend.
 
 Tests measure wall-clock time for various population × generation combinations

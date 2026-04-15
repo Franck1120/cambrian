@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Lamarckian evolution — write acquired behaviours back into the genome.
 
 In standard Darwinian evolution the genome is fixed at birth; only offspring

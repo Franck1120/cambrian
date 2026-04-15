@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Agent and Genome — the core evolutionary unit of Cambrian.
 
 A :class:`Genome` encodes the full specification of an AI agent (prompt,

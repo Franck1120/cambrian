@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """tests/test_sandbox_security.py — Security tests for the subprocess sandbox.
 
 Verifies that:

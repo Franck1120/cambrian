@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Transgenerational Epigenetics — Technique 64.
 
 In biology, transgenerational epigenetics refers to heritable changes in

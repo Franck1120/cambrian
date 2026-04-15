@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Edge-case tests for Tier 3 & 4 modules.
 
 Covers boundary conditions and less-obvious behaviour across:

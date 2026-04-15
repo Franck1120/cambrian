@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Agent-to-Agent (A2A) protocol for Cambrian.
 
 In a standard evolutionary run, agents operate independently: each is

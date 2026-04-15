@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """CLI-Anything — wrap any shell command as an agent-invocable tool.
 
 Agents in Cambrian can be given *tools* — callable utilities they can

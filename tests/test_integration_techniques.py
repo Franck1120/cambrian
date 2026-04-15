@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """tests/test_integration_techniques.py — Multi-technique integration tests.
 
 Each test combines 3 or more Cambrian techniques in a single coordinated run

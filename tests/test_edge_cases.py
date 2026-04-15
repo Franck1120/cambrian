@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Edge case and boundary condition tests for Cambrian.
 
 Covers: genome serialisation corner cases, cache boundary conditions,

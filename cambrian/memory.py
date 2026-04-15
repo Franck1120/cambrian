@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """EvolutionaryMemory — lineage graph backed by NetworkX.
 
 Tracks the genealogy of every agent across generations, enabling:

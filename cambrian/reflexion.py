@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Reflexion — self-critique loop for iterative response improvement.
 
 Reflexion (Technique 35) implements the *generate → reflect → revise* cycle

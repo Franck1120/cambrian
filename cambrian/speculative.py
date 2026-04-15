@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Speculative execution for Cambrian — async parallel mutation sampling.
 
 In standard evolution, each agent is mutated sequentially and the single

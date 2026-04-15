@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Advanced population statistics for Cambrian evolution runs.
 
 Provides three analysis tools:

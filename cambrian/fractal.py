@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """cambrian/fractal.py — Recursive multi-scale fractal evolution.
 
 Implements self-similar evolutionary search across multiple genome granularities:

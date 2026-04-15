@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Mixture of Agents (MoA) and Quantum Tunneling for Cambrian.
 
 Mixture of Agents (Technique 36)

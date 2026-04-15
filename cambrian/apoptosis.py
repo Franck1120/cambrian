@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Apoptosis — Technique 52.
 
 Programmed cell death applied to agent populations: agents that are

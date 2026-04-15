@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Pipeline evolution — multi-step agent pipelines for Forge mode.
 
 A :class:`Pipeline` is an ordered list of :class:`PipelineStep` objects.

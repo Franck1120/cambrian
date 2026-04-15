@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Artificial Immune System — prevent re-exploring failed solution space.
 
 Biological immune systems *remember* pathogens they have encountered so that

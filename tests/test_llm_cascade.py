@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.llm_cascade — LLMCascade."""
 from __future__ import annotations
 

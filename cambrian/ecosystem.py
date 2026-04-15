@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """cambrian/ecosystem.py — Ecological role-based evolutionary pressures.
 
 Implements a 4-role ecosystem that shapes fitness dynamics:

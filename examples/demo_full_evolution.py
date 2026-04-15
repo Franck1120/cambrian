@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Demo: Full Evolution Stack — mocked offline run.
 
 Combines the following techniques in a single coordinated loop:

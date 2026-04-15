@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Symbiotic Fusion — Technique 50.
 
 Two agents that perform well on complementary task facets merge into a

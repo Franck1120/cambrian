@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Inference-Time Scaling — Technique 57.
 
 Generate N candidate responses at inference time and select the best via

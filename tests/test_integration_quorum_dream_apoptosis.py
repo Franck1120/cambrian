@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Integration test: 5-generation evolution with QuorumSensor, DreamPhase, ApoptosisController.
 
 Verifies that:

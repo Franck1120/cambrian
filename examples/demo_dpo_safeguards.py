@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Demo: DPO Selection + Safeguards — mocked offline run.
 
 Shows how to:

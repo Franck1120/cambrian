@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Prompt compression utilities.
 
 Reducing prompt length cuts API costs and improves cache hit rates. Two

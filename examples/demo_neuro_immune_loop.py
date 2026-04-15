@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Neuromodulation + Immune Memory in a Mini-Evolution Loop -- demo.
 
 Shows how NeuromodulatorBank and ImmuneCortex integrate with a simple

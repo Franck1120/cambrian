@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Dynamic tool creation — agents invent new CLI tools during evolution."""
 
 from __future__ import annotations

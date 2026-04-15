@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Unit tests for cache, compress, router, diversity, and memory modules."""
 
 from __future__ import annotations

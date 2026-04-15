@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """tests/test_quorum.py — Unit tests for QuorumSensor (quorum sensing).
 
 Covers:

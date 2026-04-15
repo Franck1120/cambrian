@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.immune_memory — BCellMemory, TCellMemory, ImmuneCortex."""
 from __future__ import annotations
 

@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.tabu — TabuList and TabuMutator."""
 from __future__ import annotations
 

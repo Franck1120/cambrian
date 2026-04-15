@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Dream phase — GraphRAG-style recombination of lineage experiences.
 
 Inspired by the role of REM sleep in memory consolidation and creative insight,

@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """B/T-cell Immune Memory — Technique 65.
 
 Inspired by adaptive immunity:

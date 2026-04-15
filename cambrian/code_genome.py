@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Code genome — evolvable Python code for Forge mode.
 
 Forge mode treats *executable Python code* as the evolvable artifact instead

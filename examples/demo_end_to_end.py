@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Demo: End-to-end evolution with mock backend — 10 generations, real fitness improvement.
 
 This example runs a complete evolutionary loop using:

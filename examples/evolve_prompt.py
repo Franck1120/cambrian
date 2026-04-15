@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 #!/usr/bin/env python3
 """Evolve a system prompt for a specific persona or reasoning style.
 

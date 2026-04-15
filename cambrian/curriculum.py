@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Curriculum learning — progressive task difficulty.
 
 Instead of exposing agents to the hardest task from the start (which can

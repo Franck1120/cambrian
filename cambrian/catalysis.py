@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Catalysis — Technique 53.
 
 In biochemistry a catalyst lowers the activation energy of a reaction

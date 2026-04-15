@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """SAHOO-inspired safeguards with goal drift and anomaly detection.
 
 Provides three complementary safety mechanisms for Cambrian's evolutionary

@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """tests/test_moa_reflexion.py — Unit tests for MoA, QuantumTunneler, and Reflexion.
 
 Covers:

@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Streamlit-based live evolution dashboard for Cambrian.
 
 Two-tab dashboard covering both run modes:

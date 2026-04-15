@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """tests/test_code_genome.py — Unit tests for Forge mode code evolution.
 
 Tests cover:

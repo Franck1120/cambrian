@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Multi-objective Pareto optimisation for Cambrian — NSGA-II selection.
 
 Cambrian agents are normally ranked by a single scalar fitness value.  This

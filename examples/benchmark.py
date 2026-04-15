@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Cambrian Performance Benchmark.
 
 Measures wall-clock time, simulated token throughput, and peak memory usage

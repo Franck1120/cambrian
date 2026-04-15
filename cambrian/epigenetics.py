@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Epigenetic layer — context-dependent genome expression.
 
 In biological epigenetics, the same DNA sequence can produce different

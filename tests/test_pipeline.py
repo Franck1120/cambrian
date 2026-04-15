@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """tests/test_pipeline.py — Unit tests for Pipeline evolution (Forge mode).
 
 Covers:

@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """MAP-Elites — quality-diversity algorithm for agent populations.
 
 MAP-Elites (Mouret & Clune, 2015) maintains a 2D grid where each cell holds

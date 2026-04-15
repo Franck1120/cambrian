@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Zeitgeber — Technique 62.
 
 A Zeitgeber (German: "time-giver") is an external cue that synchronises

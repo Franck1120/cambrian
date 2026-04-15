@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """EvolutionEngine — the main evolutionary loop.
 
 Orchestrates selection, crossover, mutation, evaluation, and archiving across

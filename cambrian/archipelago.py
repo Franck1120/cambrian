@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Population archipelago model for Cambrian — island-based evolution.
 
 The archipelago model runs N *isolated island populations* in parallel.

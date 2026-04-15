@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Simulated Annealing — Technique 60.
 
 Simulated Annealing (Kirkpatrick 1983) accepts worse solutions with a

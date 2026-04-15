@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """cambrian/metamorphosis.py — Discrete metamorphic phase transitions for agents.
 
 Implements a holometabolous-inspired lifecycle:

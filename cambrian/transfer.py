@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Transfer Learning — Technique 58.
 
 A source agent that has been trained (evolved) on one task domain donates

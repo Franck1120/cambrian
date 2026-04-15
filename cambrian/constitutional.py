@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Constitutional AI as a selective pressure in evolutionary search.
 
 Standard evaluation scores the agent's *first* response to a task.

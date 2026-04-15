@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """LLMMutator — LLM-guided genome mutation and crossover.
 
 Instead of blind random mutations (flip a bit, tweak a parameter), Cambrian

@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Self-play competition between agents.
 
 Two agents compete on the same task.  A judge (LLM or heuristic) determines

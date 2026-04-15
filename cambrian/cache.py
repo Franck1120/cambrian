@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """SemanticCache — prompt-level response cache.
 
 Caches LLM responses keyed by a hash of the prompt string so identical

@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """ModelRouter — selects the appropriate LLM model for a given task.
 
 Routes tasks to cheap fast models when complexity is low and to premium

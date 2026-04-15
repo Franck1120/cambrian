@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for new Cambrian features:
 
 - Lamarckian evolution (LamarckianAdapter, few_shot_examples in Genome)

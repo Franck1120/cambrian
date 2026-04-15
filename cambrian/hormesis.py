@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Hormesis — Technique 51.
 
 Biological hormesis: low-dose stressor triggers an adaptive, beneficial
