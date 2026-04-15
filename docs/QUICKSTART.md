@@ -114,10 +114,59 @@ print(best.genome.system_prompt)
 | Run multiple isolated populations | `Archipelago(n_islands=4, topology="ring")` |
 | Export as a FastAPI app | `export_api(best, "my_agent_api.py")` |
 | Export as an MCP server | `export_mcp(best, "mcp_server/")` |
+| Evolve Python code (Forge) | See `examples/evolve_forge_code.py` |
+| Auto-regulate diversity | See `examples/evolve_with_quorum.py` |
+| Memory consolidation | See `examples/evolve_with_dream.py` |
+| Ensemble synthesis | See `examples/evolve_with_moa.py` |
+| Improve with self-critique | `ReflexionAgent(agent, n_rounds=2)` |
 
 ---
 
-## 8. Useful CLI commands
+## 8. Forge Mode — evolve Python code
+
+Use `cambrian forge` when you want to evolve **executable code** rather than
+prompt text.
+
+```bash
+# Evolve a Python script that sums two integers from stdin
+cambrian forge "Read two integers from stdin and print their sum" \
+    --mode code \
+    --model gpt-4o-mini \
+    --test-case "3 4|7" \
+    --test-case "10 20|30" \
+    --test-case "-1 1|0" \
+    --generations 8 \
+    --output best_code.json
+```
+
+Python API equivalent:
+
+```python
+from cambrian.code_genome import CodeGenome, CodeEvaluator, CodeEvolutionEngine, TestCase
+from cambrian.backends.openai_compat import OpenAICompatBackend
+
+backend = OpenAICompatBackend(model="gpt-4o-mini")
+test_cases = [
+    TestCase("3 4", "7"),
+    TestCase("10 20", "30"),
+    TestCase("-1 1", "0"),
+]
+engine = CodeEvolutionEngine(
+    backend=backend,
+    evaluator=CodeEvaluator(test_cases),
+    population_size=6,
+)
+best = engine.evolve(
+    CodeGenome(description="sum two integers from stdin"),
+    task="sum two integers",
+    n_generations=8,
+)
+print(best.code)
+```
+
+---
+
+## 9. Useful CLI commands
 
 ```bash
 # View population at a specific generation

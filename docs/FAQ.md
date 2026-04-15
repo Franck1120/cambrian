@@ -134,6 +134,73 @@ performance.  Agents that predict their scores accurately get a blended fitness
 bonus.  This selects for self-aware agents that know when they are likely to
 succeed.
 
+### What is Forge mode?
+
+Forge mode evolves **executable artifacts** instead of prompt text.  There are
+two sub-modes:
+
+- **Code mode** (`cambrian forge TASK --mode code`): `CodeGenome` wraps Python
+  code.  `CodeEvaluator` runs each test case in a subprocess sandbox and scores
+  by pass rate + LOC efficiency + runtime.  `CodeMutator` asks the LLM to
+  rewrite the code across generations.
+- **Pipeline mode** (`cambrian forge TASK --mode pipeline`): `Pipeline` is an
+  ordered list of `PipelineStep` objects.  `PipelineRunner` chains steps
+  sequentially (output of step N is input to step N+1).  `PipelineMutator`
+  adds/removes/reorders steps via LLM.
+
+Forge is useful when the final artefact must be executable and verifiable
+(e.g., algorithm coding challenges, data-processing pipelines).
+
+### What is Dream Phase?
+
+`DreamPhase` mimics memory consolidation during sleep: an LLM recombines past
+`Experience` objects (task, response, score triples) into synthetic hybrid
+scenarios.  Agents are evaluated on these dreams, and their fitness is blended
+with their real-world score:
+
+```
+new_fitness = (1 - blend_weight) * real_fitness + blend_weight * dream_fitness
+```
+
+This rewards agents that generalise across related tasks, not just specialists
+on the current task.
+
+### What is Quorum Sensing?
+
+`QuorumSensor` monitors the Shannon entropy of the population fitness
+distribution.  When entropy is low (population has converged), it raises
+`mutation_rate` and `elite_n` to inject diversity.  When entropy is high
+(population is chaotic), it lowers both to allow convergence.
+
+```python
+sensor = QuorumSensor(target_entropy=0.6, lr=0.05)
+state = sensor.update(population)
+engine._mut_rate = state.mutation_rate   # apply back to engine
+engine._elite_n = state.elite_n
+```
+
+### What is Mixture of Agents (MoA)?
+
+`MixtureOfAgents` runs N agents independently on the same task and passes all
+their answers to an aggregator LLM, which synthesises a single final answer.
+This is more robust than a single agent because errors by individual agents are
+averaged out.
+
+### What is Quantum Tunneling?
+
+`QuantumTunneler` prevents population convergence by randomly replacing
+non-elite agents with fresh random genomes at probability `tunnel_prob`.
+This mimics quantum tunneling through local optima — a stuck population can
+escape a fitness plateau.
+
+### What is Reflexion?
+
+`ReflexionAgent` runs a generate → critique → revise cycle (Shinn et al. 2023):
+the LLM first answers the task, then critiques its own answer, then produces an
+improved version.  `ReflexionEvaluator` wraps any base evaluator and applies
+Reflexion before scoring — useful when reasoning quality matters more than
+first-shot accuracy.
+
 ---
 
 ## Deployment
