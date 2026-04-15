@@ -1056,3 +1056,255 @@ def compare(run1: str, run2: str, output_format: str, metric: str) -> None:
 def version() -> None:
     """Print Cambrian version."""
     click.echo(f"Cambrian {__version__}")
+
+
+# ── forge ─────────────────────────────────────────────────────────────────────
+
+
+@main.command()
+@click.argument("task")
+@click.option(
+    "--model", "-m",
+    default="gpt-4o-mini",
+    show_default=True,
+    help="LLM model for code mutation and evaluation.",
+)
+@click.option(
+    "--base-url",
+    default="https://api.openai.com/v1",
+    show_default=True,
+    envvar="CAMBRIAN_BASE_URL",
+    help="OpenAI-compatible API base URL.",
+)
+@click.option(
+    "--api-key",
+    default=None,
+    envvar="OPENAI_API_KEY",
+    help="API key. Falls back to OPENAI_API_KEY env var.",
+)
+@click.option(
+    "--generations", "-g",
+    default=8,
+    show_default=True,
+    help="Number of evolutionary generations.",
+)
+@click.option(
+    "--population", "-p",
+    default=6,
+    show_default=True,
+    help="Population size per generation.",
+)
+@click.option(
+    "--mode",
+    default="code",
+    show_default=True,
+    type=click.Choice(["code", "pipeline"], case_sensitive=False),
+    help="Forge mode: 'code' evolves Python code, 'pipeline' evolves step chains.",
+)
+@click.option(
+    "--entry-point",
+    default="solution",
+    show_default=True,
+    help="[code mode] Name of the Python function to evolve.",
+)
+@click.option(
+    "--test-case",
+    "test_cases",
+    multiple=True,
+    help=(
+        "[code mode] Test case in 'INPUT:EXPECTED' format. "
+        "Repeat for multiple cases."
+    ),
+)
+@click.option(
+    "--seed-code",
+    default=None,
+    help="[code mode] Path to a Python file used as the initial genome.",
+)
+@click.option(
+    "--seed-pipeline",
+    default=None,
+    type=click.Path(exists=True),
+    help="[pipeline mode] Path to a Pipeline JSON file used as the seed.",
+)
+@click.option(
+    "--output", "-o",
+    default=None,
+    help="Output path: forge_best.py (code) or forge_best.json (pipeline).",
+)
+@click.option(
+    "--temperature",
+    default=0.6,
+    show_default=True,
+    help="Mutation temperature.",
+)
+@click.option(
+    "--timeout",
+    default=10.0,
+    show_default=True,
+    help="[code mode] Sandbox timeout per test-case (seconds).",
+)
+def forge(
+    task: str,
+    model: str,
+    base_url: str,
+    api_key: str | None,
+    generations: int,
+    population: int,
+    mode: str,
+    entry_point: str,
+    test_cases: tuple[str, ...],
+    seed_code: str | None,
+    seed_pipeline: str | None,
+    output: str | None,
+    temperature: float,
+    timeout: float,
+) -> None:
+    """Synthesise and evolve executable Python code or a multi-step agent pipeline.
+
+    TASK is a natural-language description of the problem to solve.
+
+    \b
+    Examples
+    --------
+    cambrian forge "Write reverse(s: str) -> str" --test-case "hello:olleh"
+    cambrian forge "Summarise text" --mode pipeline --generations 5
+    """
+    from cambrian.code_genome import CodeEvolutionEngine, CodeGenome
+    from cambrian.pipeline import Pipeline, PipelineEvolutionEngine, PipelineStep
+
+    resolved_key = api_key or os.environ.get("OPENAI_API_KEY", "")
+    backend = OpenAICompatBackend(model=model, base_url=base_url, api_key=resolved_key)
+
+    if _RICH and console is not None:
+        console.rule(f"[bold cyan]Cambrian Forge — {mode} mode[/bold cyan]")
+        console.print(f"[dim]Task:[/dim] {task}")
+        console.print(f"[dim]Model:[/dim] {model}  [dim]Gens:[/dim] {generations}  [dim]Pop:[/dim] {population}")
+
+    if mode == "code":
+        # --- Code mode ---
+        parsed_tests: list[dict[str, str]] = []
+        for tc_str in test_cases:
+            if ":" in tc_str:
+                inp, _, exp = tc_str.partition(":")
+                parsed_tests.append({"input": inp, "expected": exp})
+            else:
+                logger.warning("Ignoring malformed --test-case %r (expected 'INPUT:EXPECTED')", tc_str)
+
+        seed_src = ""
+        if seed_code:
+            seed_src = Path(seed_code).read_text()
+
+        seed = CodeGenome(
+            code=seed_src,
+            entry_point=entry_point,
+            description=task,
+            test_cases=parsed_tests,
+        )
+
+        engine = CodeEvolutionEngine(
+            backend=backend,
+            population_size=population,
+            mutation_temperature=temperature,
+            timeout=timeout,
+        )
+
+        generation_count = [0]
+
+        def _on_gen(gen: int, pop: list[Any]) -> None:
+            generation_count[0] = gen
+            scores = [a.fitness or 0.0 for a in pop]
+            best_score = max(scores) if scores else 0.0
+            mean_score = sum(scores) / max(len(scores), 1)
+            if _RICH and console is not None:
+                console.print(
+                    f"  Gen [bold]{gen:3d}[/bold]  best=[green]{best_score:.4f}[/green]  mean={mean_score:.4f}"
+                )
+            else:
+                click.echo(f"  Gen {gen:3d}  best={best_score:.4f}  mean={mean_score:.4f}")
+
+        click.echo(f"Evolving code for {generations} generations (population={population}) ...")
+        best = engine.evolve(
+            seed=seed,
+            task=task,
+            n_generations=generations,
+            on_generation=_on_gen,
+        )
+
+        out_path = Path(output) if output else Path("forge_best.py")
+        out_path.write_text(best.genome.code)
+
+        if _RICH and console is not None:
+            console.rule("[bold green]Done[/bold green]")
+            console.print(f"Best fitness: [bold green]{best.fitness or 0.0:.4f}[/bold green]")
+            console.print(f"Output: {out_path}")
+        else:
+            click.echo(f"\nBest fitness: {best.fitness or 0.0:.4f}")
+            click.echo(f"Output: {out_path}")
+
+    else:
+        # --- Pipeline mode ---
+        import json as _json
+
+        if seed_pipeline:
+            data = _json.loads(Path(seed_pipeline).read_text())
+            seed_pl = Pipeline.from_dict(data)
+        else:
+            seed_pl = Pipeline(
+                name="forge-pipeline",
+                steps=[
+                    PipelineStep(
+                        name="analyser",
+                        system_prompt="Analyse the task and identify key requirements.",
+                        role="extractor",
+                    ),
+                    PipelineStep(
+                        name="solver",
+                        system_prompt="Solve the task based on the analysis.",
+                        role="transformer",
+                    ),
+                    PipelineStep(
+                        name="validator",
+                        system_prompt="Review and improve the solution for correctness.",
+                        role="validator",
+                    ),
+                ],
+            )
+
+        engine_pl = PipelineEvolutionEngine(
+            backend=backend,
+            population_size=population,
+            temperature=temperature,
+        )
+
+        def _on_pl_gen(gen: int, pop: list[Any]) -> None:
+            scores = [p.fitness or 0.0 for p in pop]
+            best_score = max(scores) if scores else 0.0
+            mean_score = sum(scores) / max(len(scores), 1)
+            if _RICH and console is not None:
+                console.print(
+                    f"  Gen [bold]{gen:3d}[/bold]  best=[green]{best_score:.4f}[/green]  mean={mean_score:.4f}"
+                )
+            else:
+                click.echo(f"  Gen {gen:3d}  best={best_score:.4f}  mean={mean_score:.4f}")
+
+        click.echo(f"Evolving pipeline for {generations} generations (population={population}) ...")
+        best_pl = engine_pl.evolve(
+            seed=seed_pl,
+            task=task,
+            n_generations=generations,
+            on_generation=_on_pl_gen,
+        )
+
+        out_path = Path(output) if output else Path("forge_pipeline.json")
+        out_path.write_text(_json.dumps(best_pl.to_dict(), indent=2))
+
+        if _RICH and console is not None:
+            console.rule("[bold green]Done[/bold green]")
+            console.print(f"Best fitness: [bold green]{best_pl.fitness or 0.0:.4f}[/bold green]")
+            console.print(f"Steps: {len(best_pl.steps)}")
+            console.print(f"Output: {out_path}")
+        else:
+            click.echo(f"\nBest fitness: {best_pl.fitness or 0.0:.4f}")
+            click.echo(f"Steps: {len(best_pl.steps)}")
+            click.echo(f"Output: {out_path}")
