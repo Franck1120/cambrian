@@ -1,6 +1,6 @@
 # Cambrian — Architecture Reference
 
-> Version: 0.18.0 · Last updated: 2026-04-14
+> Version: 0.9.0 · Last updated: 2026-04-15
 
 ---
 
@@ -12,41 +12,47 @@ evolved over multiple generations using LLM-guided mutation, multi-objective
 fitness evaluation, and a growing library of bio-inspired pressures.
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           CAMBRIAN ARCHITECTURE                              │
-│                                                                             │
-│  ┌──────────────────────────────────────────────────────────────────────┐  │
-│  │                        EvolutionEngine (evolution.py)                 │  │
-│  │                                                                      │  │
-│  │   seeds ──▶ [Evaluate] ──▶ [Select] ──▶ [Mutate/Crossover] ──▶ loop │  │
-│  │                │                │              │                     │  │
-│  │                ▼                ▼              ▼                     │  │
-│  │           Evaluator      Tournament       LLMMutator                 │  │
-│  │           (fitness)      Selection        (mutator.py)               │  │
-│  └──────────────────────────────────────────────────────────────────────┘  │
-│                                                                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │   Backends   │  │  Evaluators  │  │  Bio Pressures│  │   Analytics  │  │
-│  │              │  │              │  │               │  │              │  │
-│  │ OpenAICompat │  │ CodeEvaluator│  │  Lamarck      │  │ ParetoFront  │  │
-│  │ AnthropicBack│  │ LLMJudge     │  │  Stigmergy    │  │ DiversityTrk │  │
-│  │ GeminiBackend│  │ Composite    │  │  Epigenetics  │  │ FitnessLand. │  │
-│  └──────────────┘  │ VarianceAware│  │  ImmuneMemory │  └──────────────┘  │
-│                    │ BaldwinEval  │  │  MCTS         │                     │
-│                    │ DiffCoTEval  │  │  Co-Evolution │  ┌──────────────┐  │
-│                    │ WorldModelEv.│  │  Curriculum   │  │ Memory/Graph │  │
-│                    └──────────────┘  │  Constitutional│  │ (memory.py)  │  │
-│                                      │  Self-Play    │  └──────────────┘  │
-│  ┌──────────────┐                    │  MetaEvolution│                     │
-│  │  Reasoning   │                    └──────────────┘  ┌──────────────┐  │
-│  │              │                                       │  Structured  │  │
-│  │ DiffCoT      │  ┌──────────────┐                    │  Logging     │  │
-│  │ CausalGraph  │  │  Tools       │                    │ (JSONLogger) │  │
-│  │ CausalMutator│  │              │                    └──────────────┘  │
-│  └──────────────┘  │ CLITool      │                                       │
-│                    │ ToolInventor │                                       │
-│                    └──────────────┘                                       │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                              CAMBRIAN ARCHITECTURE                                │
+│                                                                                  │
+│  ┌───────────────────────────────────────────────────────────────────────────┐  │
+│  │                    EvolutionEngine / CodeEvolutionEngine / PipelineEngine  │  │
+│  │                                                                           │  │
+│  │   seeds ──▶ [Evaluate] ──▶ [Select] ──▶ [Mutate/Crossover] ──▶ loop      │  │
+│  │                │                │              │                          │  │
+│  │                ▼                ▼              ▼                          │  │
+│  │           Evaluator      Tournament       LLMMutator                      │  │
+│  │           (fitness)      Selection        (mutator.py)                    │  │
+│  └───────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                  │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │   Backends   │  │  Evaluators  │  │  Bio Pressures│  │   Analytics  │       │
+│  │              │  │              │  │               │  │              │       │
+│  │ OpenAICompat │  │ CodeEvaluator│  │  Lamarck      │  │ ParetoFront  │       │
+│  │ AnthropicBack│  │ LLMJudge     │  │  Stigmergy    │  │ DiversityTrk │       │
+│  │ GeminiBackend│  │ Composite    │  │  Epigenetics  │  │ FitnessLand. │       │
+│  └──────────────┘  │ VarianceAware│  │  ImmuneMemory │  └──────────────┘       │
+│                    │ BaldwinEval  │  │  MCTS         │                          │
+│                    │ DiffCoTEval  │  │  Co-Evolution │  ┌──────────────┐       │
+│                    │ WorldModelEv.│  │  Curriculum   │  │ Memory/Graph │       │
+│                    │ ReflexionEv. │  │  Constitutional│  │ (memory.py)  │       │
+│                    └──────────────┘  │  Self-Play    │  └──────────────┘       │
+│                                      │  MetaEvolution│                          │
+│  ┌──────────────┐                    │  DreamPhase   │  ┌──────────────┐       │
+│  │  Reasoning   │                    │  QuorumSensor │  │  Structured  │       │
+│  │              │                    └──────────────┘  │  Logging     │       │
+│  │ DiffCoT      │  ┌──────────────┐                    │ (JSONLogger) │       │
+│  │ CausalGraph  │  │  Tools       │  ┌──────────────┐  └──────────────┘       │
+│  │ CausalMutator│  │ CLITool      │  │  Ensemble    │                          │
+│  │ ReflexionAgt │  │ ToolInventor │  │ MixtureOfAgt │                          │
+│  └──────────────┘  └──────────────┘  │ QuantumTunnl │                          │
+│                                      └──────────────┘                           │
+│  ┌──────────────────────────────────────────────────────────────────────────┐   │
+│  │  Forge Mode — Code & Pipeline Evolution                                   │   │
+│  │  CodeGenome + CodeEvaluator + CodeMutator + CodeEvolutionEngine            │   │
+│  │  Pipeline + PipelineRunner + PipelineEvaluator + PipelineMutator           │   │
+│  └──────────────────────────────────────────────────────────────────────────┘   │
+└──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -412,6 +418,107 @@ world_model_fitness(raw_score, prediction_error, accuracy_weight) → float
 Agents that **predict their own performance accurately** receive a fitness
 bonus — creating selective pressure for self-aware agents.
 
+### Dream Phase (`cambrian/dream.py`)
+
+Mimics memory consolidation during sleep — agents are re-evaluated on LLM-generated
+synthetic scenarios that blend past experiences:
+
+```
+Experience(task, response, score, genome_id)
+
+DreamScenario(task, source_scores, blend_description)
+ └── expected_difficulty → float   # mean of source scores
+
+DreamPhase(backend, n_experiences, n_dreams, blend_weight, min_score_threshold)
+ ├── generate_scenario(experiences) → DreamScenario
+ └── run(population, task, evaluator, experiences)
+       For each agent:
+         • Evaluate on n_dreams synthetic scenarios → dream_score
+         • Blend: new_fitness = (1-w)*real + w*dream   (clips to [0,1])
+
+extract_experiences_from_memory(memory, task, limit) → list[Experience]
+```
+
+Useful as a **diversity maintenance tool**: agents that generalise well across dream
+scenarios receive higher blended fitness than specialists.
+
+### Quorum Sensing (`cambrian/quorum.py`)
+
+Monitors Shannon entropy of the population fitness distribution and auto-adjusts
+`mutation_rate` and `elite_n` toward a target entropy:
+
+```
+QuorumState(generation, entropy, mutation_rate, elite_n, population_size, diversity_ratio)
+
+QuorumSensor(n_bins, target_entropy, min/max_mutation_rate, min/max_elite_ratio, lr)
+ ├── compute_entropy(fitnesses) → float     # normalised Shannon entropy [0,1]
+ ├── update(population) → QuorumState       # adjust rate: rate += lr*(target-H)
+ ├── stagnation_detected(window, threshold) → bool
+ ├── should_inject_diversity(low_threshold, window) → bool
+ └── summary() → dict
+
+Feedback loop:
+  low entropy (converged) → raise mutation_rate, raise elite_n
+  high entropy (chaotic)  → lower mutation_rate, lower elite_n
+```
+
+### Mixture of Agents (`cambrian/moa.py`)
+
+N independent agents answer in parallel; an aggregator LLM synthesises a final answer:
+
+```
+MoAResult(final_answer, individual_answers, n_agents)
+
+MixtureOfAgents(agents, aggregator_backend, aggregator_temperature, n_agents)
+ ├── run(task) → MoAResult
+ ├── _aggregate(task, answers) → str    # LLM synthesises; fallback = longest answer
+ └── from_population(population, aggregator_backend) → MixtureOfAgents   # factory
+```
+
+Robust to single-agent failures — the aggregator falls back to the longest answer
+if its LLM call fails.
+
+### Quantum Tunneling (`cambrian/moa.py`)
+
+Prevents population convergence by probabilistically replacing non-elite agents with
+fresh random genomes — analogous to quantum tunneling out of local optima:
+
+```
+TunnelEvent(generation, agent_id, old_fitness, genome_id)
+
+QuantumTunneler(tunnel_prob, protect_elites, n_elites, seed)
+ ├── apply(population, model) → list[Agent]
+ │     For each non-elite: replace at tunnel_prob with random genome
+ ├── _random_genome(model) → Genome      # sampled from predefined diversity pool
+ ├── tunnel_count: int                   # total replacements so far
+ └── summary() → dict
+```
+
+### Reflexion (`cambrian/reflexion.py`)
+
+Generate → critique → revise loop (Shinn et al. 2023):
+
+```
+ReflexionRound(round_number, response, critique, improved)
+
+ReflexionResult(final_response, rounds, task, n_rounds_used)
+ ├── initial_response → str    # round 0 response
+ └── improved → bool           # True if any round was non-trivial
+
+ReflexionAgent(agent, n_rounds, critique_temperature, revision_temperature,
+               stop_if_excellent, reflection_backend)
+ └── run(task) → ReflexionResult
+
+ReflexionEvaluator(base_evaluator, n_rounds, reflection_backend)
+ └── evaluate(agent, task) → float
+       1. Run Reflexion to produce improved_response
+       2. Create _ProxyAgent (wraps agent, overrides run() → improved_response)
+       3. Score proxy via base_evaluator
+```
+
+Early-exit: if critique starts with `"EXCELLENT:"` and `stop_if_excellent=True`,
+the loop stops and the current response is returned.
+
 ### Constitutional AI (`cambrian/constitutional.py`)
 
 ```
@@ -433,6 +540,61 @@ Compresses an evolved large-model genome for deployment on a smaller model:
 1. caveman_compress()  — remove stopwords/filler
 2. procut_prune()      — paragraph pruning to token budget
 3. LLM adaptation      — model-specific prompt rewrite
+```
+
+---
+
+## Forge Mode
+
+Forge mode evolves **executable artifacts** (code, pipelines) rather than prompt text.
+It uses separate genome and engine classes that follow the same generational loop pattern.
+
+### Code Genome (`cambrian/code_genome.py`)
+
+```
+TestCase(input_data, expected_output, weight, label)
+
+CodeGenome(code, description, version, genome_id, parent_id, metadata)
+ └── loc() → int                 # non-blank, non-comment lines
+
+CodeEvaluationResult(pass_rate, runtime_s, loc, passed, total, error, timed_out, fitness)
+ └── fitness = 0.95*pass_rate + 0.02*loc_term + 0.03*runtime_term
+
+CodeEvaluator(test_cases, timeout, loc_bonus, runtime_bonus_cap)
+ └── evaluate(genome) → CodeEvaluationResult
+
+CodeMutator(backend, mutation_temperature, fallback_on_error)
+ ├── mutate(genome, task) → CodeGenome    # LLM rewrites code
+ └── _seed(task) → CodeGenome             # generate from scratch if empty
+
+CodeEvolutionEngine(backend, evaluator, population_size, elite_ratio, crossover_rate)
+ └── evolve(seed, task, n_generations, on_generation) → CodeGenome
+       Early exit when fitness >= 1.0
+```
+
+Each test case is run in a **subprocess sandbox** (`utils/sandbox.py`) with API keys
+stripped.  Fitness blends pass rate (95%), LOC efficiency (2%), and runtime (3%).
+
+### Pipeline Genome (`cambrian/pipeline.py`)
+
+```
+PipelineStep(role, system_prompt, temperature, step_id)
+
+Pipeline(steps, description, version, pipeline_id, parent_id, metadata)
+ └── step_count() → int
+
+PipelineRunner(backend)
+ └── run(pipeline, task) → str     # chain: output[N] → input[N+1]; "" if empty
+
+PipelineEvaluator(backend, score_fn, empty_pipeline_penalty)
+ └── evaluate(pipeline) → float    # score_fn(output, task); clips to [0,1]
+
+PipelineMutator(backend, mutation_temperature, fallback_on_error)
+ ├── mutate(pipeline, task) → Pipeline      # LLM adds/removes/reorders steps
+ └── crossover(parent_a, parent_b) → Pipeline  # dedup roles, max 6 steps
+
+PipelineEvolutionEngine(backend, evaluator, population_size, elite_ratio, crossover_rate)
+ └── evolve(seed, task, n_generations, on_generation) → Pipeline
 ```
 
 ---
@@ -470,15 +632,16 @@ Methods:
 ## CLI Commands
 
 ```
-cambrian evolve TASK        Run evolution (pop size, gens, mutation, crossover flags)
-cambrian run --agent FILE   Load evolved genome, run on a task
-cambrian analyze MEMORY     Deep analysis: trajectory, diversity, lineage
-cambrian snapshot --memory  Show population state at a specific generation
-cambrian compare RUN1 RUN2  Compare two NDJSON evolution log files
-cambrian dashboard          Streamlit live dashboard (--port, --log-file)
-cambrian distill GENOME     Pretty-print a saved genome JSON
-cambrian distill-agent      Compress evolved genome for a smaller model
-cambrian version            Print version
+cambrian evolve TASK              Run prompt evolution (pop, gens, mutation, crossover flags)
+cambrian forge TASK               Forge mode: evolve code or pipelines (--mode code|pipeline)
+cambrian run --agent FILE         Load evolved genome, run on a task
+cambrian analyze MEMORY           Deep analysis: trajectory, diversity, lineage
+cambrian snapshot --memory FILE   Show population state at a specific generation
+cambrian compare RUN1 RUN2        Compare two NDJSON evolution log files
+cambrian dashboard                Streamlit live dashboard (--port, --log-file)
+cambrian distill GENOME           Pretty-print a saved genome JSON
+cambrian distill-agent            Compress evolved genome for a smaller model
+cambrian version                  Print version
 ```
 
 ---
@@ -507,8 +670,22 @@ cambrian/
 ├── self_play.py         SelfPlayEvaluator, SelfPlayResult, TournamentRecord, run_tournament
 ├── meta_evolution.py    HyperParams, MetaEvolutionEngine
 ├── world_model.py       WorldModel, WorldModelEvaluator, WorldModelPrediction
-├── dashboard.py         Streamlit dashboard (_build_app, run_dashboard)
-├── cli.py               Click CLI entry point (9 commands)
+│
+│  ─── Round 9: Forge Mode ───
+├── code_genome.py       CodeGenome, CodeEvaluator, CodeMutator, CodeEvolutionEngine, TestCase
+├── pipeline.py          Pipeline, PipelineStep, PipelineRunner, PipelineEvaluator,
+│                        PipelineMutator, PipelineEvolutionEngine
+│
+│  ─── Round 9: Adaptive Pressures ───
+├── dream.py             DreamPhase, DreamScenario, Experience, extract_experiences_from_memory
+├── quorum.py            QuorumSensor, QuorumState
+│
+│  ─── Round 9: Ensemble & Reflexion ───
+├── moa.py               MixtureOfAgents, MoAResult, QuantumTunneler, TunnelEvent
+├── reflexion.py         ReflexionAgent, ReflexionResult, ReflexionRound, ReflexionEvaluator
+│
+├── dashboard.py         Streamlit dashboard (Evolve + Forge + Logs tabs)
+├── cli.py               Click CLI entry point (10 commands incl. forge)
 ├── __main__.py          python -m cambrian entry point
 ├── backends/
 │   ├── base.py          LLMBackend ABC
@@ -516,7 +693,7 @@ cambrian/
 │   ├── anthropic.py     AnthropicBackend (anthropic SDK)
 │   └── gemini.py        GeminiBackend (google-genai SDK)
 ├── evaluators/
-│   ├── code.py          CodeEvaluator
+│   ├── code.py          CodeEvaluator (prompt-based; see code_genome.py for Forge)
 │   ├── llm_judge.py     LLMJudgeEvaluator
 │   ├── composite.py     CompositeEvaluator
 │   ├── variance_aware.py VarianceAwareEvaluator + build_diversified_evaluator
