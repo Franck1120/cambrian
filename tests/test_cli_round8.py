@@ -365,7 +365,8 @@ class TestCliHealth:
         result = runner.invoke(main, ["version"])
         assert result.exit_code == 0
         assert "Cambrian" in result.output
-        assert "1.0.2" in result.output
+        import cambrian
+        assert cambrian.__version__ in result.output
 
     def test_evolve_help_exits_zero(self) -> None:
         runner = CliRunner()
