@@ -4,10 +4,46 @@ All notable changes to Cambrian are documented here.
 
 ---
 
+## [1.0.2] — CLI Round 8, TUTORIAL, Benchmark, Comparison
+
+**New CLI commands, docs, and benchmark script.**  
+**1583 tests passing.** Zero mypy errors. Zero ruff warnings.
+
+### Added
+- **`cambrian meta-evolve` CLI command** — wraps `MetaEvolutionEngine`; co-evolves
+  agents and hyperparameters (mutation rate, temperature, tournament_k) simultaneously.
+  Prints live hp stats per generation.
+- **`cambrian tournament` CLI command** — runs a round-robin `SelfPlayEvaluator`
+  tournament across a population; prints a ranked leaderboard (W/L/D); optionally
+  saves JSON results.
+- **`docs/TUTORIAL.md`** — complete step-by-step tutorial: install → Evolve mode →
+  Forge mode → analyse results → export agent → mock backend (no API key needed).
+- **`examples/benchmark.py`** — standalone performance benchmark: 4 scenarios
+  (10×10 through 50×100), wall-clock time, `tracemalloc` peak memory, simulated
+  token count, throughput (evals/s). No API key required.
+- **`py.typed` marker** — PEP 561 compliance; downstream typed packages can now
+  use Cambrian without `ignore_missing_imports`.
+- **`docs/API_REFERENCE.md`** — added DPO & Safeguards section with `DPOPair`,
+  `DPOSelector`, `DPOTrainer`, `GoalDriftDetector`, `DriftEvent`,
+  `FitnessAnomalyDetector`, `SafeguardController`. Bumped to v1.0.1 → v1.0.2.
+
+### Changed
+- **`README.md`** — "Cambrian vs the Field" comparison table (DSPy, DGM, AVO,
+  TextGrad feature checklist); CLI section documents `meta-evolve` and `tournament`.
+- **`CHANGELOG.md`** — corrected test badge from 1494 → 1583.
+
+### Fixed
+- `cambrian/cli.py`: `_make_evaluator` call signature in `tournament` command
+  (wrong number of arguments — mypy caught this).
+- `examples/demo_end_to_end.py`: E402 module-level import not at top; F541
+  f-string without placeholder (both ruff fixes).
+
+---
+
 ## [1.0.1] — Tier 5: Lifecycle, Ecology & Fractal Evolution
 
 **New modules:** Metamorphosis, Ecosystem, Fractal, DPO selection, SAHOO Safeguards.
-**1494 tests passing.** Zero mypy errors. Zero ruff warnings.
+**1583 tests passing.** Zero mypy errors. Zero ruff warnings.
 
 ### Added
 - **`cambrian/metamorphosis.py`** — Holometabolous agent lifecycle: LARVA (broad
