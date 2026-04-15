@@ -6,7 +6,7 @@
 
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-1494%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-1575%20passing-brightgreen)](tests/)
 [![Version](https://img.shields.io/badge/version-1.0.0-blue)](CHANGELOG.md)
 [![mypy](https://img.shields.io/badge/mypy-strict-blue)](https://mypy-lang.org)
 
@@ -194,6 +194,11 @@
 | `FractalEvolution` | Recursive multi-scale evolution: macro populations seed meso, meso seed micro; results bubble back up |
 | `FractalMutator` | Scale-aware mutation: MACRO stays broad, MICRO highly localised |
 | `FractalPopulation` | Self-contained population at one fractal scale with its own evaluator and mutator |
+| `DPOSelector` | Direct Preference Optimization: builds preferred/rejected agent pairs, applies fitness bonuses |
+| `DPOTrainer` | LLM-driven genome refinement: rewrites bottom-50% toward chosen patterns, away from rejected |
+| `GoalDriftDetector` | Detects agents diverging from original intent via Jaccard word-overlap (no external deps) |
+| `FitnessAnomalyDetector` | Flags reward-hacking spikes using z-score threshold on per-agent fitness history |
+| `SafeguardController` | Orchestrates drift + anomaly detection; optional LLM-backed prompt remediation |
 
 ### Backends
 | Backend | Class | SDK |
