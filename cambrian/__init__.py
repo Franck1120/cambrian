@@ -78,10 +78,11 @@ from cambrian.quorum import QuorumSensor
 from cambrian.moa import MixtureOfAgents, QuantumTunneler
 from cambrian.reflexion import ReflexionEvaluator
 
-# Tier 3 — Symbiotic Fusion + Hormesis + Apoptosis
+# Tier 3 — Symbiotic Fusion + Hormesis + Apoptosis + Catalysis
 from cambrian.symbiosis import SymbioticFuser, SymbioticPair
 from cambrian.hormesis import HormesisAdapter, HormesisEvent
 from cambrian.apoptosis import ApoptosisController, ApoptosisEvent
+from cambrian.catalysis import CatalysisEngine, CatalystSelector, CatalysisEvent
 
 __all__ = [
     # Core
@@ -131,13 +132,16 @@ __all__ = [
     "MixtureOfAgents",
     "QuantumTunneler",
     "ReflexionEvaluator",
-    # Tier 3 — Symbiotic Fusion + Hormesis + Apoptosis
+    # Tier 3 — Symbiotic Fusion + Hormesis + Apoptosis + Catalysis
     "SymbioticFuser",
     "SymbioticPair",
     "HormesisAdapter",
     "HormesisEvent",
     "ApoptosisController",
     "ApoptosisEvent",
+    "CatalysisEngine",
+    "CatalystSelector",
+    "CatalysisEvent",
     # Meta
     "__version__",
 ]
