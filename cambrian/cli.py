@@ -1067,6 +1067,241 @@ def version() -> None:
     click.echo(f"Cambrian {__version__}")
 
 
+# ── meta-evolve ───────────────────────────────────────────────────────────────
+
+
+@main.command("meta-evolve")
+@click.argument("task")
+@click.option("--model", "-m", default="gpt-4o-mini", show_default=True,
+              help="LLM model identifier.")
+@click.option("--base-url", default="https://api.openai.com/v1", show_default=True,
+              envvar="CAMBRIAN_BASE_URL", help="OpenAI-compatible API base URL.")
+@click.option("--api-key", default=None, envvar="OPENAI_API_KEY",
+              help="API key (falls back to OPENAI_API_KEY env var).")
+@click.option("--generations", "-g", default=10, show_default=True,
+              help="Total number of generations.")
+@click.option("--population", "-p", default=6, show_default=True,
+              help="Population size.")
+@click.option("--meta-interval", default=2, show_default=True,
+              help="Run a hyperparameter meta-step every N generations.")
+@click.option("--output", "-o", default="meta_best.json", show_default=True,
+              help="Path to save the best genome JSON.")
+@click.option("--memory-out", default=None,
+              help="Path to save lineage JSON (optional).")
+def meta_evolve(
+    task: str,
+    model: str,
+    base_url: str,
+    api_key: str | None,
+    generations: int,
+    population: int,
+    meta_interval: int,
+    output: str,
+    memory_out: str | None,
+) -> None:
+    """Run meta-evolution: co-evolve agents AND hyperparameters (MAML-inspired).
+
+    Outer loop adapts mutation_rate, crossover_rate, temperature, and
+    tournament_k automatically. Use when you want Cambrian to tune itself
+    while searching.
+
+    \b
+    Example:
+        cambrian meta-evolve "Summarise text in one sentence" \\
+            --generations 20 --population 8 --output meta_best.json
+    """
+    from cambrian.meta_evolution import MetaEvolutionEngine, HyperParams
+    from cambrian.evaluator import Evaluator
+    from cambrian.agent import Agent
+
+    key = api_key or os.environ.get("OPENAI_API_KEY", "")
+    backend = _make_backend(model, base_url, key)
+    mutator = LLMMutator(backend=backend)
+
+    class _LLMJudgeEval(Evaluator):
+        def evaluate(self, agent: Agent, task: str) -> float:
+            prompt = (
+                f"Rate how well this system prompt helps with: {task}\n"
+                f"System prompt: {agent.genome.system_prompt}\n"
+                f"Reply with a single float between 0.0 and 1.0. Nothing else."
+            )
+            try:
+                raw = backend.generate(prompt)
+                return max(0.0, min(1.0, float(raw.strip().split()[0])))
+            except Exception:
+                return 0.0
+
+    evaluator = _LLMJudgeEval()
+    engine = MetaEvolutionEngine(
+        evaluator=evaluator,
+        mutator=mutator,
+        backend=backend,
+        population_size=population,
+    )
+    seeds = [Genome(system_prompt=f"Agent {i}: help with {task}") for i in range(population)]
+
+    if _RICH and console is not None:
+        console.rule(f"[bold cyan]Meta-Evolution[/bold cyan]  task={task!r}")
+
+    def _on_gen(gen: int, pop: list[Any], hp: HyperParams) -> None:
+        scores = [a.fitness or 0.0 for a in pop]
+        best_s = max(scores) if scores else 0.0
+        mean_s = sum(scores) / max(len(scores), 1)
+        if _RICH and console is not None:
+            console.print(
+                f"  Gen [bold]{gen:3d}[/bold]  best=[green]{best_s:.4f}[/green]"
+                f"  mean={mean_s:.4f}  mut={hp.mutation_rate:.2f}"
+                f"  temp={hp.temperature:.2f}"
+            )
+        else:
+            click.echo(
+                f"  Gen {gen:3d}  best={best_s:.4f}  mean={mean_s:.4f}"
+                f"  mut={hp.mutation_rate:.2f}  temp={hp.temperature:.2f}"
+            )
+
+    click.echo(f"Meta-evolving {population} agents for {generations} generations ...")
+    best = engine.evolve(
+        seed_genomes=seeds,
+        task=task,
+        n_generations=generations,
+        meta_interval=meta_interval,
+        on_generation=_on_gen,
+    )
+
+    out_path = Path(output)
+    out_path.write_text(json.dumps(best.genome.to_dict(), indent=2))
+
+    if memory_out:
+        try:
+            engine._base_engine.memory.save(memory_out)  # type: ignore[attr-defined]
+        except Exception:
+            pass
+
+    if _RICH and console is not None:
+        console.rule("[bold green]Done[/bold green]")
+        console.print(f"Best fitness : [bold green]{best.fitness or 0.0:.4f}[/bold green]")
+        console.print(f"Genome saved : {out_path}")
+    else:
+        click.echo(f"\nBest fitness: {best.fitness or 0.0:.4f}")
+        click.echo(f"Genome saved: {out_path}")
+
+
+# ── tournament ────────────────────────────────────────────────────────────────
+
+
+@main.command()
+@click.argument("task")
+@click.option("--model", "-m", default="gpt-4o-mini", show_default=True,
+              help="LLM model identifier.")
+@click.option("--base-url", default="https://api.openai.com/v1", show_default=True,
+              envvar="CAMBRIAN_BASE_URL", help="OpenAI-compatible API base URL.")
+@click.option("--api-key", default=None, envvar="OPENAI_API_KEY",
+              help="API key (falls back to OPENAI_API_KEY env var).")
+@click.option("--agents-file", "-a", default=None, type=click.Path(exists=True),
+              help="JSON file containing a list of genome dicts to load as agents.")
+@click.option("--population", "-p", default=6, show_default=True,
+              help="Random population size (used when --agents-file is not given).")
+@click.option("--output", "-o", default=None,
+              help="Path to save tournament record JSON (optional).")
+def tournament(
+    task: str,
+    model: str,
+    base_url: str,
+    api_key: str | None,
+    agents_file: str | None,
+    population: int,
+    output: str | None,
+) -> None:
+    """Run a round-robin tournament between agents for a given task.
+
+    Each pair of agents competes head-to-head; fitness is updated in-place.
+    Prints a ranked leaderboard after all matches.
+
+    \b
+    Example:
+        cambrian tournament "Explain quantum entanglement" \\
+            --agents-file team.json --output results.json
+    """
+    from cambrian.self_play import SelfPlayEvaluator, run_tournament
+    from cambrian.agent import Agent
+
+    key = api_key or os.environ.get("OPENAI_API_KEY", "")
+    backend = _make_backend(model, base_url, key)
+    evaluator = _make_evaluator(task, backend)
+
+    if agents_file:
+        data = json.loads(Path(agents_file).read_text())
+        if isinstance(data, list):
+            agents = [Agent(genome=Genome.from_dict(d)) for d in data]
+        else:
+            raise click.ClickException("agents-file must contain a JSON list of genome dicts")
+    else:
+        agents = [Agent(genome=Genome(system_prompt=f"Agent {i}: help with {task}"))
+                  for i in range(population)]
+
+    sp_eval = SelfPlayEvaluator(base_evaluator=evaluator, win_bonus=0.1, loss_penalty=0.05)
+
+    click.echo(f"Running tournament: {len(agents)} agents, task={task!r}")
+    record = run_tournament(agents, sp_eval, task)
+
+    # Build ranked table
+    ranked = sorted(
+        agents,
+        key=lambda a: a.fitness or 0.0,
+        reverse=True,
+    )
+
+    if _RICH and console is not None:
+        table = Table(title="Tournament Leaderboard", show_header=True)
+        table.add_column("Rank", style="bold", width=6)
+        table.add_column("Agent ID", width=36)
+        table.add_column("Fitness", justify="right")
+        table.add_column("W", justify="right", style="green")
+        table.add_column("L", justify="right", style="red")
+        table.add_column("D", justify="right")
+        for rank, agent in enumerate(ranked, 1):
+            aid = agent.id
+            table.add_row(
+                str(rank),
+                aid[:32] + "…" if len(aid) > 32 else aid,
+                f"{agent.fitness or 0.0:.4f}",
+                str(record.wins.get(aid, 0)),
+                str(record.losses.get(aid, 0)),
+                str(record.draws.get(aid, 0)),
+            )
+        console.print(table)
+    else:
+        click.echo(f"\n{'Rank':>4}  {'Agent':36}  {'Fitness':>8}  W  L  D")
+        click.echo("-" * 64)
+        for rank, agent in enumerate(ranked, 1):
+            aid = agent.id[:32]
+            click.echo(
+                f"{rank:>4}  {aid:36}  {agent.fitness or 0.0:8.4f}"
+                f"  {record.wins.get(agent.id, 0)}"
+                f"  {record.losses.get(agent.id, 0)}"
+                f"  {record.draws.get(agent.id, 0)}"
+            )
+
+    if output:
+        out_data = {
+            "task": task,
+            "agents": [
+                {
+                    "id": a.id,
+                    "fitness": a.fitness or 0.0,
+                    "wins": record.wins.get(a.id, 0),
+                    "losses": record.losses.get(a.id, 0),
+                    "draws": record.draws.get(a.id, 0),
+                    "genome": a.genome.to_dict(),
+                }
+                for a in ranked
+            ],
+            "total_matches": len(record.matches),
+        }
+        Path(output).write_text(json.dumps(out_data, indent=2))
+        click.echo(f"\nResults saved: {output}")
+
+
 # ── forge ─────────────────────────────────────────────────────────────────────
 
 

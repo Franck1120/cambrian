@@ -276,6 +276,18 @@ cambrian compare run_a.json run_b.json --metric mean_fitness --format json
 # Distill-agent — compress genome for a smaller model
 cambrian distill-agent --agent best.json --target gemma-4-12b --max-tokens 120
 
+# ── Round 8 — Meta-Evolution & Tournament ────────────────────────────────────
+
+# Meta-evolve — co-evolve agents AND hyperparameters simultaneously (MAML-inspired)
+cambrian meta-evolve "Summarise any text in one sentence" \
+    --generations 20 --population 8 --output meta_best.json
+
+# Tournament — round-robin head-to-head competition between agents
+cambrian tournament "Explain quantum entanglement" \
+    --agents-file team.json --output results.json
+# (omit --agents-file to auto-generate a random population)
+cambrian tournament "Write a haiku" --population 6
+
 # Version
 cambrian version
 ```
@@ -422,6 +434,32 @@ python examples/evolve_researcher.py \
     --topic "quantum computing applications in cryptography" \
     --generations 15 --population 12
 ```
+
+---
+
+## Cambrian vs the Field
+
+| Feature | Cambrian | DSPy | DGM | AVO | TextGrad |
+|---------|----------|------|-----|-----|----------|
+| Evolutionary search | ✅ full genetic loop | ❌ | ✅ partial | ❌ | ❌ |
+| LLM-guided mutation | ✅ | ✅ (optimiser) | ✅ | ✅ | ✅ |
+| No gradient required | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Multi-agent tournament | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Island / Archipelago model | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Meta-evolution (auto hyperparams) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Code evolution (Forge) | ✅ | ❌ | ✅ | ❌ | ❌ |
+| Causal reasoning graphs | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Bio-inspired operators | ✅ (50 techniques) | ❌ | ❌ | ❌ | ❌ |
+| DPO preference selection | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Goal-drift safeguards | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Ecosystem / lifecycle phases | ✅ | ❌ | ❌ | ❌ | ❌ |
+| OpenAI-compatible (any provider) | ✅ | ✅ | ✅ | partial | ✅ |
+| MIT licence | ✅ | ✅ | ✅ | varies | ✅ |
+
+> **DSPy** — Stanford's signature-based optimiser; best for structured prompting pipelines.  
+> **DGM** (DeepMind) — self-improving agent with code diff mutation; narrower scope.  
+> **AVO** — automated verbal optimisation via LLM feedback.  
+> **TextGrad** — gradient-of-text via backpropagation through LLMs; requires differentiable graph.
 
 ---
 

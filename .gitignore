@@ -33,3 +33,4 @@ Thumbs.db
 .cambrian_cache/
 evolution_checkpoints/
 *.jsonl
+.claude/

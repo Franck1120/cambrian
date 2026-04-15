@@ -1,6 +1,6 @@
 # Cambrian API Reference
 
-> Version 1.0.0 · Auto-generated from source · 119 public symbols
+> Version 1.0.1 · Auto-generated from source · 130 public symbols
 
 This document covers every class and function exported from the `cambrian` package.
 Import any symbol directly from the top-level package:
@@ -27,7 +27,8 @@ from cambrian import EvolutionEngine, Genome, Agent, LLMMutator
 12. [Tier 3 — Advanced Bio-Inspired](#tier-3--advanced-bio-inspired)
 13. [Tier 4 — Cutting-Edge Bio-Inspired](#tier-4--cutting-edge-bio-inspired)
 14. [Tier 5 — Metamorphosis, Ecosystem, Fractal](#tier-5--metamorphosis-ecosystem-fractal)
-15. [Utilities](#utilities)
+15. [Tier 5 — DPO & Safeguards](#tier-5--dpo--safeguards)
+16. [Utilities](#utilities)
 
 ---
 
@@ -1182,6 +1183,139 @@ Recursive multi-scale evolutionary search across MACRO, MESO, MICRO granularitie
 
 ---
 
+## Tier 5 — DPO & Safeguards
+
+### `DPOPair`
+
+```python
+from cambrian import DPOPair
+```
+
+Dataclass representing a **Direct Preference Optimisation** pair.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `chosen` | `Agent` | The higher-fitness (preferred) agent |
+| `rejected` | `Agent` | The lower-fitness (rejected) agent |
+| `task` | `str` | Task description for context |
+| `margin` | `float` | Fitness gap: `chosen.fitness - rejected.fitness` |
+
+---
+
+### `DPOSelector`
+
+```python
+from cambrian import DPOSelector
+
+selector = DPOSelector(beta=0.1, pair_strategy="adjacent")  # or "random"
+pairs   = selector.build_pairs(population, task)
+reward  = selector.compute_dpo_reward(pair)    # → float ∈ [0, 1]
+updated = selector.apply(population, task)     # mutates fitness in-place
+```
+
+Builds preference pairs from a ranked population and applies a margin-based
+DPO reward. `pair_strategy="adjacent"` pairs consecutive ranks;
+`"random"` pairs random agents.
+
+**Key parameters:**
+- `beta` — scale factor for preference reward (default `0.1`)
+- `pair_strategy` — `"adjacent"` or `"random"`
+
+---
+
+### `DPOTrainer`
+
+```python
+from cambrian import DPOTrainer
+
+trainer = DPOTrainer(backend=backend, beta=0.1, n_refinements=3)
+pairs   = trainer.collect_pairs(population, task)
+refined = trainer.refine(agent, pairs, task)   # → Agent
+updated = trainer.train(population, task)      # → list[Agent]
+```
+
+Wraps `DPOSelector` with LLM-driven genome refinement. For each top
+preference pair, asks the backend to produce an improved genome that
+captures the `chosen` agent's strengths while avoiding the `rejected`
+agent's weaknesses.
+
+---
+
+### `GoalDriftDetector`
+
+```python
+from cambrian import GoalDriftDetector
+
+det = GoalDriftDetector(drift_threshold=0.4, window=5)
+det.register(agent, intent="expert step-by-step reasoning")
+event = det.measure(agent, generation=3)    # → DriftEvent
+flagged = det.scan_population(population, generation=3)
+```
+
+Detects **semantic drift** from the original optimisation intent using
+Jaccard word-overlap (no external dependencies). A `drift_score` of `1.0`
+means the prompt shares no words with the original intent.
+
+**Key parameters:**
+- `drift_threshold` — Jaccard distance above which an agent is flagged (default `0.4`)
+- `window` — rolling window for drift history
+
+---
+
+### `DriftEvent`
+
+Dataclass returned by `GoalDriftDetector.measure()`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `agent_id` | `str` | UUID of the agent |
+| `generation` | `int` | Generation number |
+| `drift_score` | `float` | Jaccard distance ∈ [0, 1] |
+| `original_intent` | `str` | The intent string at registration |
+| `current_prompt` | `str` | Current system prompt |
+| `flagged` | `bool` | `True` if drift_score > threshold |
+
+---
+
+### `FitnessAnomalyDetector`
+
+```python
+from cambrian import FitnessAnomalyDetector
+
+det = FitnessAnomalyDetector(z_threshold=2.5, min_history=5)
+det.record(agent, generation=10)
+is_bad = det.is_anomalous(agent)
+ids = det.scan(population, generation=10)   # → list[str] of anomalous IDs
+```
+
+Flags agents whose fitness jumps more than `z_threshold` standard deviations
+above the population mean — a signal of potential **reward hacking**.
+Uses `statistics.mean` / `statistics.stdev` (stdlib only).
+
+---
+
+### `SafeguardController`
+
+```python
+from cambrian import SafeguardController, GoalDriftDetector, FitnessAnomalyDetector
+
+ctrl = SafeguardController(
+    drift_detector=GoalDriftDetector(drift_threshold=0.4),
+    anomaly_detector=FitnessAnomalyDetector(z_threshold=2.5),
+    backend=backend,   # optional — enables remediation
+)
+report = ctrl.check(population, generation=5)
+# report = {"drift_violations": [...], "anomaly_detections": [...]}
+
+remediated_agent = ctrl.remediate(agent, task)
+```
+
+Combines drift detection and anomaly detection into a single controller.
+If `backend` is provided, `remediate()` calls the LLM to re-ground the
+agent's prompt toward its original intent.
+
+---
+
 ## Utilities
 
 ### `JSONLogger`
@@ -1235,4 +1369,4 @@ Export as FastAPI REST application.
 
 ---
 
-*This document is generated from Cambrian v1.0.0 source. For the latest API, run `help(cambrian.<ClassName>)` or read the inline docstrings.*
+*This document is generated from Cambrian v1.0.1 source. For the latest API, run `help(cambrian.<ClassName>)` or read the inline docstrings.*

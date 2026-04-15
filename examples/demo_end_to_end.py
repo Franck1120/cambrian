@@ -16,6 +16,7 @@ Usage
 
 from __future__ import annotations
 
+import json
 import random
 from unittest.mock import MagicMock
 
@@ -54,8 +55,6 @@ class KeywordEvaluator(Evaluator):
 # ---------------------------------------------------------------------------
 # Smart mock backend: each mutation call adds one new keyword
 # ---------------------------------------------------------------------------
-
-import json
 
 _PROMPT_UPGRADES = [
     "You are an expert step-by-step systematic problem solver.",
@@ -174,7 +173,7 @@ print(f"  Initial best fitness : {initial_best:.4f}")
 print(f"  Final best fitness   : {final_best:.4f}")
 print(f"  Total improvement    : +{improvement:.4f} ({improvement / initial_best * 100:.1f}%)")
 print()
-print(f"  Best agent genome (first 80 chars):")
+print("  Best agent genome (first 80 chars):")
 print(f"  {best_agent.genome.system_prompt[:80]!r}")
 print()
 

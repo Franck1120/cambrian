@@ -25,7 +25,7 @@ from unittest.mock import MagicMock
 from cambrian.agent import Agent, Genome
 from cambrian.apoptosis import ApoptosisController
 from cambrian.dream import DreamPhase
-from cambrian.ecosystem import EcologicalRole, EcosystemConfig, EcosystemInteraction
+from cambrian.ecosystem import EcosystemConfig, EcosystemInteraction
 from cambrian.evaluator import Evaluator
 from cambrian.memory import EvolutionaryMemory
 from cambrian.metamorphosis import MetamorphicPhase, MetamorphosisController, PhaseConfig
