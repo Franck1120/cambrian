@@ -122,6 +122,7 @@ from cambrian.red_team import (
     RobustnessReport,
     AttackResult,
 )
+from cambrian.zeitgeber import ZeitgeberClock, ZeitgeberScheduler, ZeitgeberState
 
 __all__ = [
     # Core
@@ -215,6 +216,9 @@ __all__ = [
     "RedTeamSession",
     "RobustnessReport",
     "AttackResult",
+    "ZeitgeberClock",
+    "ZeitgeberScheduler",
+    "ZeitgeberState",
     # Meta
     "__version__",
 ]
