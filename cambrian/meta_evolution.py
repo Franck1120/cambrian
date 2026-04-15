@@ -44,7 +44,7 @@ from __future__ import annotations
 import copy
 import random
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from cambrian.agent import Agent, Genome
 from cambrian.evaluator import Evaluator
@@ -54,6 +54,7 @@ from cambrian.utils.logging import get_logger
 
 if TYPE_CHECKING:
     from cambrian.backends.base import LLMBackend
+    from cambrian.memory import EvolutionaryMemory
 
 logger = get_logger(__name__)
 
@@ -191,7 +192,7 @@ class MetaEvolutionEngine:
         n_candidates: int = 3,
         population_size: int = 8,
         seed: int | None = None,
-        **engine_kwargs: object,
+        **engine_kwargs: Any,
     ) -> None:
         self._evaluator = evaluator
         self._mutator = mutator
@@ -204,6 +205,7 @@ class MetaEvolutionEngine:
         self._engine_kwargs = engine_kwargs
         self._rng = random.Random(seed)
         self._hp_history: list[HyperParams] = [copy.copy(self.hp)]
+        self._last_engine: EvolutionEngine | None = None
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -221,7 +223,7 @@ class MetaEvolutionEngine:
             crossover_rate=hp.crossover_rate,
             tournament_k=hp.tournament_k,
             seed=self._seed,
-            **self._engine_kwargs,  # type: ignore[arg-type]
+            **self._engine_kwargs,
         )
 
     @staticmethod
@@ -241,7 +243,6 @@ class MetaEvolutionEngine:
 
         for cand in candidates:
             engine = self._make_engine(cand)
-            engine._population = population  # type: ignore[attr-defined]
             try:
                 trial_pop = engine.evolve_generation(population, task)
                 fitness = self._mean_fitness(trial_pop)
@@ -286,6 +287,7 @@ class MetaEvolutionEngine:
             Best :class:`~cambrian.agent.Agent` found.
         """
         engine = self._make_engine(self.hp)
+        self._last_engine = engine
         population = engine.initialize_population(seed_genomes)
         population = engine.evaluate_population(population, task)
 
@@ -318,6 +320,7 @@ class MetaEvolutionEngine:
                     self.hp = new_hp
                     self._hp_history.append(copy.copy(new_hp))
                     engine = self._make_engine(self.hp)
+                    self._last_engine = engine
 
             logger.info(
                 "Meta-gen %d/%d  mean=%.4f  hp=%s",
@@ -342,3 +345,14 @@ class MetaEvolutionEngine:
     def hp_history(self) -> list[HyperParams]:
         """All hyperparameter snapshots taken during evolution."""
         return list(self._hp_history)
+
+    @property
+    def memory(self) -> "EvolutionaryMemory":
+        """Lineage memory from the last (or current) evolution engine.
+
+        Raises:
+            RuntimeError: If ``evolve()`` has not been called yet.
+        """
+        if self._last_engine is None:
+            raise RuntimeError("evolve() has not been called yet")
+        return self._last_engine.memory

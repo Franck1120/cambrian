@@ -1174,10 +1174,9 @@ def meta_evolve(
     out_path.write_text(json.dumps(best.genome.to_dict(), indent=2))
 
     if memory_out:
-        try:
-            engine._base_engine.memory.save(memory_out)  # type: ignore[attr-defined]
-        except Exception:
-            pass
+        mem_path = Path(memory_out)
+        mem_path.write_text(engine.memory.to_json())
+        click.echo(f"Lineage graph written to {mem_path}")
 
     if _RICH and console is not None:
         console.rule("[bold green]Done[/bold green]")

@@ -80,7 +80,8 @@ def _load_json(path: str) -> list[dict[str, Any]] | None:
         return None
     try:
         data = json.loads(p.read_text(encoding="utf-8"))
-        return data  # type: ignore[no-any-return]
+        parsed: list[dict[str, Any]] = data
+        return parsed
     except Exception:
         return None
 

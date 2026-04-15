@@ -748,3 +748,72 @@ class TestCascadeReflexionBestOfN:
         result = ref.evaluate(agent, "What is 6x7?")
         response, score = result
         assert 0.0 <= score <= 1.0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. MetaEvolutionEngine — memory property and guard
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestMetaEvolutionMemory:
+    """Verify the new MetaEvolutionEngine.memory property introduced in the
+    audit-fix commit: accessing it before evolve() must raise RuntimeError;
+    after evolve() it must return the EvolutionaryMemory from the last engine."""
+
+    def test_memory_raises_before_evolve(self) -> None:
+        from cambrian.meta_evolution import MetaEvolutionEngine
+
+        class _NullEval:
+            def __call__(self, agent: object, task: str) -> float:
+                return 0.5
+
+        class _EchoBackend:
+            model_name = "echo"
+
+            def generate(self, prompt: str, **kwargs: object) -> str:
+                return "{}"
+
+        from cambrian.mutator import LLMMutator
+
+        backend = _EchoBackend()
+        engine = MetaEvolutionEngine(
+            evaluator=_NullEval(),  # type: ignore[arg-type]
+            mutator=LLMMutator(backend=backend, fallback_on_error=True),  # type: ignore[arg-type]
+            backend=backend,  # type: ignore[arg-type]
+        )
+        import pytest
+        with pytest.raises(RuntimeError, match=r"evolve\(\) has not been called"):
+            _ = engine.memory
+
+    def test_memory_available_after_evolve(self) -> None:
+        from cambrian.agent import Genome
+        from cambrian.memory import EvolutionaryMemory
+        from cambrian.meta_evolution import MetaEvolutionEngine
+        from cambrian.mutator import LLMMutator
+
+        class _ConstEval:
+            def __call__(self, agent: object, task: str) -> float:
+                return 0.5
+
+        class _EchoBackend:
+            model_name = "echo"
+
+            def generate(self, prompt: str, **kwargs: object) -> str:
+                import json
+                import re
+                m = re.search(r"\{[\s\S]+\}", prompt)
+                return m.group(0) if m else json.dumps({"system_prompt": "x"})
+
+        backend = _EchoBackend()
+        engine = MetaEvolutionEngine(
+            evaluator=_ConstEval(),  # type: ignore[arg-type]
+            mutator=LLMMutator(backend=backend, fallback_on_error=True),  # type: ignore[arg-type]
+            backend=backend,  # type: ignore[arg-type]
+            population_size=2,
+        )
+        engine.evolve(
+            seed_genomes=[Genome(system_prompt="Hello")],
+            task="test",
+            n_generations=1,
+        )
+        assert isinstance(engine.memory, EvolutionaryMemory)

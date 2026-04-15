@@ -435,7 +435,8 @@ class PipelineEvaluator:
             raw = self._backend.generate(
                 prompt, system=_JUDGE_SYSTEM, temperature=self._judge_temp
             )
-            score = float(re.search(r"-?[\d.]+", raw).group())  # type: ignore[union-attr]
+            m = re.search(r"-?[\d.]+", raw)
+            score = float(m.group()) if m else 0.5
             return max(0.0, min(1.0, score))
         except Exception:
             return 0.5  # Neutral on parse failure
