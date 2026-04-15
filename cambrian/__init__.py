@@ -102,6 +102,14 @@ from cambrian.glossolalia import (
     GlossaloliaEvaluator,
     GlossaloliaResult,
 )
+from cambrian.inference_scaling import (
+    BestOfN,
+    BeamSearch,
+    ScalingResult,
+    KeywordScorer,
+    SelfConsistencyScorer,
+    length_scorer,
+)
 
 __all__ = [
     # Core
@@ -174,6 +182,12 @@ __all__ = [
     "GlossaloliaReasoner",
     "GlossaloliaEvaluator",
     "GlossaloliaResult",
+    "BestOfN",
+    "BeamSearch",
+    "ScalingResult",
+    "KeywordScorer",
+    "SelfConsistencyScorer",
+    "length_scorer",
     # Meta
     "__version__",
 ]
