@@ -4,6 +4,34 @@ All notable changes to Cambrian are documented here.
 
 ---
 
+## [1.0.4] — 232 more tests, smoke suite, compact README — 1973 passing
+
+**test_smoke.py, test_code_genome_edge.py, test_pipeline_edge.py, README rewrite.**  
+**1973 tests passing.** Zero mypy errors. Zero ruff warnings.
+
+### Added
+- **`tests/test_smoke.py`** — 47 smoke tests: all 126 `__init__.__all__` symbols are
+  importable, 38 submodules import cleanly, dashboard imports without streamlit,
+  backends/evaluators/utils subpackages importable.
+- **`tests/test_code_genome_edge.py`** — 28 edge-case tests for `CodeGenome`
+  (round-trip serialisation, clone independence, str/repr), `CodeAgent` (fitness, generation,
+  clone), `CodeEvaluator` (empty code → 0.0, syntax error → ≤ 0.1, infinite loop timeout,
+  partial pass, all pass → 1.0).
+- **`tests/test_pipeline_edge.py`** — 27 edge-case tests for `PipelineStep` (defaults,
+  round-trip, clone independence) and `Pipeline` (construction, fitness coercion, serialisation,
+  clone with independent steps, repr with/without fitness).
+
+### Fixed
+- **`tests/test_cli_round8.py`**: version assertion now reads `cambrian.__version__`
+  dynamically instead of hardcoding `"1.0.2"` (broke when version bumped to 1.0.3).
+
+### Changed
+- **`README.md`**: complete rewrite — 578 lines → 169 lines, launch-ready, punchy.
+  Value proposition first, 3-command quickstart, concise feature bullets, comparison
+  table, all CLI commands, docs table.
+
+---
+
 ## [1.0.3] — 112 new tests, DEPLOYMENT.md, copyright headers, asyncio fix
 
 **conftest.py, test_export, test_a2a, test_cli_tools, DEPLOYMENT.md.**  

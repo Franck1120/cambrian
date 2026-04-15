@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cambrian-ai"
-version = "1.0.3"
+version = "1.0.4"
 description = "Evolve AI agents autonomously. One command. Zero manual tuning."
 readme = "README.md"
 license = { file = "LICENSE" }
