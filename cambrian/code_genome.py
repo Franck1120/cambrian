@@ -417,7 +417,14 @@ class CodeEvaluator:
     @staticmethod
     def _make_runner(code: str, entry_point: str, inp: str) -> str:
         """Build a sandbox script that imports the code and calls entry_point."""
-        safe_inp = inp.replace("\\", "\\\\").replace("'", "\\'")
+        # Escape backslashes, single quotes, and newlines so the string literal
+        # is valid Python regardless of what the test-case input contains.
+        safe_inp = (
+            inp.replace("\\", "\\\\")
+               .replace("'", "\\'")
+               .replace("\n", "\\n")
+               .replace("\r", "\\r")
+        )
         return (
             f"{code}\n\n"
             f"_result = {entry_point}('{safe_inp}')\n"

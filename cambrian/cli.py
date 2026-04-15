@@ -668,26 +668,35 @@ def distill_agent(
 )
 @click.option(
     "--log-file", default="cambrian_log.json", show_default=True,
-    help="Path to the evolution log JSON written by the evolution engine.",
+    help="Path to the Evolve log JSON written by the evolution engine.",
+)
+@click.option(
+    "--forge-log-file", default="forge_log.json", show_default=True,
+    help="Path to the Forge log JSON written by forge runs.",
 )
 @click.option(
     "--no-browser", is_flag=True, default=False,
     help="Do not open a browser tab automatically.",
 )
-def dashboard(port: int, log_file: str, no_browser: bool) -> None:
-    """Launch the Streamlit live evolution dashboard.
+def dashboard(port: int, log_file: str, forge_log_file: str, no_browser: bool) -> None:
+    """Launch the Streamlit live evolution dashboard (2 tabs: Evolve + Forge).
 
-    Reads LOG_FILE (a JSON log written by the evolution engine) and displays
-    fitness trajectory, top agents, fitness landscape, and more.
+    Reads LOG_FILE (Evolve mode) and FORGE_LOG_FILE (Forge mode) and displays
+    fitness trajectory, top agents, fitness landscape, code/pipeline viewers.
 
     \\b
     Example:
-        cambrian dashboard --port 8501 --log-file my_run.json
+        cambrian dashboard --port 8501 --log-file evolve_run.json
     """
     try:
         from cambrian.dashboard import run_dashboard
         click.echo(f"Starting dashboard on http://localhost:{port} ...")
-        run_dashboard(port=port, log_file=log_file, open_browser=not no_browser)
+        run_dashboard(
+            port=port,
+            log_file=log_file,
+            forge_log_file=forge_log_file,
+            open_browser=not no_browser,
+        )
     except ImportError as exc:
         raise click.ClickException(str(exc)) from exc
 
