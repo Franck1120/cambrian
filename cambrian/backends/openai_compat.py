@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """OpenAI-compatible HTTP backend.
 
 Works with any API that speaks the OpenAI Chat Completions protocol:

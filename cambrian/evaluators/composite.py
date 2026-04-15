@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """CompositeEvaluator — combines multiple evaluators to resist reward hacking.
 
 When a single evaluator is used as the fitness signal, agents can overfit to

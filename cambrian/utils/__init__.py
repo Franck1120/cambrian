@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Cambrian utility modules."""
 
 from cambrian.utils.logging import get_logger

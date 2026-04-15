@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Subprocess sandbox for executing untrusted Python code safely.
 
 Runs code in an isolated subprocess with a hard timeout so that runaway

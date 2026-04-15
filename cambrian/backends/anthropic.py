@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Anthropic Claude backend for Cambrian.
 
 Uses the official ``anthropic`` Python SDK to call the Claude API.

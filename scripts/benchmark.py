@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 #!/usr/bin/env python3
 """Benchmark Cambrian's per-generation throughput without real API calls.
 
@@ -122,7 +123,7 @@ def main(args: argparse.Namespace) -> None:
     Args:
         args: Parsed CLI arguments (population, generations, runs, histogram).
     """
-    print(f"\nCambrian Benchmark (no LLM calls)")
+    print("\nCambrian Benchmark (no LLM calls)")
     print(f"  Population : {args.population}")
     print(f"  Generations: {args.generations}")
     print(f"  Runs       : {args.runs}")
@@ -144,7 +145,7 @@ def main(args: argparse.Namespace) -> None:
 
     print()
     print("-" * 48)
-    print(f"  Per-generation (ms):")
+    print("  Per-generation (ms):")
     print(f"    min    = {_fmt_ms(min(all_gen_times))}")
     print(f"    mean   = {_fmt_ms(statistics.mean(all_gen_times))}")
     print(f"    median = {_fmt_ms(statistics.median(all_gen_times))}")
@@ -152,7 +153,7 @@ def main(args: argparse.Namespace) -> None:
     if len(all_gen_times) > 1:
         print(f"    stdev  = {_fmt_ms(statistics.stdev(all_gen_times))}")
     print()
-    print(f"  Total run time:")
+    print("  Total run time:")
     print(f"    mean   = {_fmt_ms(statistics.mean(all_totals))}")
     print()
 

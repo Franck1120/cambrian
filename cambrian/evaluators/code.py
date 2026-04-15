@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """CodeEvaluator — runs agent-generated code in a sandbox and scores it.
 
 Scoring heuristic:

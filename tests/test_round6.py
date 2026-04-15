@@ -588,20 +588,20 @@ class TestSpeculativeResult:
 
 
 def _run_async(coro: Any) -> Any:
-    """Run an async coroutine reliably on Windows (avoids socket-buffer exhaustion)."""
+    """Run an async coroutine reliably on Windows (avoids socket-buffer exhaustion).
+
+    Uses ProactorEventLoop on Windows — it relies on IOCP instead of socketpair(),
+    so it does not exhaust the OS socket buffer when thousands of tests run in a
+    single process.
+    """
     import sys
 
     if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        # ProactorEventLoop is the default since Python 3.8 on Windows and
+        # does NOT use socketpair(), avoiding WinError 10055 exhaustion.
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
-    for attempt in range(3):
-        try:
-            return asyncio.run(coro)
-        except OSError as exc:
-            # WinError 10055: socket buffer exhaustion — transient, retry
-            if attempt == 2 or getattr(exc, "winerror", None) != 10055:
-                raise
-    return None  # unreachable
+    return asyncio.run(coro)
 
 
 class TestSpeculate:

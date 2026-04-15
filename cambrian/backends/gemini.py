@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Google Gemini backend for Cambrian.
 
 Uses the official ``google-genai`` Python SDK (``google.genai``) to call the

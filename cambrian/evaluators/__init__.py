@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Concrete evaluator implementations."""
 
 from cambrian.evaluators.code import CodeEvaluator

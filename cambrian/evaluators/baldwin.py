@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """BaldwinEvaluator — in-context learning bonus (Baldwin Effect).
 
 The Baldwin Effect (1896) describes how an organism's capacity for

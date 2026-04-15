@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Abstract base class for LLM backends."""
 
 from __future__ import annotations

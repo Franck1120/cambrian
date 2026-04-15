@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """LLM backend implementations for Cambrian."""
 
 from cambrian.backends.base import LLMBackend

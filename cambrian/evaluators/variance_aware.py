@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """VarianceAwareEvaluator — anti-reward-hacking via diversified evaluation.
 
 Reward hacking occurs when an agent learns to game a single metric while

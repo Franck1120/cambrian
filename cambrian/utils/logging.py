@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Structured logging helpers for Cambrian.
 
 Uses Python's stdlib ``logging`` with a rich handler for pretty terminal output

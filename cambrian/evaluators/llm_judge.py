@@ -1,3 +1,4 @@
+# Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """LLMJudgeEvaluator — uses an LLM to score agent responses on a 0-10 scale.
 
 The judge is given the original task, the agent's response, and a rubric
