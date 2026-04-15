@@ -7,7 +7,7 @@ All notable changes to Cambrian are documented here.
 ## [1.0.2] — CLI Round 8, TUTORIAL, Benchmark, Comparison
 
 **New CLI commands, docs, benchmark, VISION, COMPARISON, CLI tests, ENV_VARS.**  
-**1619 tests passing.** Zero mypy errors. Zero ruff warnings.
+**1629 tests passing.** Zero mypy errors. Zero ruff warnings.
 
 ### Added
 - **`cambrian meta-evolve` CLI command** — wraps `MetaEvolutionEngine`; co-evolves
