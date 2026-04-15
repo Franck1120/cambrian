@@ -6,8 +6,8 @@ All notable changes to Cambrian are documented here.
 
 ## [1.0.2] — CLI Round 8, TUTORIAL, Benchmark, Comparison
 
-**New CLI commands, docs, and benchmark script.**  
-**1583 tests passing.** Zero mypy errors. Zero ruff warnings.
+**New CLI commands, docs, benchmark, VISION, COMPARISON, CLI tests, ENV_VARS.**  
+**1619 tests passing.** Zero mypy errors. Zero ruff warnings.
 
 ### Added
 - **`cambrian meta-evolve` CLI command** — wraps `MetaEvolutionEngine`; co-evolves
@@ -26,11 +26,22 @@ All notable changes to Cambrian are documented here.
 - **`docs/API_REFERENCE.md`** — added DPO & Safeguards section with `DPOPair`,
   `DPOSelector`, `DPOTrainer`, `GoalDriftDetector`, `DriftEvent`,
   `FitnessAnomalyDetector`, `SafeguardController`. Bumped to v1.0.1 → v1.0.2.
+- **`docs/COMPARISON.md`** — detailed feature-by-feature comparison with DSPy,
+  DGM, AVO, EvoAgent, MiroFish; includes architectural comparison tables.
+- **`VISION.md`** — project vision: Era 1 (prompt evolution) → Era 2 (ecosystem
+  intelligence) → Era 3 (autonomous self-improvement). The "Cambrian Explosion"
+  analogy. Guiding principles.
+- **`docs/ENV_VARS.md`** — complete reference for all supported environment
+  variables (`OPENAI_API_KEY`, `CAMBRIAN_BASE_URL`, `OPENAI_API_BASE`,
+  `CAMBRIAN_LOG_LEVEL`) with provider examples.
+- **`tests/test_cli_round8.py`** — 36 tests for `meta-evolve`, `tournament`,
+  and `forge` CLI commands; covers --help output, defaults, file I/O, error cases.
 
 ### Changed
 - **`README.md`** — "Cambrian vs the Field" comparison table (DSPy, DGM, AVO,
-  TextGrad feature checklist); CLI section documents `meta-evolve` and `tournament`.
-- **`CHANGELOG.md`** — corrected test badge from 1494 → 1583.
+  TextGrad feature checklist); CLI section documents `meta-evolve` and `tournament`;
+  test badge updated to 1619.
+- **`CHANGELOG.md`** — corrected test badge from 1494 → 1583 → 1619.
 
 ### Fixed
 - `cambrian/cli.py`: `_make_evaluator` call signature in `tournament` command
