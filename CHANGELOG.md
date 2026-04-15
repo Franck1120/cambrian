@@ -4,6 +4,67 @@ All notable changes to Cambrian are documented here.
 
 ---
 
+## [0.9.0] — Round 9
+
+### Added
+
+#### Forge Mode — Code Evolution
+- **CodeGenome** (`cambrian/code_genome.py`): Executable Python code as an
+  evolvable genome.  Tracks `version`, `parent_id`, `loc()` (non-blank lines).
+  `CodeEvaluator` runs each test case in a subprocess sandbox and scores by
+  weighted pass rate + LOC efficiency + runtime bonuses.
+  `CodeMutator` asks the LLM to rewrite code (seed or improve), strips markdown
+  fences, falls back gracefully on errors.
+  `CodeEvolutionEngine` runs the generational loop with elitism, early-exit on
+  perfect fitness, and optional `on_generation` callback.
+
+#### Forge Mode — Pipeline Composition
+- **Pipeline** (`cambrian/pipeline.py`): Ordered list of `PipelineStep` objects
+  as an evolvable genome.  `PipelineRunner` chains steps sequentially (output of
+  step N is input to step N+1).  `PipelineEvaluator` scores by user-provided
+  `score_fn(output, task) -> float`.  `PipelineMutator` adds/removes/reorders
+  steps via LLM, supports crossover.  `PipelineEvolutionEngine` runs the loop.
+- **CLI**: `cambrian forge TASK --mode code|pipeline` entry point.
+
+#### Adaptive Pressures
+- **Dream Phase** (`cambrian/dream.py`): Recombines past experiences via LLM
+  into hybrid synthetic scenarios.  Agents evaluated on dreams get a blended
+  fitness signal (configurable `blend_weight`).  Mimics memory consolidation
+  during sleep.
+- **Quorum Sensing** (`cambrian/quorum.py`): Monitors Shannon entropy of
+  population fitness distribution.  Auto-adjusts `mutation_rate` and `elite_n`
+  toward a target entropy.  `stagnation_detected()` and `should_inject_diversity()`
+  helpers enable reactive control loops.
+
+#### Ensemble & Reflexion
+- **Mixture of Agents** (`cambrian/moa.py`): N agents answer independently; an
+  aggregator LLM synthesises a final answer.  `MoAResult` carries
+  `individual_answers` + `final_answer`.  Robust to single-agent failures.
+- **Quantum Tunneling** (`cambrian/moa.py`): `QuantumTunneler` replaces agents
+  with fresh random genomes at a configurable `tunnel_prob`.  Elite protection,
+  event history, `summary()`.
+- **Reflexion** (`cambrian/reflexion.py`): Generate → critique → revise cycle
+  (Shinn et al. 2023).  `ReflexionAgent` supports N rounds, early-exit on
+  "EXCELLENT" critique, custom reflection backend.  `ReflexionEvaluator` wraps
+  any evaluator and applies Reflexion before scoring via a proxy agent.
+
+#### Dashboard
+- **Streamlit dashboard** (`cambrian/dashboard.py`): Fully rewritten with three
+  tabs — Evolve (fitness chart, population table, best genome viewer), Forge
+  (code viewer + test-case pass/fail grid, pipeline step viewer), Logs (live
+  NDJSON stream).  Supports both NDJSON and legacy JSON array log formats.
+
+### Tests
+- 776 tests total (was 480): +296 new tests across 4 new test files.
+- `test_code_genome.py` (38 tests), `test_pipeline.py` (35 tests),
+  `test_dream_quorum.py` (38 tests), `test_moa_reflexion.py` (39 tests),
+  `test_round9_integration.py` (24 tests).
+
+### Quality
+- ruff clean, mypy clean on all 54 source files.
+
+---
+
 ## [0.8.0] — Round 8
 
 ### Added
