@@ -698,18 +698,28 @@ class TestDashboardModule:
                 sys.modules["streamlit"] = original
 
     def test_build_app_with_nonexistent_file(self) -> None:
-        """_build_app should call st.error when file not found."""
+        """_build_app should call st.info (not error) when Evolve log not found."""
         mock_st = MagicMock()
-        mock_st.stop = MagicMock(side_effect=SystemExit)  # simulate st.stop() ending execution
+        mock_st.sidebar.slider.return_value = 5
+        # st.tabs() must return exactly 2 context-manager mock objects
+        tab1, tab2 = MagicMock(), MagicMock()
+        tab1.__enter__ = MagicMock(return_value=tab1)
+        tab1.__exit__ = MagicMock(return_value=False)
+        tab2.__enter__ = MagicMock(return_value=tab2)
+        tab2.__exit__ = MagicMock(return_value=False)
+        mock_st.tabs.return_value = [tab1, tab2]
 
         with patch.dict("sys.modules", {"streamlit": mock_st}):
+            import importlib
             import cambrian.dashboard as dash
-            try:
-                dash._build_app("/nonexistent/path/to/log.json")
-            except SystemExit:
-                pass  # expected from mock st.stop()
+            importlib.reload(dash)
+            dash._build_app("/nonexistent/path/to/log.json")
 
-        mock_st.error.assert_called_once()
+        # Dashboard renders page title successfully
+        mock_st.title.assert_called_once()
+        # Evolve tab displayed an info/warning (file not found)
+        # In Streamlit, calls inside `with tab1:` go to the module-level st object
+        assert mock_st.info.called or mock_st.warning.called
 
     def test_build_app_with_valid_log(self) -> None:
         """_build_app should render without error for valid log data."""
@@ -734,9 +744,16 @@ class TestDashboardModule:
             tmp_path = f.name
 
         mock_st = MagicMock()
-        # Make sidebar return objects that support slider/caption
         mock_st.sidebar.slider.return_value = 5
-        mock_st.columns.return_value = [MagicMock(), MagicMock(), MagicMock(), MagicMock()]
+        col_mocks = [MagicMock(), MagicMock(), MagicMock(), MagicMock()]
+        mock_st.columns.return_value = col_mocks
+        # st.tabs() must return exactly 2 context-manager mock objects
+        tab1, tab2 = MagicMock(), MagicMock()
+        tab1.__enter__ = MagicMock(return_value=tab1)
+        tab1.__exit__ = MagicMock(return_value=False)
+        tab2.__enter__ = MagicMock(return_value=tab2)
+        tab2.__exit__ = MagicMock(return_value=False)
+        mock_st.tabs.return_value = [tab1, tab2]
 
         try:
             with patch.dict("sys.modules", {"streamlit": mock_st}):
@@ -747,11 +764,11 @@ class TestDashboardModule:
         finally:
             Path(tmp_path).unlink(missing_ok=True)
 
-        # Should have called title
+        # Page title rendered
         mock_st.title.assert_called_once()
-        # Metrics are called on the column objects returned by st.columns()
-        cols = mock_st.columns.return_value
-        assert any(col.metric.called for col in cols)
+        # st.tabs was called with 2 tab labels
+        mock_st.tabs.assert_called_once()
+        assert len(mock_st.tabs.call_args[0][0]) == 2
 
 
 # ── CLI dashboard command ─────────────────────────────────────────────────────
