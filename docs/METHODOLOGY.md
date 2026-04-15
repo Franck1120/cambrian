@@ -54,6 +54,11 @@ primary academic reference and explains how the theory translates into code.
 43. [Transgenerational Epigenetics](#43-transgenerational-epigenetics)
 44. [B/T-cell Immune Memory](#44-bt-cell-immune-memory)
 45. [Neuromodulation](#45-neuromodulation)
+46. [Metamorphosis (Holometabolous Lifecycle)](#46-metamorphosis-holometabolous-lifecycle)
+47. [Ecosystem (Ecological Role-Based Fitness)](#47-ecosystem-ecological-role-based-fitness)
+48. [Fractal Evolution (Multi-Scale Recursive Search)](#48-fractal-evolution-multi-scale-recursive-search)
+49. [Direct Preference Optimization (DPO) Selection](#49-direct-preference-optimization-dpo-selection)
+50. [SAHOO Safeguards (Goal Drift & Anomaly Detection)](#50-sahoo-safeguards-goal-drift--anomaly-detection)
 
 ---
 
@@ -1164,6 +1169,215 @@ sp_delta = sp_range × (0.5×dopamine − 0.5×acetylcholine)
 
 > Friston, K., et al. (2012). Dopamine, Affordance and Active Inference.
 > *PLOS Computational Biology*, 8(1), e1002327.
+
+---
+
+## 46. Metamorphosis (Holometabolous Lifecycle)
+
+**Core idea:** Biological holometabolism — larva, pupa (chrysalis), imago —
+imposes qualitatively different developmental pressures at each stage.  Mapping
+this onto AI evolution creates a structured progression: broad early exploration
+yields to a compact consolidation phase, after which the agent specialises for
+deployment.
+
+**Theoretical basis:** Developmental plasticity theory (West-Eberhard 2003)
+argues that phenotypic reorganisation during a quiescent intermediate phase
+allows integration of environmentally acquired information.  Applied to prompt
+evolution, the chrysalis phase is the moment when the LLM rewrites the entire
+genome with full retrospective access to the larval exploration history.
+
+In Cambrian (`cambrian/metamorphosis.py`):
+- **LARVA** — `mutation_rate_multiplier=1.5`, no strategy constraint.  The
+  agent explores broadly.  Advances when `fitness ≥ fitness_threshold` AND
+  `generations_in_phase ≥ min_generations`.
+- **CHRYSALIS** — `mutation_rate_multiplier=0.0` (frozen).  `metamorphose()`
+  calls the LLM to produce a restructured system prompt from the larval history.
+  The agent does not evolve structurally during this phase.
+- **IMAGO** — `mutation_rate_multiplier=0.5`, strategy locked to
+  `"chain-of-thought"`, temperature lowered.  The agent exploits its
+  consolidated strategy.  Terminal phase — no further transitions.
+
+`MetamorphosisController.advance(agent, generation, fitness)` enforces both
+criteria and logs a `MorphEvent` on transition.  `MetamorphicPopulation.tick()`
+orchestrates the population-level loop and triggers reorganisation automatically
+when an agent enters CHRYSALIS.
+
+**References:**
+
+> West-Eberhard, M.J. (2003). *Developmental Plasticity and Evolution*.
+> Oxford University Press.
+
+> Moran, N.A. (1994). Adaptation and constraint in the complex life cycles of
+> animals. *Annual Review of Ecology and Systematics*, 25, 573–600.
+
+---
+
+## 47. Ecosystem (Ecological Role-Based Fitness)
+
+**Core idea:** Natural ecosystems maintain diversity through niche
+differentiation — organisms occupy non-overlapping roles that collectively
+stabilise the community.  Superimposing ecological roles on an evolutionary
+population prevents monopoly by a single genome phenotype and introduces
+frequency-dependent selection pressure.
+
+**Theoretical basis:** Lotka-Volterra predator-prey dynamics show that
+population stability emerges from coupled negative feedback loops.  Red Queen
+co-evolution (Van Valen 1973) further argues that competition with a changing
+biotic environment maintains evolutionary pressure even on high-fitness agents.
+
+In Cambrian (`cambrian/ecosystem.py`):
+
+| Role | Mechanism | Fitness effect |
+|------|-----------|----------------|
+| **HERBIVORE** | Counts unique strategies in the rest of the population | Bonus × diversity count |
+| **PREDATOR** | Identifies prey (fitness < threshold); hunts weakest | Bonus × prey count |
+| **DECOMPOSER** | Identifies recyclable agents (fitness below threshold) | Bonus × recyclable count |
+| **PARASITE** | Latches onto strongest eligible host | Gain from host; host loses `parasite_drain` |
+
+All fitness deltas are collected **atomically before any fitness is written**
+so that predators, parasites, and decomposers all act on the same pre-round
+snapshot.  `auto_assign()` distributes roles by fitness rank (top 20% →
+PREDATOR, bottom 20% → DECOMPOSER, random 20% → PARASITE, remainder →
+HERBIVORE), creating a structurally balanced ecosystem each generation.
+
+`EcosystemEvaluator` provides a plug-in blending layer: final score =
+`(1-w)*base_score + w*ecological_score`.
+
+**References:**
+
+> Van Valen, L. (1973). A new evolutionary law. *Evolutionary Theory*, 1, 1–30.
+
+> Lotka, A.J. (1925). *Elements of Physical Biology*. Williams & Wilkins.
+
+> Nowak, M.A., & May, R.M. (1992). Evolutionary games and spatial chaos.
+> *Nature*, 359, 826–829.
+
+---
+
+## 48. Fractal Evolution (Multi-Scale Recursive Search)
+
+**Core idea:** Self-similar evolutionary search across multiple resolutions of
+the genome.  Coarse (MACRO) evolution optimises overall strategy; medium (MESO)
+evolution refines paragraph structure; fine (MICRO) evolution polishes word
+choice.  Elite solutions from each scale seed the next, and the best micro-level
+refinement propagates back to the macro population.
+
+**Theoretical basis:** Hierarchical search (Schmidhuber 1997) and self-similar
+optimisation landscapes (Mandelbrot 1982) suggest that the same evolutionary
+operators applied at different granularities can efficiently navigate landscapes
+that resist single-resolution search.  In NLP, compositionality means that
+optimal prompts exhibit structure at all levels: strategy → paragraph → phrase.
+
+In Cambrian (`cambrian/fractal.py`):
+
+```
+FractalScale: MACRO(0) → MESO(1) → MICRO(2)
+
+Per cycle:
+  1. MACRO population evolves n_generations (temperature 0.7, strategy "chain-of-thought")
+  2. MACRO elite genome seeds MESO population (temperature 0.5, strategy "step-by-step")
+  3. MESO elite seeds MICRO population (temperature 0.3, strategy "direct")
+  4. MICRO best genome propagates back to MACRO as a refinement
+```
+
+`FractalMutator` dispatches to three scale-specific methods:
+- `mutate_macro`: rewrites the full strategy and high-level structure
+- `mutate_meso`: refines a specific paragraph or sentence block
+- `mutate_micro`: replaces a short word or phrase in context
+
+All three methods fall back to the original genome on backend errors.
+
+`FractalEvolution.evolve(seed_genome, task, n_cycles)` orchestrates the full
+recursive loop across scales.
+
+**References:**
+
+> Schmidhuber, J. (1997). Discovering Neural Nets with Low Kolmogorov Complexity
+> and High Generalization Capability. *Neural Networks*, 10(5), 857–873.
+
+> Mandelbrot, B.B. (1982). *The Fractal Geometry of Nature*. W.H. Freeman.
+
+> Bengio, Y., et al. (2013). Representation Learning: A Review and New
+> Perspectives. *IEEE Transactions on Pattern Analysis and Machine Intelligence*,
+> 35(8), 1798–1828.
+
+---
+
+## 49. Direct Preference Optimization (DPO) Selection
+
+**Core idea:** DPO (Rafailov et al. 2023) trains language models directly on
+preference pairs without an explicit reward model.  In Cambrian, we adapt the
+spirit of DPO: pairs of (chosen, rejected) agents are constructed from fitness
+rankings, and chosen agents receive a fitness bonus proportional to the margin
+— creating a selection pressure that mimics DPO's preference signal.
+
+**Theoretical basis:** Standard RLHF requires a separate reward model trained
+on preferences.  DPO shows that the preference signal can be applied directly
+to the policy, collapsing two training stages into one.  Here, `agent.fitness`
+serves as the policy's value function, and the DPO reward adjusts it without
+gradient descent.
+
+In Cambrian (`cambrian/dpo.py`):
+- `DPOSelector.build_pairs()`: pairs agents by fitness rank (adjacent or
+  random strategy); always sets the higher-fitness member as `chosen`.
+- `compute_dpo_reward(pair)` = `clamp(pair.margin × beta, 0, 1)`.
+- `apply()` adds the reward to each chosen agent's fitness in-place (clamped
+  to `[0, 1]`).
+- `DPOTrainer.refine(agent, pairs, task)`: calls the LLM backend with a
+  structured prompt listing chosen patterns to emulate and rejected patterns to
+  avoid; repeats `n_refinements` times; falls back to the unmodified clone on
+  backend error.
+
+**References:**
+
+> Rafailov, R., Sharma, A., Mitchell, E., et al. (2023). Direct Preference
+> Optimization: Your Language Model is Secretly a Reward Model.
+> *arXiv:2305.18290*.
+
+> Christiano, P., et al. (2017). Deep Reinforcement Learning from Human
+> Preferences. *Advances in Neural Information Processing Systems*, 30.
+
+---
+
+## 50. SAHOO Safeguards (Goal Drift & Anomaly Detection)
+
+**Core idea:** Evolutionary processes can produce adversarial optima —
+agents that score well on the measured metric while diverging from the intended
+task (reward hacking) or that gradually drift from their original goal through
+successive mutations.  Explicit monitors catch both failure modes before they
+propagate through the population.
+
+**Theoretical basis:** SAHOO (Safety-Aware Holistic Optimisation and Oversight)
+advocates for continuous alignment monitoring throughout the optimisation
+process, not just at deployment.  Campbell (2019) formalises specification
+gaming as the gap between intended and measured reward; Amodei et al. (2016)
+catalogue the classes of misaligned behaviour that emerge under optimisation
+pressure.
+
+In Cambrian (`cambrian/safeguards.py`):
+- **Goal Drift** — `GoalDriftDetector` computes
+  `drift_score = 1 - Jaccard(intent_tokens, current_prompt_tokens)`.
+  Jaccard similarity is computed over word-level token sets (lowercase,
+  punctuation stripped) — zero external dependencies.  A `drift_score >
+  threshold` sets `DriftEvent.flagged = True`.
+- **Anomaly Detection** — `FitnessAnomalyDetector` maintains a per-agent
+  fitness history and flags agents whose current fitness exceeds
+  `mean + z_threshold × std` over the history (requiring `min_history`
+  samples to reduce false positives on cold-start).
+- **Remediation** — `SafeguardController.remediate(agent, task)` calls the
+  LLM backend with the agent's original intent to realign the system prompt.
+  Falls back to a clone of the original agent on backend error.
+
+**References:**
+
+> Amodei, D., Olah, C., Steinhardt, J., et al. (2016). Concrete Problems in
+> AI Safety. *arXiv:1606.06565*.
+
+> Campbell, M. (2019). Solving Complex Problems with AI. *Science*, 364(6435),
+> 30–31.
+
+> Leike, J., Martic, M., Krakovna, V., et al. (2017). AI Safety Gridworlds.
+> *arXiv:1711.09883*.
 
 ---
 
