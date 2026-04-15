@@ -4,6 +4,53 @@ All notable changes to Cambrian are documented here.
 
 ---
 
+## [1.0.1] — Tier 5: Lifecycle, Ecology & Fractal Evolution
+
+**New modules:** Metamorphosis, Ecosystem, Fractal, DPO selection, SAHOO Safeguards.
+**1494 tests passing.** Zero mypy errors. Zero ruff warnings.
+
+### Added
+- **`cambrian/metamorphosis.py`** — Holometabolous agent lifecycle: LARVA (broad
+  exploration, 1.5x mutation) → CHRYSALIS (LLM-driven genome reorganisation,
+  frozen mutation) → IMAGO (exploit, 0.5x mutation). `MetamorphosisController`
+  tracks per-agent phase, enforces min-generations + fitness-threshold criteria,
+  and calls `metamorphose()` for chrysalis reorganisation. `MetamorphicPopulation`
+  orchestrates population-wide ticks.
+- **`cambrian/ecosystem.py`** — 4-role ecological fitness dynamics: HERBIVORE
+  (diversity bonus per unique strategy), PREDATOR (hunts weak agents), DECOMPOSER
+  (recycles low-fitness agents), PARASITE (drains strongest host). Deltas are
+  collected atomically before application. `EcosystemEvaluator` blends base score
+  with ecological signal. `auto_assign()` distributes roles by fitness rank.
+- **`cambrian/fractal.py`** — Recursive multi-scale evolution: MACRO → MESO → MICRO.
+  Each scale seeds the next from its elite, results bubble back up. `FractalMutator`
+  applies broad/medium/localised genome rewrites per scale. `FractalEvolution`
+  orchestrates the full recursive loop.
+- **`cambrian/dpo.py`** — Direct Preference Optimization as alternative selection:
+  `DPOSelector` builds preferred/rejected pairs and applies DPO fitness bonuses.
+  `DPOTrainer` uses an LLM backend to refine bottom-50% agents toward chosen patterns.
+- **`cambrian/safeguards.py`** — SAHOO-inspired safety monitors: `GoalDriftDetector`
+  uses Jaccard word-overlap to flag agents diverging from their original intent.
+  `FitnessAnomalyDetector` catches reward-hacking spikes via z-score. `SafeguardController`
+  orchestrates both + optional LLM-guided remediation.
+- **`docs/API_REFERENCE.md`** — Comprehensive reference: 119 public symbols across
+  15 sections, full parameter tables and return types.
+- **`examples/demo_full_evolution.py`** — Offline demo combining 8 techniques
+  (QuorumSensor, DreamPhase, ApoptosisController, MetamorphosisController,
+  EcosystemInteraction, NeuromodulatorBank) — runs instantly with mocked backends.
+
+### Tests
+- 61 tests for metamorphosis (phase transitions, chrysalis reorg, phase pressure)
+- 67 tests for ecosystem (auto-assign, interact, apply_events, EcosystemEvaluator)
+- 60 tests for fractal (scale ordering, mutations, FractalEvolution end-to-end)
+- 43 integration tests combining 3+ techniques (QuorumSensor+Apoptosis+Neuro, etc.)
+- Edge-case tests: IMAGO terminal lock, extinction scenarios, singleton populations
+
+### Fixed
+- Flaky test `test_speculate_returns_best_candidate` — WinError 10055 (socket buffer
+  exhaustion) fixed with `asyncio.run()` + `WindowsSelectorEventLoopPolicy` + retry
+
+---
+
 ## [1.0.0] — First Stable Release
 
 **Cambrian is feature-complete and production-stable.**

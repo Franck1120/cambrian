@@ -1,6 +1,6 @@
 # Cambrian — Architecture Reference
 
-> Version: 0.19.0 · Last updated: 2026-04-15
+> Version: 1.0.1 · Last updated: 2026-04-15
 
 ---
 
@@ -425,6 +425,178 @@ Cycle per evaluation:
   4. Always restore original genome prompt (finally block)
 ```
 
+### Metamorphosis (`cambrian/metamorphosis.py`)
+
+Holometabolous-inspired discrete lifecycle — three phases with independent
+evolutionary pressures:
+
+```
+MetamorphicPhase (str, Enum)
+ ├── LARVA     — broad exploration; mutation_rate_multiplier=1.5
+ ├── CHRYSALIS — frozen mutation (0.0); LLM-driven internal reorganisation
+ └── IMAGO     — specialised exploitation; mutation_rate_multiplier=0.5
+
+PhaseConfig(phase, min_generations, fitness_threshold, mutation_rate_multiplier)
+
+MorphEvent(agent_id, from_phase, to_phase, generation, fitness_at_transition)
+
+MetamorphosisController
+ ├── advance(agent, generation, fitness) -> MorphEvent | None
+ │    Increments gen-in-phase; transitions when min_gens + fitness met
+ ├── metamorphose(agent, task) -> Agent
+ │    LLM call rewrites genome for chrysalis phase; fallback on error
+ ├── apply_phase_pressure(genome, phase) -> Genome
+ │    LARVA: +0.3 temperature; IMAGO: strategy="chain-of-thought", -0.3 temperature
+ ├── current_phase(agent) -> MetamorphicPhase
+ ├── mutation_rate_multiplier(agent) -> float
+ ├── events -> list[MorphEvent]           # chronological log
+ └── phase_distribution() -> dict[str,int]
+
+MetamorphicPopulation(controller)
+ ├── register(agent)
+ └── tick(population, generation, task) -> list[MorphEvent]
+      # Auto-triggers metamorphose() when agent enters CHRYSALIS
+```
+
+Phase progression: LARVA → CHRYSALIS → IMAGO (IMAGO is terminal).
+Each transition requires both `min_generations` in current phase
+**and** `fitness >= fitness_threshold`.
+
+---
+
+### Ecosystem (`cambrian/ecosystem.py`)
+
+4-role ecological pressure that shapes fitness dynamics each generation:
+
+```
+EcologicalRole (str, Enum)
+ ├── HERBIVORE   — forages diversity; bonus per unique strategy in population
+ ├── PREDATOR    — hunts weak agents; bonus per prey below hunt_threshold
+ ├── DECOMPOSER  — recycles failed agents; bonus per agent below recycle_threshold
+ └── PARASITE    — latches onto strong host; gain from strongest eligible host
+
+EcosystemConfig
+ ├── herbivore_diversity_bonus: float = 0.05
+ ├── predator_hunt_threshold: float = 0.3
+ ├── predator_hunt_bonus: float = 0.1
+ ├── decomposer_recycle_threshold: float = 0.25
+ ├── decomposer_bonus: float = 0.08
+ ├── parasite_host_threshold: float = 0.7
+ ├── parasite_drain: float = 0.03   # subtracted from host
+ └── parasite_gain: float = 0.06
+
+EcosystemInteraction
+ ├── assign_role(agent, role)
+ ├── get_role(agent) -> EcologicalRole | None
+ ├── auto_assign(population)
+ │    top 20% → PREDATOR · bottom 20% → DECOMPOSER
+ │    random 20% of middle → PARASITE · rest → HERBIVORE
+ ├── interact(population, task) -> list[EcosystemEvent]
+ │    Collects deltas atomically, then applies; no mid-loop mutation
+ ├── apply_events(events, population)
+ │    Clamps fitness to [0.0, 1.0]
+ ├── role_counts() -> dict[str,int]
+ └── events -> list[EcosystemEvent]
+
+EcosystemEvaluator(base_evaluator, interaction, interaction_weight=0.2)
+ └── evaluate(agent, task) -> float
+      # blended = (1-w)*base_score + w*ecological_score
+```
+
+Interaction deltas are **collected before any fitness is written** so that
+predators, parasites, and decomposers all act on the same pre-round snapshot.
+
+---
+
+### Fractal Evolution (`cambrian/fractal.py`)
+
+Recursive multi-scale search — each scale seed the next and results bubble
+back up, creating self-similar pressure across genome granularities:
+
+```
+FractalScale (int, Enum)
+ ├── MACRO = 0   — overall strategy + structure; temperature 0.7
+ ├── MESO  = 1   — paragraph/section level; temperature 0.5
+ └── MICRO = 2   — word/phrase level; temperature 0.3
+
+ScaleConfig(scale, population_size, n_generations,
+            mutation_temperature, fragment_size)
+  __post_init__: applies scale-specific defaults for temperature + fragment_size
+
+FractalResult(scale, best_genome, best_fitness, n_evaluations)
+
+FractalMutator(backend)
+ ├── mutate_macro(genome, task) -> Genome   # full-strategy rewrite
+ ├── mutate_meso(genome, task)  -> Genome   # paragraph-level tweak
+ └── mutate_micro(genome, task) -> Genome   # local word substitution
+     All fall back to original genome on backend error.
+
+FractalPopulation(scale, config, backend, evaluator)
+ └── evolve_step(seed_genomes, task) -> FractalResult
+
+FractalEvolution(backend, evaluator, macro_config, meso_config, micro_config)
+ └── evolve(seed, task, n_rounds) -> FractalResult
+      Loop: macro → seed meso from macro elite → seed micro from meso elite
+            → bubble micro best back up → update macro with micro insight
+```
+
+---
+
+### DPO Selection (`cambrian/dpo.py`)
+
+Direct Preference Optimization as an alternative selection pressure:
+
+```
+DPOPair(chosen, rejected, task, margin)
+  margin = chosen.fitness - rejected.fitness
+
+DPOSelector(beta=0.1, pair_strategy="adjacent"|"random")
+ ├── build_pairs(population, task) -> list[DPOPair]
+ ├── compute_dpo_reward(pair) -> float   # margin * beta, clamped [0,1]
+ └── apply(population, task) -> list[Agent]
+      Adds DPO reward to chosen agents' fitness in-place
+
+DPOTrainer(backend, beta=0.1, n_refinements=3)
+ ├── collect_pairs(population, task) -> list[DPOPair]
+ │    top-50% vs bottom-50%, zipped into pairs
+ ├── refine(agent, pairs, task) -> Agent
+ │    LLM rewrites genome preferring chosen patterns, avoiding rejected
+ └── train(population, task, n_pairs=3) -> list[Agent]
+      Collects pairs, refines bottom-50%, returns updated population
+```
+
+---
+
+### Safeguards (`cambrian/safeguards.py`)
+
+SAHOO-inspired safety monitors for goal drift and reward hacking:
+
+```
+DriftEvent(agent_id, generation, drift_score, original_intent,
+           current_prompt, flagged)
+  drift_score = 1.0 - jaccard_similarity(intent_tokens, prompt_tokens)
+  flagged = drift_score > drift_threshold
+
+GoalDriftDetector(drift_threshold=0.4, window=5)
+ ├── register(agent, intent)
+ ├── measure(agent, generation) -> DriftEvent
+ ├── scan_population(population, generation) -> list[DriftEvent]  # flagged only
+ └── events -> list[DriftEvent]
+
+FitnessAnomalyDetector(z_threshold=2.5, min_history=5)
+ ├── record(agent, generation)
+ ├── is_anomalous(agent) -> bool   # fitness > mean + z*std in history
+ └── scan(population, generation) -> list[str]  # anomalous agent_ids
+
+SafeguardController(drift_detector, anomaly_detector, backend=None)
+ ├── check(population, generation) -> dict[str, list]
+ │    {"drift": [DriftEvent,...], "anomalies": [agent_id,...]}
+ └── remediate(agent, task) -> Agent
+      LLM realigns prompt to original intent; fallback to clone
+```
+
+---
+
 ### Knowledge Distillation (CLI `distill-agent`)
 
 Compresses an evolved large-model genome for deployment on a smaller model:
@@ -524,6 +696,11 @@ cambrian/
 ├── transgenerational.py TransgenerationalRegistry, EpigeneMark (Tier 4)
 ├── immune_memory.py     ImmuneCortex, BCellMemory, TCellMemory (Tier 4)
 ├── neuromodulation.py   NeuromodulatorBank, NeuroState, *Modulator (Tier 4)
+├── metamorphosis.py     MetamorphicPhase, MetamorphosisController, MetamorphicPopulation (Tier 5)
+├── ecosystem.py         EcologicalRole, EcosystemInteraction, EcosystemEvaluator (Tier 5)
+├── fractal.py           FractalScale, FractalMutator, FractalPopulation, FractalEvolution (Tier 5)
+├── dpo.py               DPOPair, DPOSelector, DPOTrainer (Tier 5)
+├── safeguards.py        GoalDriftDetector, FitnessAnomalyDetector, SafeguardController (Tier 5)
 ├── dashboard.py         Streamlit dashboard (_build_app, run_dashboard)
 ├── cli.py               Click CLI entry point (9 commands)
 ├── __main__.py          python -m cambrian entry point

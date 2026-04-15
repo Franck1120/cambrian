@@ -145,6 +145,15 @@ from cambrian.neuromodulation import (
     NoradrenalineModulator,
 )
 
+# Tier 5 — DPO selection, Safeguards
+from cambrian.dpo import DPOPair, DPOSelector, DPOTrainer
+from cambrian.safeguards import (
+    DriftEvent,
+    FitnessAnomalyDetector,
+    GoalDriftDetector,
+    SafeguardController,
+)
+
 # Tier 5 — Metamorphosis, Ecosystem, Fractal Evolution
 from cambrian.metamorphosis import (
     MetamorphicPhase,
@@ -303,6 +312,14 @@ __all__ = [
     "FractalMutator",
     "FractalPopulation",
     "FractalEvolution",
+    # Tier 5 — DPO & Safeguards
+    "DPOPair",
+    "DPOSelector",
+    "DPOTrainer",
+    "DriftEvent",
+    "GoalDriftDetector",
+    "FitnessAnomalyDetector",
+    "SafeguardController",
     # Meta
     "__version__",
 ]
