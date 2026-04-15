@@ -44,6 +44,37 @@ from cambrian.self_play import SelfPlayEvaluator, TournamentRecord, run_tourname
 from cambrian.meta_evolution import MetaEvolutionEngine, HyperParams
 from cambrian.world_model import WorldModelEvaluator, WorldModel, world_model_fitness
 
+# Round 9 — Forge mode: Code Evolution + Pipeline Composition
+from cambrian.code_genome import (
+    CodeGenome,
+    CodeMutator,
+    CodeEvaluator,
+    CodeEvaluationResult,
+    CodeEvolutionEngine,
+    TestCase,
+)
+from cambrian.pipeline import (
+    Pipeline,
+    PipelineStep,
+    PipelineRunner,
+    PipelineEvaluator,
+    PipelineMutator,
+    PipelineEvolutionEngine,
+)
+
+# Round 9 — Adaptive Pressures: Dream Phase + Quorum Sensing
+from cambrian.dream import DreamPhase, DreamScenario, Experience
+from cambrian.quorum import QuorumSensor, QuorumState
+
+# Round 9 — Ensemble & Reflexion
+from cambrian.moa import MixtureOfAgents, MoAResult, QuantumTunneler, TunnelEvent
+from cambrian.reflexion import (
+    ReflexionAgent,
+    ReflexionEvaluator,
+    ReflexionResult,
+    ReflexionRound,
+)
+
 __all__ = [
     # Core
     "Agent",
@@ -74,6 +105,35 @@ __all__ = [
     "WorldModelEvaluator",
     "WorldModel",
     "world_model_fitness",
+    # Code Evolution (Forge)
+    "CodeGenome",
+    "CodeMutator",
+    "CodeEvaluator",
+    "CodeEvaluationResult",
+    "CodeEvolutionEngine",
+    "TestCase",
+    # Pipeline Composition (Forge)
+    "Pipeline",
+    "PipelineStep",
+    "PipelineRunner",
+    "PipelineEvaluator",
+    "PipelineMutator",
+    "PipelineEvolutionEngine",
+    # Adaptive Pressures
+    "DreamPhase",
+    "DreamScenario",
+    "Experience",
+    "QuorumSensor",
+    "QuorumState",
+    # Ensemble & Reflexion
+    "MixtureOfAgents",
+    "MoAResult",
+    "QuantumTunneler",
+    "TunnelEvent",
+    "ReflexionAgent",
+    "ReflexionEvaluator",
+    "ReflexionResult",
+    "ReflexionRound",
     # Meta
     "__version__",
 ]

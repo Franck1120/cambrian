@@ -41,25 +41,38 @@ def _load_log(log_file: str) -> list[dict[str, Any]]:
     if not raw:
         return []
 
-    # Try NDJSON first (one JSON per line)
+    # Try NDJSON first (one JSON object per line — dicts only)
     entries: list[dict[str, Any]] = []
     for line in raw.splitlines():
         line = line.strip()
         if not line:
             continue
         try:
-            entries.append(json.loads(line))
+            obj = json.loads(line)
+            # Accept only dicts (skip bare arrays that appear in legacy JSON)
+            if isinstance(obj, dict):
+                entries.append(obj)
         except json.JSONDecodeError:
             continue
 
     if entries:
         return entries
 
-    # Fallback: legacy JSON array
+    # Fallback: legacy JSON array (entire file is a JSON array)
     try:
         data = json.loads(raw)
         if isinstance(data, list):
-            return data  # type: ignore[return-value]
+            # Flatten one level: each element should be a dict (generation record)
+            result: list[dict[str, Any]] = []
+            for item in data:
+                if isinstance(item, dict):
+                    result.append(item)
+                elif isinstance(item, list):
+                    # Legacy format: list of agent lists per generation
+                    for sub in item:
+                        if isinstance(sub, dict):
+                            result.append(sub)
+            return result
         if isinstance(data, dict):
             return [data]
     except json.JSONDecodeError:
@@ -104,6 +117,8 @@ def _build_app(log_file: str) -> None:
         page_icon="\U0001f9ec",
         layout="wide",
     )
+
+    st.title("\U0001f9ec Cambrian Dashboard")
 
     # ── Sidebar ───────────────────────────────────────────────────────────────
 
@@ -330,10 +345,10 @@ def _render_evolve_tab(
         ):
             st.markdown("**System prompt:**")
             st.code(genome.get("system_prompt", "(empty)"), language="text")
-            col_a, col_b, col_c = st.columns(3)
-            col_a.metric("Model", genome.get("model", ""))
-            col_b.metric("Temperature", f"{genome.get('temperature', 0.7):.2f}")
-            col_c.metric("Strategy", genome.get("strategy", ""))
+            _cols = st.columns(3)
+            _cols[0].metric("Model", genome.get("model", ""))
+            _cols[1].metric("Temperature", f"{genome.get('temperature', 0.7):.2f}")
+            _cols[2].metric("Strategy", genome.get("strategy", ""))
 
     # Export button
     if sorted_agents:
@@ -415,7 +430,7 @@ def _render_forge_code_tab(
             import pandas as pd
             df = pd.DataFrame({
                 "Generation": gens * 2,
-                "Value": fitnesses + [l / max(max(locs), 1) for l in locs],
+                "Value": fitnesses + [loc_val / max(max(locs), 1) for loc_val in locs],
                 "Series": ["Fitness"] * len(gens) + ["LOC (norm)"] * len(gens),
             })
             try:
@@ -432,7 +447,7 @@ def _render_forge_code_tab(
                 )
                 st.altair_chart(chart, use_container_width=True)
             except ImportError:
-                st.line_chart(pd.DataFrame({"Fitness": fitnesses, "LOC (norm)": [l / max(max(locs), 1) for l in locs]}, index=gens))
+                st.line_chart(pd.DataFrame({"Fitness": fitnesses, "LOC (norm)": [loc_val / max(max(locs), 1) for loc_val in locs]}, index=gens))
         except ImportError:
             st.write("Install pandas for charts.")
 

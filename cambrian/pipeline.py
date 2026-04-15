@@ -431,7 +431,7 @@ class PipelineMutator:
             data = json.loads(raw.strip())
             # Validate minimal structure
             if "steps" in data and isinstance(data["steps"], list):
-                return data  # type: ignore[return-value]
+                return dict(data)
         except (json.JSONDecodeError, TypeError):
             pass
         return fallback.to_dict()

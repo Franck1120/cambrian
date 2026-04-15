@@ -432,7 +432,7 @@ def forge(
 
     else:
         # pipeline mode
-        from cambrian.pipeline import Pipeline, PipelineStep, PipelineEvolutionEngine
+        from cambrian.pipeline import Pipeline, PipelineEvolutionEngine
 
         def _stub_score(output_text: str, _task: str) -> float:
             # Without a real evaluator, score by non-emptiness + length heuristic

@@ -152,7 +152,14 @@ class ReflexionAgent:
         self._critique_temp = critique_temperature
         self._revision_temp = revision_temperature
         self._stop_excellent = stop_if_excellent
-        self._reflection_backend = reflection_backend or agent.backend
+        # Ensure we always have a backend (prefer explicit, fall back to agent's)
+        backend = reflection_backend if reflection_backend is not None else agent.backend
+        if backend is None:
+            raise ValueError(
+                "ReflexionAgent requires a backend. "
+                "Pass reflection_backend= or ensure agent has a backend."
+            )
+        self._reflection_backend: LLMBackend = backend
 
     def run(self, task: str) -> ReflexionResult:
         """Run the generate → critique → revise cycle on *task*.
@@ -277,17 +284,19 @@ class ReflexionEvaluator:
             reflection_backend=backend,
         )
         result = reflexion.run(task)
-        # Temporarily inject the improved response back into the evaluation
-        # by creating a thin wrapper agent that returns the improved response
-        original_run = agent.run
+        # Evaluate using the improved response: create a lightweight proxy agent
+        # that overrides run() without monkey-patching the original
+        from cambrian.agent import Agent as _Agent, Genome as _Genome
 
-        def _patched_run(_task: str) -> str:
-            return result.final_response
+        improved_response = result.final_response
 
-        try:
-            agent.run = _patched_run  # type: ignore[method-assign]
-            score = float(self._evaluator.evaluate(agent, task))
-        finally:
-            agent.run = original_run  # type: ignore[method-assign]
+        class _ProxyAgent(_Agent):
+            def run(self, _task: str) -> str:
+                return improved_response
 
-        return score
+        proxy = _ProxyAgent(
+            genome=agent.genome,
+            backend=agent.backend,
+            agent_id=agent.agent_id,
+        )
+        return float(self._evaluator.evaluate(proxy, task))

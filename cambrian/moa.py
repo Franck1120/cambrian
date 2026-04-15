@@ -91,7 +91,12 @@ class MixtureOfAgents:
         if not agents:
             raise ValueError("agents must not be empty")
         self._agents = agents
-        self._agg_backend = aggregator_backend or agents[0].backend
+        _backend = aggregator_backend if aggregator_backend is not None else agents[0].backend
+        if _backend is None:
+            raise ValueError(
+                "MixtureOfAgents requires an aggregator_backend or an agent with a backend."
+            )
+        self._agg_backend: LLMBackend = _backend
         self._agg_temp = aggregator_temperature
         self._n_agents = n_agents
 
