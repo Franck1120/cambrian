@@ -1,5 +1,6 @@
 from __future__ import annotations
-import io, json
+import io
+import json
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
@@ -229,7 +230,6 @@ class TestMetaEvolutionEngine:
         assert len(engine.hp.fitness_history) > 0
 
     def test_callback(self) -> None:
-        from cambrian.meta_evolution import HyperParams
         engine = self._make()
         calls: list[int] = []
         engine.evolve([Genome(system_prompt=".")], "t", n_generations=2,

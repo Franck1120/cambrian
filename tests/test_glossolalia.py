@@ -1,9 +1,8 @@
 """Tests for cambrian.glossolalia — GlossaloliaReasoner and GlossaloliaEvaluator."""
 from __future__ import annotations
 
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
-import pytest
 
 from cambrian.agent import Agent, Genome
 from cambrian.glossolalia import (

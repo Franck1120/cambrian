@@ -10,7 +10,6 @@ Covers:
 from __future__ import annotations
 
 import json
-import math
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -699,7 +698,7 @@ class TestCausalStrategyExtractor:
 
 class TestCausalMutator:
     def test_mutate_with_causality_returns_agent_and_graph(self) -> None:
-        from cambrian.causal import CausalMutator, CausalStrategyExtractor
+        from cambrian.causal import CausalStrategyExtractor
         from cambrian.mutator import LLMMutator
 
         mutator_response = (

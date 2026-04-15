@@ -1,7 +1,6 @@
 """Tests for cambrian.annealing — AnnealingSchedule and AnnealingSelector."""
 from __future__ import annotations
 
-import math
 import random
 
 import pytest

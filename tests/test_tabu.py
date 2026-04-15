@@ -3,10 +3,9 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
 
 from cambrian.agent import Agent, Genome
-from cambrian.tabu import TabuEntry, TabuList, TabuMutator, _fingerprint
+from cambrian.tabu import TabuList, TabuMutator, _fingerprint
 
 
 # ---------------------------------------------------------------------------

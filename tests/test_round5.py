@@ -272,7 +272,7 @@ class TestEpigeneticLayer:
         assert result is agent  # no clone needed
 
     def test_add_rule(self) -> None:
-        from cambrian.epigenetics import EpigeneticLayer, EpigenomicContext
+        from cambrian.epigenetics import EpigeneticLayer
 
         layer = EpigeneticLayer()
         layer.add_rule(lambda g, ctx: "added rule")
@@ -842,7 +842,6 @@ class TestMypyStrictRound5:
         assert BaldwinEvaluator
 
     def test_gemini_imports_without_sdk(self) -> None:
-        import sys
         # Should be importable at module level (lazy SDK import in generate())
         import cambrian.backends.gemini as gm
         assert gm.GeminiBackend

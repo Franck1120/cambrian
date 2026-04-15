@@ -15,8 +15,6 @@ Key assertions:
 
 from __future__ import annotations
 
-import json
-import re
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -25,7 +23,6 @@ import pytest
 from cambrian.agent import Agent, Genome
 from cambrian.evaluator import Evaluator
 from cambrian.evolution import EvolutionEngine
-from cambrian.memory import EvolutionaryMemory
 from cambrian.mutator import LLMMutator
 
 
