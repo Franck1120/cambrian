@@ -1660,3 +1660,87 @@ def forge(
             click.echo(f"\nBest fitness: {best_pl.fitness or 0.0:.4f}")
             click.echo(f"Steps: {len(best_pl.steps)}")
             click.echo(f"Output: {out_path}")
+
+
+# ── serve ─────────────────────────────────────────────────────────────────────
+
+@main.command()
+@click.option(
+    "--port", "-p",
+    default=8000,
+    show_default=True,
+    help="TCP port for the API server.",
+)
+@click.option(
+    "--host",
+    default="127.0.0.1",
+    show_default=True,
+    help="Host address to bind.",
+)
+@click.option(
+    "--reload",
+    is_flag=True,
+    default=False,
+    help="Enable auto-reload on code changes (development mode).",
+)
+@click.option(
+    "--db",
+    default="cambrian.db",
+    show_default=True,
+    help="Path to the SQLite database file.",
+)
+def serve(port: int, host: str, reload: bool, db: str) -> None:
+    """Launch the FastAPI REST + WebSocket server for the React UI.
+
+    \\b
+    Endpoints:
+        GET  /api/health
+        GET  /api/plugins       GET/POST /api/plugins/{name}/enable|disable
+        GET  /api/models
+        GET/DELETE /api/runs    GET /api/runs/{id}/agents
+        POST /api/evolve        -> starts evolution, returns run_id
+        GET  /api/agents/{id}
+        WS   /ws/evolve/{run_id}
+
+    \\b
+    Examples:
+        cambrian serve
+        cambrian serve --port 8080 --host 0.0.0.0
+        cambrian serve --reload --db /tmp/dev.db
+    """  # noqa: RUF001
+    try:
+        import uvicorn
+    except ImportError:
+        click.echo(
+            "uvicorn is not installed. Run: pip install 'cambrian-ai[server]'",
+            err=True,
+        )
+        raise SystemExit(1)
+
+    from pathlib import Path as _Path
+    import cambrian.api as _api
+
+    db_path = _Path(db)
+    _api.DB_PATH = db_path
+    _api._init_db(db_path)
+
+    if _RICH and console is not None:
+        console.print(
+            f"[bold cyan]Cambrian API[/bold cyan] "
+            f"[dim]v{__version__}[/dim]  "
+            f"http://{host}:{port}"  # noqa: RUF001
+        )
+        console.print(f"  [dim]DB:[/dim] {db_path.resolve()}")
+        console.print(f"  [dim]Docs:[/dim] http://{host}:{port}/api/docs")
+    else:
+        click.echo(f"Cambrian API v{__version__}  ->  http://{host}:{port}")
+        click.echo(f"  DB:   {db_path.resolve()}")
+        click.echo(f"  Docs: http://{host}:{port}/api/docs")
+
+    uvicorn.run(
+        "cambrian.api:app",
+        host=host,
+        port=port,
+        reload=reload,
+        log_level="info",
+    )
