@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Search, LayoutGrid, List } from 'lucide-react'
 import GlassPanel from '../components/ui/GlassPanel'
 import GlowButton from '../components/ui/GlowButton'
 import PluginCard from '../components/ui/PluginCard'
 import { COLORS, CATEGORY_COLOR } from '../lib/theme'
+import { getPlugins, mergePluginState, togglePlugin } from '../lib/api'
 import { PLUGINS } from '../data/plugins'
 import type { Plugin, PluginCategory } from '../types'
 
@@ -26,8 +27,41 @@ const PluginHub = () => {
   const [category, setCategory] = useState<PluginCategory | 'all'>('all')
   const [view, setView] = useState<ViewMode>('grid')
 
-  const togglePlugin = (id: string) => {
-    setPlugins((prev) => prev.map((p) => (p.id === id ? { ...p, enabled: !p.enabled } : p)))
+  // Fetch enabled state from API and merge with static data
+  useEffect(() => {
+    let cancelled = false
+    getPlugins()
+      .then((apiPlugins) => {
+        if (!cancelled) setPlugins(mergePluginState(PLUGINS, apiPlugins))
+      })
+      .catch(() => {
+        // API unavailable — keep static defaults
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  const handleToggle = async (id: string) => {
+    const plugin = plugins.find((p) => p.id === id)
+    if (!plugin) return
+    const nextEnabled = !plugin.enabled
+    // Optimistic update
+    setPlugins((prev) => prev.map((p) => (p.id === id ? { ...p, enabled: nextEnabled } : p)))
+    try {
+      await togglePlugin(id, nextEnabled)
+    } catch {
+      // Revert on failure
+      setPlugins((prev) => prev.map((p) => (p.id === id ? { ...p, enabled: plugin.enabled } : p)))
+    }
+  }
+
+  const handleEnableAll = async () => {
+    setPlugins((prev) => prev.map((p) => ({ ...p, enabled: true })))
+    await Promise.allSettled(plugins.map((p) => togglePlugin(p.id, true)))
+  }
+
+  const handleDisableAll = async () => {
+    setPlugins((prev) => prev.map((p) => ({ ...p, enabled: false })))
+    await Promise.allSettled(plugins.map((p) => togglePlugin(p.id, false)))
   }
 
   const filtered = useMemo(() => {
@@ -73,7 +107,7 @@ const PluginHub = () => {
               color="cyan"
               variant="outline"
               size="sm"
-              onClick={() => setPlugins((p) => p.map((pl) => ({ ...pl, enabled: true })))}
+              onClick={() => void handleEnableAll()}
             >
               Enable All
             </GlowButton>
@@ -81,7 +115,7 @@ const PluginHub = () => {
               color="magenta"
               variant="outline"
               size="sm"
-              onClick={() => setPlugins((p) => p.map((pl) => ({ ...pl, enabled: false })))}
+              onClick={() => void handleDisableAll()}
             >
               Disable All
             </GlowButton>
@@ -200,9 +234,9 @@ const PluginHub = () => {
               transition={{ delay: i * 0.03, duration: 0.25 }}
             >
               {view === 'grid' ? (
-                <PluginCard plugin={plugin} onToggle={togglePlugin} />
+                <PluginCard plugin={plugin} onToggle={(id) => void handleToggle(id)} />
               ) : (
-                <ListPluginRow plugin={plugin} onToggle={togglePlugin} />
+                <ListPluginRow plugin={plugin} onToggle={(id) => void handleToggle(id)} />
               )}
             </motion.div>
           ))}

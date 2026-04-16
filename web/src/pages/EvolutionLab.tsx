@@ -8,25 +8,45 @@ import FitnessChart from '../components/ui/FitnessChart'
 import GenerationTimeline from '../components/ui/GenerationTimeline'
 import AgentProfileModal from '../components/AgentProfileModal'
 import { COLORS, STATUS_COLOR } from '../lib/theme'
-import { MOCK_AGENTS, MOCK_GENERATIONS, MOCK_ALL_AGENTS } from '../data/mock'
-import type { Agent } from '../types'
+import { useEvolution } from '../hooks/useEvolution'
+import type { Agent, EvolutionConfig } from '../types'
 
 const EvolutionLab = () => {
   const [task, setTask] = useState('Write a Python function that reverses a string')
   const [generations, setGenerations] = useState(10)
   const [population, setPopulation] = useState(8)
-  const [running, setRunning] = useState(false)
-  const [hasRun] = useState(true)
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
 
+  const { state, start, stop } = useEvolution()
+
+  const running = state.status === 'starting' || state.status === 'running'
+  const hasRun = state.allAgents.length > 0 || state.generations.length > 0
+
   const handleRun = () => {
-    setRunning(true)
-    setTimeout(() => setRunning(false), 3000)
+    if (running) {
+      stop()
+      return
+    }
+    const config: EvolutionConfig = {
+      task,
+      generations,
+      population,
+      model_id: 'llama-3.3-70b',
+      plugins: [],
+    }
+    void start(config)
   }
 
-  const bestFitness = Math.max(...MOCK_AGENTS.map((a) => a.fitness))
-  const avgFitness = MOCK_AGENTS.reduce((s, a) => s + a.fitness, 0) / MOCK_AGENTS.length
-  const totalTokens = MOCK_AGENTS.reduce((s, a) => s + a.prompt_tokens, 0)
+  const displayAgents = state.agents.length > 0 ? state.agents : []
+  const displayGenerations = state.generations
+
+  const bestFitness = displayAgents.length > 0
+    ? Math.max(...displayAgents.map((a) => a.fitness))
+    : 0
+  const avgFitness = displayAgents.length > 0
+    ? displayAgents.reduce((s, a) => s + a.fitness, 0) / displayAgents.length
+    : 0
+  const totalTokens = displayAgents.reduce((s, a) => s + a.prompt_tokens, 0)
   const estimatedCost = ((totalTokens / 1000) * 0.27).toFixed(3)
 
   return (
@@ -132,13 +152,20 @@ const EvolutionLab = () => {
             <GlowButton
               color={running ? 'amber' : 'cyan'}
               size="lg"
-              loading={running}
+              loading={state.status === 'starting'}
               icon={running ? <Square size={15} /> : <Play size={15} />}
               onClick={handleRun}
             >
               {running ? 'Evolving…' : 'Run Evolution'}
             </GlowButton>
           </div>
+
+          {/* Error banner */}
+          {state.status === 'error' && state.error && (
+            <div style={{ marginTop: 12, padding: '8px 14px', borderRadius: 8, background: 'rgba(255,60,60,0.1)', border: '1px solid rgba(255,60,60,0.3)', fontSize: 12, color: '#ff6b6b' }}>
+              {state.error}
+            </div>
+          )}
         </GlassPanel>
       </motion.div>
 
@@ -148,9 +175,9 @@ const EvolutionLab = () => {
           {/* Stats row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
             {[
-              { label: 'Best Fitness', value: bestFitness.toFixed(3), trend: 0.06, sparkline: MOCK_GENERATIONS.map((g) => g.best_fitness), color: 'cyan' as const, icon: <Zap size={14} /> },
-              { label: 'Avg Fitness', value: avgFitness.toFixed(3), trend: 0.01, sparkline: MOCK_GENERATIONS.map((g) => g.avg_fitness), color: 'magenta' as const, icon: <Layers size={14} /> },
-              { label: 'Generations', value: `${MOCK_GENERATIONS.length} / ${generations}`, sub: 'completed', color: 'green' as const, icon: <Users size={14} /> },
+              { label: 'Best Fitness', value: bestFitness.toFixed(3), trend: 0.06, sparkline: displayGenerations.map((g) => g.best_fitness), color: 'cyan' as const, icon: <Zap size={14} /> },
+              { label: 'Avg Fitness', value: avgFitness.toFixed(3), trend: 0.01, sparkline: displayGenerations.map((g) => g.avg_fitness), color: 'magenta' as const, icon: <Layers size={14} /> },
+              { label: 'Generations', value: `${state.currentGeneration} / ${generations}`, sub: 'completed', color: 'green' as const, icon: <Users size={14} /> },
               { label: 'Est. Cost', value: `$${estimatedCost}`, sub: `${totalTokens.toLocaleString()} tokens`, color: 'amber' as const, icon: <DollarSign size={14} /> },
             ].map((s, i) => (
               <motion.div key={s.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.06 }}>
@@ -160,60 +187,66 @@ const EvolutionLab = () => {
           </div>
 
           {/* Charts */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-              <FitnessChart data={MOCK_GENERATIONS} height={220} title="Fitness Over Generations" />
-            </motion.div>
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-              <FitnessChart data={MOCK_GENERATIONS} showDiversity height={220} title="Diversity Decay" />
-            </motion.div>
-          </div>
+          {displayGenerations.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
+              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+                <FitnessChart data={displayGenerations} height={220} title="Fitness Over Generations" />
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+                <FitnessChart data={displayGenerations} showDiversity height={220} title="Diversity Decay" />
+              </motion.div>
+            </div>
+          )}
 
           {/* Generation Timeline */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
-            <GlassPanel style={{ padding: '20px 28px', marginBottom: 24 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 20 }}>
-                Genealogy Timeline
-              </div>
-              <GenerationTimeline
-                generations={MOCK_GENERATIONS}
-                agents={MOCK_ALL_AGENTS}
-                onAgentClick={setSelectedAgent}
-                selectedAgentId={selectedAgent?.id}
-              />
-            </GlassPanel>
-          </motion.div>
+          {displayGenerations.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
+              <GlassPanel style={{ padding: '20px 28px', marginBottom: 24 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 20 }}>
+                  Genealogy Timeline
+                </div>
+                <GenerationTimeline
+                  generations={displayGenerations}
+                  agents={state.allAgents}
+                  onAgentClick={setSelectedAgent}
+                  selectedAgentId={selectedAgent?.id}
+                />
+              </GlassPanel>
+            </motion.div>
+          )}
 
           {/* Agent Population Table */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
-            <GlassPanel style={{ overflow: 'hidden' }}>
-              <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: 11, fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span>Agent Population — Gen {MOCK_GENERATIONS.length}</span>
-                <span style={{ fontWeight: 400 }}>
-                  {MOCK_AGENTS.filter((a) => a.status !== 'dead').length} active · {MOCK_AGENTS.filter((a) => a.status === 'elite').length} elite
-                </span>
-              </div>
+          {displayAgents.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+              <GlassPanel style={{ overflow: 'hidden' }}>
+                <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: 11, fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>Agent Population — Gen {state.currentGeneration}</span>
+                  <span style={{ fontWeight: 400 }}>
+                    {displayAgents.filter((a) => a.status !== 'dead').length} active · {displayAgents.filter((a) => a.status === 'elite').length} elite
+                  </span>
+                </div>
 
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      {['Agent', 'Gen', 'Fitness', 'Temp', 'Strategy', 'Tokens', 'Status'].map((h) => (
-                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-                          {h}
-                        </th>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        {['Agent', 'Gen', 'Fitness', 'Temp', 'Strategy', 'Tokens', 'Status'].map((h) => (
+                          <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {displayAgents.map((agent, i) => (
+                        <AgentRow key={agent.id} agent={agent} index={i} total={displayAgents.length} onClick={setSelectedAgent} />
                       ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {MOCK_AGENTS.map((agent, i) => (
-                      <AgentRow key={agent.id} agent={agent} index={i} onClick={setSelectedAgent} />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </GlassPanel>
-          </motion.div>
+                    </tbody>
+                  </table>
+                </div>
+              </GlassPanel>
+            </motion.div>
+          )}
         </>
       )}
 
@@ -226,10 +259,12 @@ const EvolutionLab = () => {
 const AgentRow = ({
   agent,
   index,
+  total,
   onClick,
 }: {
   agent: Agent
   index: number
+  total: number
   onClick: (a: Agent) => void
 }) => {
   const [hovered, setHovered] = useState(false)
@@ -241,7 +276,7 @@ const AgentRow = ({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        borderBottom: index < MOCK_AGENTS.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+        borderBottom: index < total - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
         cursor: 'pointer',
         background: hovered ? 'rgba(0,240,255,0.04)' : 'transparent',
         transition: 'background 0.12s',
