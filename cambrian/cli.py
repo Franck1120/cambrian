@@ -174,6 +174,21 @@ def main() -> None:
     "--compress-tokens", default=256, show_default=True,
     help="Max token budget when compressing prompts.",
 )
+@click.option(
+    "--enable",
+    default=None,
+    help=(
+        "Comma-separated list of plugins to enable for this run. "
+        "Example: --enable dream,quorum,tabu"
+    ),
+)
+@click.option(
+    "--config",
+    "config_file",
+    default=None,
+    type=click.Path(exists=False),
+    help="Path to a YAML config file (may specify plugins.enabled list).",
+)
 def evolve(
     task: str,
     model: str,
@@ -192,6 +207,8 @@ def evolve(
     tournament_k: int,
     compress_every: int,
     compress_tokens: int,
+    enable: str | None,
+    config_file: str | None,
 ) -> None:
     """Run evolutionary optimisation for TASK.
 
@@ -230,6 +247,35 @@ def evolve(
         compress_interval=compress_every,
         compress_max_tokens=compress_tokens,
     )
+
+    # -- Plugin loading --------------------------------------------------------
+    _plugin_names: list[str] = []
+    if enable:
+        _plugin_names.extend(n.strip() for n in enable.split(",") if n.strip())
+    if config_file:
+        import pathlib as _pl
+        if _pl.Path(config_file).exists():
+            try:
+                from cambrian.plugin_registry import PluginRegistry as _PR
+                _pr = _PR()
+                _pr.load_from_yaml(config_file, engine)
+                if _RICH and console is not None:
+                    console.print(f"[dim]Plugins from config:[/dim] {_pr.active_plugins}")
+                else:
+                    click.echo(f"Plugins from config: {_pr.active_plugins}")
+            except Exception as _exc:
+                click.echo(f"Warning: could not load plugins from {config_file}: {_exc}", err=True)
+    if _plugin_names:
+        try:
+            from cambrian.plugin_registry import PluginRegistry as _PlugReg
+            _reg = _PlugReg()
+            _reg.enable(_plugin_names, engine)
+            if _RICH and console is not None:
+                console.print(f"[dim]Plugins enabled:[/dim] {_plugin_names}")
+            else:
+                click.echo(f"Plugins enabled: {_plugin_names}")
+        except Exception as _exc:
+            click.echo(f"Warning: could not enable plugins {_plugin_names}: {_exc}", err=True)
 
     initial_prompt = seed_prompt or (
         "You are a precise and knowledgeable AI assistant. "
@@ -1060,6 +1106,67 @@ def compare(run1: str, run2: str, output_format: str, metric: str) -> None:
         click.echo(f"{'Final ' + metric:20s}  {final_a:>12.4f}  {final_b:>12.4f}")
         click.echo(f"{'Best ' + metric:20s}  {best_a:>12.4f}  {best_b:>12.4f}")
         click.echo(f"\nWinner: {winner}  (Δ={delta:.4f})")
+
+
+# ── plugins ───────────────────────────────────────────────────────────────────
+
+
+@main.command()
+@click.option(
+    "--category", default=None,
+    help="Filter plugins by category (e.g. memory, selection, evaluation).",
+)
+def plugins(category: str | None) -> None:
+    """List all available Cambrian plugins with metadata.
+
+    Shows each plugin's name, category, description, and measured impact.
+
+    \\b
+    Example:
+        cambrian plugins
+        cambrian plugins --category memory
+    """
+    from cambrian.plugin_registry import PluginRegistry
+
+    registry = PluginRegistry()
+    all_plugins = registry.list_all()
+
+    if category:
+        all_plugins = [p for p in all_plugins if p.get("category") == category]
+
+    if not all_plugins:
+        click.echo("No plugins found." + (f" (category={category!r})" if category else ""))
+        return
+
+    if _RICH and console is not None:
+        from rich.table import Table
+
+        table = Table(title="Available Cambrian Plugins", show_header=True, header_style="bold cyan")
+        table.add_column("Name", style="bold", width=22)
+        table.add_column("Category", width=14)
+        table.add_column("Description", width=55)
+        table.add_column("Impact", width=20)
+
+        for meta in all_plugins:
+            table.add_row(
+                str(meta.get("name", "")),
+                str(meta.get("category", "")),
+                str(meta.get("description", "")),
+                str(meta.get("impact") or "—"),
+            )
+        console.print(table)
+    else:
+        click.echo(f"{'Name':<22}  {'Category':<14}  Description")
+        click.echo("-" * 80)
+        for meta in all_plugins:
+            click.echo(
+                f"{str(meta.get('name', '')):<22}  "
+                f"{str(meta.get('category', '')):<14}  "
+                f"{str(meta.get('description', ''))[:50]}"
+            )
+
+
+# ── version ───────────────────────────────────────────────────────────────────
 
 
 @main.command()
