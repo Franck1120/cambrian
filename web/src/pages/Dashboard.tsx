@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -9,7 +9,9 @@ import GlassPanel from '../components/ui/GlassPanel'
 import GlowButton from '../components/ui/GlowButton'
 import StatCard from '../components/ui/StatCard'
 import { COLORS } from '../lib/theme'
-import { MOCK_HISTORY, MOCK_AGENTS } from '../data/mock'
+import { getRuns } from '../lib/api'
+import { MOCK_AGENTS } from '../data/mock'
+import type { EvolutionRun } from '../types'
 
 interface TooltipPayloadItem {
   name: string
@@ -48,12 +50,26 @@ const radarData = [
 ]
 
 const Dashboard = () => {
+  const [runs, setRuns] = useState<EvolutionRun[]>([])
   const [selectedRun, setSelectedRun] = useState<string | null>(null)
 
-  const totalRuns = MOCK_HISTORY.length
-  const bestFitness = Math.max(...MOCK_HISTORY.map((r) => r.best_fitness))
-  const avgGen = (MOCK_HISTORY.reduce((s, r) => s + r.generations, 0) / totalRuns).toFixed(1)
-  const totalAgents = MOCK_HISTORY.reduce((s, r) => s + r.generations * r.population, 0)
+  useEffect(() => {
+    let cancelled = false
+    getRuns()
+      .then((data) => { if (!cancelled) setRuns(data) })
+      .catch(() => { /* API not available yet, keep empty */ })
+    return () => { cancelled = true }
+  }, [])
+
+  const totalRuns = runs.length
+  const bestFitness = runs.length > 0 ? Math.max(...runs.map((r) => r.best_fitness)) : 0
+  const avgGen = runs.length > 0
+    ? (runs.reduce((s, r) => s + r.generations, 0) / totalRuns).toFixed(1)
+    : '0'
+  const totalAgents = runs.reduce((s, r) => s + r.generations * r.population, 0)
+  const bestRunId = runs.length > 0
+    ? runs.reduce((best, r) => r.best_fitness > best.best_fitness ? r : best, runs[0]).id
+    : '—'
 
   return (
     <div style={{ padding: '28px 32px', maxWidth: 1280, margin: '0 auto' }}>
@@ -79,7 +95,7 @@ const Dashboard = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         {[
           { label: 'Total Runs', value: totalRuns, sub: 'all time', color: 'cyan' as const, icon: <Target size={14} /> },
-          { label: 'Best Fitness', value: bestFitness.toFixed(3), sub: 'run-001', color: 'green' as const, icon: <TrendingUp size={14} /> },
+          { label: 'Best Fitness', value: bestFitness > 0 ? bestFitness.toFixed(3) : '—', sub: bestRunId, color: 'green' as const, icon: <TrendingUp size={14} /> },
           { label: 'Avg Generations', value: avgGen, sub: 'per run', color: 'magenta' as const, icon: <Layers size={14} /> },
           { label: 'Total Agents', value: totalAgents.toLocaleString(), sub: 'evolved', color: 'amber' as const, icon: <Clock size={14} /> },
         ].map((s, i) => (
@@ -97,30 +113,30 @@ const Dashboard = () => {
             <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16, paddingLeft: 8 }}>
               Best Fitness per Run
             </div>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart
-                data={MOCK_HISTORY.map((r) => ({ name: r.id.replace('run-', '#'), fitness: r.best_fitness }))}
-                margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="name" stroke="rgba(255,255,255,0.1)" tick={{ fill: COLORS.textMuted, fontSize: 11 }} tickLine={false} axisLine={false} />
-                <YAxis domain={[0.7, 1]} stroke="rgba(255,255,255,0.1)" tick={{ fill: COLORS.textMuted, fontSize: 11 }} tickLine={false} axisLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar
-                  dataKey="fitness"
-                  name="Fitness"
-                  fill={`url(#barGrad)`}
-                  radius={[6, 6, 0, 0]}
-                  maxBarSize={48}
-                />
-                <defs>
-                  <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={COLORS.cyan} />
-                    <stop offset="100%" stopColor={COLORS.magenta} stopOpacity={0.7} />
-                  </linearGradient>
-                </defs>
-              </BarChart>
-            </ResponsiveContainer>
+            {runs.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart
+                  data={runs.map((r) => ({ name: r.id.slice(0, 8), fitness: r.best_fitness }))}
+                  margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis dataKey="name" stroke="rgba(255,255,255,0.1)" tick={{ fill: COLORS.textMuted, fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <YAxis domain={[0, 1]} stroke="rgba(255,255,255,0.1)" tick={{ fill: COLORS.textMuted, fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="fitness" name="Fitness" fill={`url(#barGrad)`} radius={[6, 6, 0, 0]} maxBarSize={48} />
+                  <defs>
+                    <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={COLORS.cyan} />
+                      <stop offset="100%" stopColor={COLORS.magenta} stopOpacity={0.7} />
+                    </linearGradient>
+                  </defs>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.textMuted, fontSize: 13 }}>
+                No runs yet — start an evolution in the Lab
+              </div>
+            )}
           </GlassPanel>
         </motion.div>
 
@@ -152,32 +168,39 @@ const Dashboard = () => {
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
         <GlassPanel style={{ overflow: 'hidden', marginBottom: 24 }}>
           <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: 11, fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-            Run History
+            Run History {runs.length > 0 ? `(${runs.length})` : ''}
           </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  {['Run', 'Task', 'Gen', 'Pop', 'Best Fitness', 'Duration', 'Date'].map((h) => (
-                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-                      {h}
-                    </th>
+          {runs.length === 0 ? (
+            <div style={{ padding: '32px 24px', textAlign: 'center', color: COLORS.textMuted, fontSize: 13 }}>
+              No runs yet — start an evolution run in the Evolution Lab
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    {['Run', 'Task', 'Gen', 'Pop', 'Best Fitness', 'Duration', 'Date'].map((h) => (
+                      <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {runs.map((run, i) => (
+                    <RunRow
+                      key={run.id}
+                      run={run}
+                      index={i}
+                      total={runs.length}
+                      isSelected={selectedRun === run.id}
+                      onClick={() => setSelectedRun(selectedRun === run.id ? null : run.id)}
+                    />
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {MOCK_HISTORY.map((run, i) => (
-                  <RunRow
-                    key={run.id}
-                    run={run}
-                    index={i}
-                    isSelected={selectedRun === run.id}
-                    onClick={() => setSelectedRun(selectedRun === run.id ? null : run.id)}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </tbody>
+              </table>
+            </div>
+          )}
         </GlassPanel>
       </motion.div>
 
@@ -242,11 +265,13 @@ const Dashboard = () => {
 const RunRow = ({
   run,
   index,
+  total,
   isSelected,
   onClick,
 }: {
-  run: typeof MOCK_HISTORY[0]
+  run: EvolutionRun
   index: number
+  total: number
   isSelected: boolean
   onClick: () => void
 }) => {
@@ -258,7 +283,7 @@ const RunRow = ({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        borderBottom: index < MOCK_HISTORY.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+        borderBottom: index < total - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
         cursor: 'pointer',
         background: isSelected
           ? 'rgba(0,240,255,0.06)'
@@ -269,7 +294,7 @@ const RunRow = ({
       }}
     >
       <td style={{ padding: '11px 16px', fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: COLORS.cyan, whiteSpace: 'nowrap' }}>
-        {run.id}
+        {run.id.slice(0, 12)}…
       </td>
       <td style={{ padding: '11px 16px', fontSize: 13, color: COLORS.textSecondary, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {run.task}

@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { Clock, DollarSign, Wifi, WifiOff, AlertTriangle, Check } from 'lucide-react'
 import GlassPanel from '../components/ui/GlassPanel'
 import GlowButton from '../components/ui/GlowButton'
 import { COLORS } from '../lib/theme'
-import { MODELS, MODEL_PROVIDER_LABELS, MODEL_PROVIDER_COLORS } from '../data/models'
-import type { ModelRole, ModelStatus, ModelProvider } from '../types'
+import { getModels } from '../lib/api'
+import { MODELS as STATIC_MODELS, MODEL_PROVIDER_LABELS, MODEL_PROVIDER_COLORS } from '../data/models'
+import type { Model, ModelRole, ModelStatus, ModelProvider } from '../types'
 
 const ROLE_CONFIG: { id: ModelRole; label: string; description: string; color: string }[] = [
   { id: 'mutation', label: 'Mutation', description: 'Generates new agent genome variants', color: COLORS.cyan },
@@ -13,7 +14,7 @@ const ROLE_CONFIG: { id: ModelRole; label: string; description: string; color: s
   { id: 'crossover', label: 'Crossover', description: 'Blends parent genomes', color: COLORS.green },
 ]
 
-const STATUS_CONFIG: Record<ModelStatus, { icon: React.ReactNode; color: string; label: string }> = {
+const STATUS_CONFIG: Record<ModelStatus, { icon: ReactNode; color: string; label: string }> = {
   online: { icon: <Wifi size={12} />, color: COLORS.green, label: 'Online' },
   offline: { icon: <WifiOff size={12} />, color: COLORS.textMuted, label: 'Offline' },
   'rate-limited': { icon: <AlertTriangle size={12} />, color: COLORS.amber, label: 'Rate limited' },
@@ -22,6 +23,7 @@ const STATUS_CONFIG: Record<ModelStatus, { icon: React.ReactNode; color: string;
 const SPEED_LABEL: Record<string, string> = { fast: '< 1s', medium: '1–3s', slow: '> 3s' }
 
 const ModelSelector = () => {
+  const [models, setModels] = useState<Model[]>(STATIC_MODELS)
   const [assignment, setAssignment] = useState<Record<ModelRole, string>>({
     mutation: 'llama-3.3-70b',
     evaluation: 'llama-3.3-70b',
@@ -30,11 +32,19 @@ const ModelSelector = () => {
   const [selectedRole, setSelectedRole] = useState<ModelRole>('mutation')
   const [filterProvider, setFilterProvider] = useState<ModelProvider | 'all'>('all')
 
-  const filteredModels = MODELS.filter(
+  useEffect(() => {
+    let cancelled = false
+    getModels()
+      .then((apiModels) => { if (!cancelled) setModels(apiModels) })
+      .catch(() => { /* keep static fallback */ })
+    return () => { cancelled = true }
+  }, [])
+
+  const filteredModels = models.filter(
     (m) => filterProvider === 'all' || m.provider === filterProvider
   )
 
-  const allProviders = [...new Set(MODELS.map((m) => m.provider))]
+  const allProviders = [...new Set(models.map((m) => m.provider))]
 
   return (
     <div style={{ padding: '28px 32px', maxWidth: 1280, margin: '0 auto' }}>
@@ -55,7 +65,7 @@ const ModelSelector = () => {
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
           {ROLE_CONFIG.map((role) => {
-            const assigned = MODELS.find((m) => m.id === assignment[role.id])
+            const assigned = models.find((m) => m.id === assignment[role.id])
             const isActive = selectedRole === role.id
             return (
               <button
