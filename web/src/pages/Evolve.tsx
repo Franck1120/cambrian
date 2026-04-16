@@ -3,7 +3,8 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Area, AreaChart, Legend,
 } from 'recharts'
-import { MOCK_AGENTS, MOCK_GENERATIONS, type Agent } from '../data/mock'
+import { MOCK_AGENTS, MOCK_GENERATIONS } from '../data/mock'
+import type { Agent } from '../types'
 
 const ACCENT = '#10b981'
 const CARD = { background: '#111111', border: '1px solid #1a1a1a', borderRadius: 10 }
@@ -14,15 +15,18 @@ const statusColor: Record<Agent['status'], string> = {
   dead: '#4b5563',
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipPayload { name: string; value: number; color: string }
+interface TooltipProps { active?: boolean; payload?: TooltipPayload[]; label?: string | number }
+
+const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
   if (!active || !payload?.length) return null
   return (
     <div style={{ background: '#161616', border: '1px solid #222', borderRadius: 8,
       padding: '10px 14px', fontSize: 13 }}>
       <div style={{ color: '#9ca3af', marginBottom: 6 }}>Gen {label}</div>
-      {payload.map((p: any) => (
+      {payload.map((p) => (
         <div key={p.name} style={{ color: p.color, marginBottom: 2 }}>
-          {p.name}: <strong>{(p.value as number).toFixed(3)}</strong>
+          {p.name}: <strong>{p.value.toFixed(3)}</strong>
         </div>
       ))}
     </div>

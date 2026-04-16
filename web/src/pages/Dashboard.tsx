@@ -1,21 +1,36 @@
+import { useState } from 'react'
+import { motion } from 'framer-motion'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar,
 } from 'recharts'
+import { TrendingUp, Clock, Target, Layers, Download } from 'lucide-react'
+import GlassPanel from '../components/ui/GlassPanel'
+import GlowButton from '../components/ui/GlowButton'
+import StatCard from '../components/ui/StatCard'
+import { COLORS } from '../lib/theme'
 import { MOCK_HISTORY, MOCK_AGENTS } from '../data/mock'
 
-const ACCENT = '#10b981'
-const CARD = { background: '#111111', border: '1px solid #1a1a1a', borderRadius: 10 }
+interface TooltipPayloadItem {
+  name: string
+  value: number
+  fill?: string
+}
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface CustomTooltipProps {
+  active?: boolean
+  payload?: TooltipPayloadItem[]
+  label?: string | number
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: '#161616', border: '1px solid #222', borderRadius: 8,
-      padding: '10px 14px', fontSize: 13 }}>
-      <div style={{ color: '#9ca3af', marginBottom: 4 }}>{label}</div>
-      {payload.map((p: any) => (
-        <div key={p.name} style={{ color: p.fill || ACCENT }}>
-          {p.name}: <strong>{typeof p.value === 'number' ? p.value.toFixed(2) : p.value}</strong>
+    <div style={{ background: 'rgba(5,8,25,0.95)', border: '1px solid rgba(0,240,255,0.2)', borderRadius: 10, padding: '10px 14px', fontSize: 12, backdropFilter: 'blur(12px)' }}>
+      <div style={{ color: COLORS.textMuted, marginBottom: 6 }}>{label}</div>
+      {payload.map((p) => (
+        <div key={p.name} style={{ color: p.fill ?? COLORS.cyan }}>
+          {p.name}: <strong>{typeof p.value === 'number' ? p.value.toFixed(3) : p.value}</strong>
         </div>
       ))}
     </div>
@@ -32,169 +47,252 @@ const radarData = [
   { subject: 'Stability', value: 78 },
 ]
 
-const Dashboard = () => (
-  <div style={{ padding: '32px 40px', maxWidth: 1200, margin: '0 auto' }}>
-    {/* Header */}
-    <div style={{ marginBottom: 28 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 600, color: '#f0f0f0', marginBottom: 4 }}>
-        Dashboard
-      </h1>
-      <p style={{ fontSize: 14, color: '#6b7280' }}>
-        Historical runs and top performing agents
-      </p>
-    </div>
+const Dashboard = () => {
+  const [selectedRun, setSelectedRun] = useState<string | null>(null)
 
-    {/* Stats row */}
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-      {[
-        { label: 'Total Runs', value: '5', sub: 'all time' },
-        { label: 'Best Fitness', value: '0.94', sub: 'run-001' },
-        { label: 'Avg Generations', value: '8.8', sub: 'per run' },
-        { label: 'Total Agents', value: '284', sub: 'evolved' },
-      ].map(s => (
-        <div key={s.label} style={{ ...CARD, padding: '18px 20px' }}>
-          <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6,
-            textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 500 }}>
-            {s.label}
-          </div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: '#f0f0f0', letterSpacing: '-0.5px' }}>
-            {s.value}
-          </div>
-          <div style={{ fontSize: 12, color: '#4b5563', marginTop: 2 }}>{s.sub}</div>
+  const totalRuns = MOCK_HISTORY.length
+  const bestFitness = Math.max(...MOCK_HISTORY.map((r) => r.best_fitness))
+  const avgGen = (MOCK_HISTORY.reduce((s, r) => s + r.generations, 0) / totalRuns).toFixed(1)
+  const totalAgents = MOCK_HISTORY.reduce((s, r) => s + r.generations * r.population, 0)
+
+  return (
+    <div style={{ padding: '28px 32px', maxWidth: 1280, margin: '0 auto' }}>
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div>
+          <h1
+            style={{ fontSize: 28, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", margin: '0 0 6px', letterSpacing: '-0.5px' }}
+            className="text-gradient-bio"
+          >
+            Dashboard
+          </h1>
+          <p style={{ fontSize: 14, color: COLORS.textMuted, margin: 0 }}>
+            Historical runs · performance analytics · top agents
+          </p>
         </div>
-      ))}
-    </div>
+        <GlowButton color="cyan" variant="outline" size="sm" icon={<Download size={13} />}>
+          Export CSV
+        </GlowButton>
+      </motion.div>
 
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
-      {/* Fitness by run */}
-      <div style={{ ...CARD, padding: '20px' }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', marginBottom: 16,
-          textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Best Fitness per Run
-        </div>
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={MOCK_HISTORY.map(r => ({ name: r.id.split('-')[1], fitness: r.best_fitness }))}
-            margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" />
-            <XAxis dataKey="name" stroke="#333" tick={{ fill: '#6b7280', fontSize: 12 }} />
-            <YAxis domain={[0.7, 1]} stroke="#333" tick={{ fill: '#6b7280', fontSize: 12 }} />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="fitness" name="Fitness" fill={ACCENT} radius={[4, 4, 0, 0]}
-              maxBarSize={40} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Performance radar */}
-      <div style={{ ...CARD, padding: '20px' }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', marginBottom: 16,
-          textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Best Agent Profile
-        </div>
-        <ResponsiveContainer width="100%" height={200}>
-          <RadarChart data={radarData} margin={{ top: 0, right: 20, left: 20, bottom: 0 }}>
-            <PolarGrid stroke="#1a1a1a" />
-            <PolarAngleAxis dataKey="subject" tick={{ fill: '#6b7280', fontSize: 11 }} />
-            <Radar name="Agent" dataKey="value" stroke={ACCENT} fill={ACCENT}
-              fillOpacity={0.15} strokeWidth={2} />
-          </RadarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-
-    {/* Run history table */}
-    <div style={{ ...CARD, marginBottom: 24, overflow: 'hidden' }}>
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid #1a1a1a',
-        fontSize: 12, fontWeight: 600, color: '#6b7280',
-        textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-        Run History
-      </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
-            {['Run', 'Task', 'Gen', 'Pop', 'Best Fitness', 'Duration', 'Date'].map(h => (
-              <th key={h} style={{ padding: '10px 16px', textAlign: 'left',
-                fontSize: 11, fontWeight: 600, color: '#4b5563',
-                textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {MOCK_HISTORY.map((run, i) => (
-            <tr key={run.id}
-              style={{ borderBottom: i < MOCK_HISTORY.length - 1 ? '1px solid #141414' : 'none',
-                transition: 'background 0.1s', cursor: 'pointer' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#161616')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-              <td style={{ padding: '11px 16px', fontSize: 12,
-                color: '#6b7280', fontFamily: 'monospace' }}>
-                {run.id}
-              </td>
-              <td style={{ padding: '11px 16px', fontSize: 13, color: '#d1d5db',
-                maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {run.task}
-              </td>
-              <td style={{ padding: '11px 16px', fontSize: 13, color: '#9ca3af' }}>
-                {run.generations}
-              </td>
-              <td style={{ padding: '11px 16px', fontSize: 13, color: '#9ca3af' }}>
-                {run.population}
-              </td>
-              <td style={{ padding: '11px 16px' }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: ACCENT }}>
-                  {run.best_fitness.toFixed(2)}
-                </span>
-              </td>
-              <td style={{ padding: '11px 16px', fontSize: 13, color: '#6b7280' }}>
-                {run.duration_s}s
-              </td>
-              <td style={{ padding: '11px 16px', fontSize: 12, color: '#4b5563' }}>
-                {run.created_at}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-
-    {/* Top agents */}
-    <div style={{ ...CARD, overflow: 'hidden' }}>
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid #1a1a1a',
-        fontSize: 12, fontWeight: 600, color: '#6b7280',
-        textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-        Top Agents (All Time)
-      </div>
-      <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {topAgents.map((agent, i) => (
-          <div key={agent.id} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: i === 0 ? ACCENT : '#4b5563',
-              minWidth: 18 }}>
-              #{i + 1}
-            </span>
-            <span style={{ fontSize: 12, color: '#4b5563', fontFamily: 'monospace',
-              minWidth: 60 }}>
-              {agent.id}
-            </span>
-            <div style={{ flex: 1, height: 4, background: '#1a1a1a', borderRadius: 2 }}>
-              <div style={{ height: '100%', width: `${agent.fitness * 100}%`,
-                background: i === 0 ? ACCENT : '#2a2a2a', borderRadius: 2,
-                transition: 'width 0.3s ease' }} />
-            </div>
-            <span style={{ fontSize: 13, fontWeight: 600, color: i === 0 ? ACCENT : '#9ca3af',
-              minWidth: 36 }}>
-              {agent.fitness.toFixed(2)}
-            </span>
-            <span style={{ fontSize: 12, background: '#1a1a1a', borderRadius: 5,
-              padding: '2px 8px', color: '#6b7280' }}>
-              {agent.strategy}
-            </span>
-          </div>
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+        {[
+          { label: 'Total Runs', value: totalRuns, sub: 'all time', color: 'cyan' as const, icon: <Target size={14} /> },
+          { label: 'Best Fitness', value: bestFitness.toFixed(3), sub: 'run-001', color: 'green' as const, icon: <TrendingUp size={14} /> },
+          { label: 'Avg Generations', value: avgGen, sub: 'per run', color: 'magenta' as const, icon: <Layers size={14} /> },
+          { label: 'Total Agents', value: totalAgents.toLocaleString(), sub: 'evolved', color: 'amber' as const, icon: <Clock size={14} /> },
+        ].map((s, i) => (
+          <motion.div key={s.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.06 }}>
+            <StatCard {...s} animateIn={false} />
+          </motion.div>
         ))}
       </div>
+
+      {/* Charts row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
+        {/* Fitness by run */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <GlassPanel style={{ padding: '20px 16px 12px' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16, paddingLeft: 8 }}>
+              Best Fitness per Run
+            </div>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart
+                data={MOCK_HISTORY.map((r) => ({ name: r.id.replace('run-', '#'), fitness: r.best_fitness }))}
+                margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis dataKey="name" stroke="rgba(255,255,255,0.1)" tick={{ fill: COLORS.textMuted, fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis domain={[0.7, 1]} stroke="rgba(255,255,255,0.1)" tick={{ fill: COLORS.textMuted, fontSize: 11 }} tickLine={false} axisLine={false} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar
+                  dataKey="fitness"
+                  name="Fitness"
+                  fill={`url(#barGrad)`}
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={48}
+                />
+                <defs>
+                  <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={COLORS.cyan} />
+                    <stop offset="100%" stopColor={COLORS.magenta} stopOpacity={0.7} />
+                  </linearGradient>
+                </defs>
+              </BarChart>
+            </ResponsiveContainer>
+          </GlassPanel>
+        </motion.div>
+
+        {/* Radar */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+          <GlassPanel style={{ padding: '20px 16px 12px' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16, paddingLeft: 8 }}>
+              Best Agent Profile
+            </div>
+            <ResponsiveContainer width="100%" height={200}>
+              <RadarChart data={radarData} margin={{ top: 0, right: 20, left: 20, bottom: 0 }}>
+                <PolarGrid stroke="rgba(255,255,255,0.08)" />
+                <PolarAngleAxis dataKey="subject" tick={{ fill: COLORS.textMuted, fontSize: 11 }} />
+                <Radar
+                  name="Agent"
+                  dataKey="value"
+                  stroke={COLORS.cyan}
+                  fill={COLORS.cyan}
+                  fillOpacity={0.12}
+                  strokeWidth={2}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </GlassPanel>
+        </motion.div>
+      </div>
+
+      {/* Run history table */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+        <GlassPanel style={{ overflow: 'hidden', marginBottom: 24 }}>
+          <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: 11, fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            Run History
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  {['Run', 'Task', 'Gen', 'Pop', 'Best Fitness', 'Duration', 'Date'].map((h) => (
+                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {MOCK_HISTORY.map((run, i) => (
+                  <RunRow
+                    key={run.id}
+                    run={run}
+                    index={i}
+                    isSelected={selectedRun === run.id}
+                    onClick={() => setSelectedRun(selectedRun === run.id ? null : run.id)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </GlassPanel>
+      </motion.div>
+
+      {/* Top agents */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+        <GlassPanel style={{ overflow: 'hidden' }}>
+          <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: 11, fontWeight: 700, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            Top Agents — All Time
+          </div>
+          <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {topAgents.map((agent, i) => (
+              <motion.div
+                key={agent.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.55 + i * 0.05 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 14 }}
+              >
+                <span
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: i === 0 ? COLORS.cyan : i === 1 ? COLORS.textSecondary : COLORS.textMuted,
+                    minWidth: 22,
+                    fontFamily: "'Space Grotesk', sans-serif",
+                  }}
+                >
+                  #{i + 1}
+                </span>
+                <span style={{ fontSize: 12, color: COLORS.textMuted, fontFamily: "'JetBrains Mono', monospace", minWidth: 56 }}>
+                  {agent.id}
+                </span>
+                <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${agent.fitness * 100}%` }}
+                    transition={{ delay: 0.6 + i * 0.05, duration: 0.5 }}
+                    style={{
+                      height: '100%',
+                      background: i === 0 ? `linear-gradient(90deg, ${COLORS.cyan}, ${COLORS.magenta})` : 'rgba(255,255,255,0.2)',
+                      borderRadius: 2,
+                    }}
+                  />
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 700, color: i === 0 ? COLORS.cyan : COLORS.textSecondary, minWidth: 36 }}>
+                  {agent.fitness.toFixed(3)}
+                </span>
+                <span style={{ fontSize: 11, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 5, padding: '2px 8px', color: COLORS.textMuted }}>
+                  {agent.strategy}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+        </GlassPanel>
+      </motion.div>
+
+      <div style={{ height: 32 }} />
     </div>
-  </div>
-)
+  )
+}
+
+const RunRow = ({
+  run,
+  index,
+  isSelected,
+  onClick,
+}: {
+  run: typeof MOCK_HISTORY[0]
+  index: number
+  isSelected: boolean
+  onClick: () => void
+}) => {
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <tr
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        borderBottom: index < MOCK_HISTORY.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+        cursor: 'pointer',
+        background: isSelected
+          ? 'rgba(0,240,255,0.06)'
+          : hovered
+            ? 'rgba(0,240,255,0.03)'
+            : 'transparent',
+        transition: 'background 0.12s',
+      }}
+    >
+      <td style={{ padding: '11px 16px', fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: COLORS.cyan, whiteSpace: 'nowrap' }}>
+        {run.id}
+      </td>
+      <td style={{ padding: '11px 16px', fontSize: 13, color: COLORS.textSecondary, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {run.task}
+      </td>
+      <td style={{ padding: '11px 16px', fontSize: 13, color: COLORS.textMuted }}>
+        {run.generations}
+      </td>
+      <td style={{ padding: '11px 16px', fontSize: 13, color: COLORS.textMuted }}>
+        {run.population}
+      </td>
+      <td style={{ padding: '11px 16px' }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: run.best_fitness >= 0.9 ? COLORS.green : run.best_fitness >= 0.8 ? COLORS.cyan : COLORS.amber }}>
+          {run.best_fitness.toFixed(3)}
+        </span>
+      </td>
+      <td style={{ padding: '11px 16px', fontSize: 12, color: COLORS.textMuted, fontFamily: "'JetBrains Mono', monospace" }}>
+        {run.duration_s}s
+      </td>
+      <td style={{ padding: '11px 16px', fontSize: 11, color: COLORS.textMuted }}>
+        {run.created_at}
+      </td>
+    </tr>
+  )
+}
 
 export default Dashboard

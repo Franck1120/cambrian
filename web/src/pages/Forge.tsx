@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { MOCK_PIPELINE, type PipelineStep } from '../data/mock'
+import { MOCK_PIPELINE } from '../data/mock'
+import type { PipelineStep } from '../types'
 
 const ACCENT = '#10b981'
 const CARD = { background: '#111111', border: '1px solid #1a1a1a', borderRadius: 10 }
