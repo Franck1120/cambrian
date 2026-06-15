@@ -219,6 +219,14 @@ class TabuMutator:
         self._tabu.add(first_candidate)
         return first_candidate
 
+    def crossover(self, parent_a: Agent, parent_b: Agent, task: str = "") -> Agent:
+        """Delegate crossover to the base mutator unchanged.
+
+        Tabu only constrains *mutation*; crossover passes through so this
+        wrapper is a drop-in replacement for an engine's mutator.
+        """
+        return self._mutator.crossover(parent_a, parent_b, task)
+
 
 # ── Plugin registration ──────────────────────────────────────────────────────
 from typing import Any
@@ -235,4 +243,17 @@ class TabuPlugin(CambrianPlugin):
     impact = None
 
     def register(self, engine: Any) -> None:
-        pass  # TabuMutator is used standalone; no engine hooks required
+        """Wrap the engine's mutator with tabu rejection and advance the tabu
+        list each generation. Genuinely alters search dynamics (mutations that
+        revisit recent genomes are retried)."""
+        base = getattr(engine, "_mutator", None)
+        if base is None:
+            return
+        self._tabu_list = TabuList()
+        engine._mutator = TabuMutator(base, self._tabu_list)
+        engine.add_hook("on_generation_end", self._advance)
+
+    def _advance(self, generation: int, population: list) -> None:
+        tabu_list = getattr(self, "_tabu_list", None)
+        if tabu_list is not None:
+            tabu_list.advance_generation()

@@ -215,4 +215,28 @@ class ApoptosisPlugin(CambrianPlugin):
     impact = None
 
     def register(self, engine: Any) -> None:
-        pass  # ApoptosisController is used standalone; no engine hooks required
+        """Track per-agent fitness and re-seed chronically poor agents in place.
+
+        Genuinely alters the population: agents that stagnate or fall below the
+        fitness floor have their genome replaced by a clone of the current best
+        and their fitness reset for re-evaluation next generation.
+        """
+        self._controller = ApoptosisController()
+        engine.add_hook("post_evaluation", self._on_eval)
+        engine.add_hook("on_generation_end", self._on_gen_end)
+
+    def _on_eval(self, agent: Agent, score: float, task: str) -> None:
+        self._controller.record(agent)
+
+    def _on_gen_end(self, generation: int, population: list) -> None:
+        if not population:
+            return
+        best = max(population, key=lambda a: a.fitness or 0.0)
+        for agent in population:
+            if agent.id == best.id:
+                continue
+            should, _reason = self._controller.should_die(agent)
+            if should:
+                agent.genome = Genome.from_dict(best.genome.to_dict())
+                agent._fitness = None
+                self._controller.reset_history(agent.id)
