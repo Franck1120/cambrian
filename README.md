@@ -4,19 +4,24 @@
 
 Cambrian runs a genetic algorithm over LLM agent genomes — system prompts, temperature, strategy, few-shot examples, tools — guided by an LLM mutator. One command. No manual tweaking.
 
-[![PyPI](https://img.shields.io/pypi/v/cambrian-ai)](https://pypi.org/project/cambrian-ai/)
+[![CI](https://github.com/Franck1120/cambrian/actions/workflows/ci.yml/badge.svg)](https://github.com/Franck1120/cambrian/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-2242%20passing-brightgreen)](tests/)
-[![Version](https://img.shields.io/badge/version-1.0.4-blue)](CHANGELOG.md)
-[![mypy](https://img.shields.io/badge/mypy-0%20errors-blue)](https://mypy-lang.org)
+[![Tests](https://img.shields.io/badge/tests-2347%20passing-brightgreen)](tests/)
+[![Status](https://img.shields.io/badge/status-v0.1.0--dev-orange)](#status)
+
+> **Status:** `v0.1.0-dev` — **not yet published to PyPI**, empirical validation pending.
+> The core CLI + evolutionary engine are real and tested; convergence vs. baselines
+> has not yet been benchmarked on a public task. See [Status](#status) for the honest state.
 
 ---
 
 ## Quickstart
 
 ```bash
-pip install cambrian-ai
+# Not on PyPI yet — install from source:
+git clone https://github.com/Franck1120/cambrian.git
+cd cambrian && pip install -e .
 
 # Evolve a prompt for a coding task — 10 generations, 8 agents, no manual work
 cambrian evolve "Write a Python function that reverses a string" \
@@ -61,7 +66,7 @@ The LLM mutator reads the current genome and its fitness score, then writes an i
 
 ## Key features
 
-**50 bio-inspired operators** — LamarckianAdapter, EpigeneticLayer, ImmuneMemory, ApoptosisController, DreamPhase, QuorumSensor, HorizontalGeneTransfer, ZeitgeberScheduler, NeuromodulatorBank, MetamorphosisController, EcosystemInteraction, FractalEvolution, and more.
+**30 bio-inspired operators** — LamarckianAdapter, EpigeneticLayer, ImmuneMemory, ApoptosisController, DreamPhase, QuorumSensor, HorizontalGeneTransfer, ZeitgeberScheduler, NeuromodulatorBank, MetamorphosisController, EcosystemInteraction, FractalEvolution, and more. About half are genuine algorithms (annealing, tabu, apoptosis, HGT, neuromodulation); the rest are LLM-prompting pipelines under a biological name. A handful are wired into the engine hooks by default (see [Operators](#operators-engine-integration)); the others run standalone.
 
 **Production-grade evaluation** — LLMJudge, CodeEvaluator (sandboxed subprocess), CompositeEvaluator, VarianceAwareEvaluator (anti-reward-hacking), BaldwinEvaluator, DiffCoTEvaluator, ConstitutionalWrapper.
 
@@ -111,9 +116,16 @@ print(best.genome.system_prompt)
 | Island / Archipelago | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Meta-evolution (auto-HP) | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Multi-agent tournament | ✅ | ❌ | ❌ | ❌ | ❌ |
-| 50 bio-inspired operators | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 30 bio-inspired operators | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Safeguards (drift + anomaly) | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Any OpenAI-compatible API | ✅ | ✅ | ✅ | partial | ✅ |
+
+> **Honest caveat:** this table shows *feature breadth*, not measured superiority.
+> Cambrian has **not** been benchmarked against these systems on any public task.
+> DSPy/GEPA are also gradient-free; [GEPA](https://arxiv.org/abs/2507.19457) (ICLR 2026)
+> is the closest prior art to Cambrian's LLM-guided mutation and is already published
+> and benchmarked. Cambrian's honest claim today is **breadth + clean engineering**,
+> not a proven performance edge. See [Status](#status).
 
 ---
 
@@ -142,7 +154,7 @@ cambrian version
 | | |
 |-|-|
 | [Tutorial](docs/TUTORIAL.md) | New-user guide: install → evolve → forge → export |
-| [API Reference](docs/API_REFERENCE.md) | All 126 public symbols |
+| [API Reference](docs/API_REFERENCE.md) | Public API surface |
 | [Architecture](docs/ARCHITECTURE.md) | Component diagram + data flows |
 | [Comparison](docs/COMPARISON.md) | Deep dive: Cambrian vs DSPy, DGM, AVO, EvoAgent |
 | [Deployment](docs/DEPLOYMENT.md) | Render, Docker, Kubernetes |
@@ -162,6 +174,54 @@ pytest tests/ -q          # 1973 tests, ~10s
 mypy cambrian/ --ignore-missing-imports
 ruff check cambrian/
 ```
+
+---
+
+## Operators (engine integration)
+
+The 30 operators split into two honest categories:
+
+**Engine-integrated by default** (genuinely alter the evolutionary dynamics via
+engine hooks — enable with `--enable tabu,apoptosis`):
+
+| Operator | Hook | Real effect |
+|----------|------|-------------|
+| `tabu` | wraps the mutator + `on_generation_end` | rejects mutations that revisit recently-seen genomes; retries up to N times |
+| `apoptosis` | `post_evaluation` + `on_generation_end` | re-seeds chronically stagnant / sub-floor agents from the current best |
+
+**Standalone** (the other 28) — used directly in your own code, not auto-wired
+into the engine loop. About half are real algorithms; the rest are LLM-prompting
+pipelines under a biological name. The honest mapping for the LLM-wrapper ones:
+
+| Operator | What it actually is |
+|----------|---------------------|
+| `glossolalia` | one high-temperature LLM call followed by a low-temperature refine |
+| `dream` | offline LLM "replay" pass that proposes genome variants |
+| `reflexion` | LLM self-critique of a trajectory, fed back as a score |
+| `symbiosis` / `metamorphosis` | multi-step LLM prompting chains |
+
+If you enable a standalone operator via `--enable`, its `register()` is a no-op
+(it does not attach to the loop) — that is intentional and documented, not a bug.
+
+---
+
+## Status
+
+**`v0.1.0-dev` — honest state as of 2026-06-15:**
+
+- ✅ **Real:** CLI, `EvolutionEngine` (tournament + elitism + crossover + MAP-Elites),
+  `LLMMutator`, NSGA-II (`pareto.py`), sandboxed `CodeEvaluator`, Gemini/OpenAI/Anthropic
+  backends, 2347 passing tests (~90% line coverage).
+- ✅ **API/WebUI:** now backed by the **real** `EvolutionEngine` (set `CAMBRIAN_BACKEND=gemini`
+  + `GEMINI_API_KEY`). Without a key it runs the mock backend and tags runs `backend="mock"`
+  so the UI shows the numbers are simulated.
+- ⚠️ **Not yet done:** **no convergence benchmark** vs. random search / hill-climbing has
+  been run on a real task yet (harness lives in `benchmarks/humaneval_real.py`, awaiting a
+  Gemini key). Not on PyPI. 8 open `mypy` errors. ~28/30 operators are standalone.
+- ❌ **Not claimed:** any measured performance edge over DSPy / GEPA / DGM.
+
+The one thing that would turn "clean GA framework" into "defensible product" is the
+benchmark — run `benchmarks/humaneval_real.py` with a real key (see its header).
 
 ---
 
