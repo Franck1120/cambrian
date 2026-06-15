@@ -20,14 +20,28 @@ WS   /ws/evolve/{run_id}
 Usage::
 
     cambrian serve --port 8000
+
+Backend selection
+-----------------
+``POST /api/evolve`` runs the **real** :class:`~cambrian.evolution.EvolutionEngine`.
+The LLM backend is chosen by the ``CAMBRIAN_BACKEND`` environment variable:
+
+* ``gemini`` (default) — Google Gemini Flash. Requires ``GEMINI_API_KEY``
+  (or ``GOOGLE_API_KEY``). Free tier: ~1500 requests/day.
+* ``mock`` — offline deterministic backend (no inference). For demos/CI.
+
+If ``gemini`` is selected but no key is present, the server logs a warning and
+falls back to the mock backend, tagging the run ``backend="mock"`` so the UI
+can show that the numbers are simulated, not real model output.
 """
 
 from __future__ import annotations
 
 import asyncio
 import json
+import logging
+import os
 import queue
-import random
 import sqlite3
 import threading
 import time
@@ -42,6 +56,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from cambrian.plugin_registry import PluginRegistry
+
+logger = logging.getLogger("cambrian.api")
 
 # ── Global state ──────────────────────────────────────────────────────────────
 
@@ -113,6 +129,9 @@ class EvolutionConfigIn(BaseModel):
 class EvolveOut(BaseModel):
     run_id: str
     status: str
+    backend: str = "gemini"
+    #: Set when the requested backend was unavailable and a fallback was used.
+    warning: str | None = None
 
 
 # ── Built-in model catalogue (no registry file needed) ────────────────────────
@@ -344,125 +363,202 @@ def _row_to_agent(row: sqlite3.Row) -> AgentOut:
     )
 
 
-# ── Stub evolution (runs in background thread) ────────────────────────────────
-
-_STRATEGIES = ["reflexion", "chain-of-thought", "tree-of-thought", "react", "direct", "moa"]
+# ── Backend resolution ────────────────────────────────────────────────────────
 
 
-def _stub_evolution(
+def _resolve_backend() -> tuple[Any, str, bool, str | None]:
+    """Pick the LLM backend from ``CAMBRIAN_BACKEND`` (default ``gemini``).
+
+    Returns ``(backend, label, is_mock, warning)``. Falls back to the offline
+    :class:`~cambrian.backends.mock.MockBackend` (with a warning) when Gemini
+    is requested but no API key is configured.
+    """
+    from cambrian.backends.mock import MockBackend
+
+    choice = os.getenv("CAMBRIAN_BACKEND", "gemini").strip().lower()
+    has_key = bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
+
+    if choice == "mock":
+        return MockBackend(), "mock", True, None
+
+    if choice == "gemini":
+        if not has_key:
+            warning = (
+                "CAMBRIAN_BACKEND=gemini but no GEMINI_API_KEY/GOOGLE_API_KEY set — "
+                "using mock backend (results are simulated, NOT real LLM output). "
+                "Set GEMINI_API_KEY for a real run."
+            )
+            logger.warning(warning)
+            return MockBackend(), "mock", True, warning
+        from cambrian.backends.gemini import GeminiBackend
+
+        return GeminiBackend(model="gemini-2.0-flash"), "gemini-2.0-flash", False, None
+
+    # Unknown value — fail safe to mock with a warning rather than crash.
+    warning = f"Unknown CAMBRIAN_BACKEND={choice!r}; using mock backend."
+    logger.warning(warning)
+    return MockBackend(), "mock", True, warning
+
+
+def _mock_evaluator(agent: Any, task: str) -> float:
+    """Deterministic offline fitness over the genome (no LLM call).
+
+    Used only with the mock backend so the *real* EvolutionEngine still has a
+    landscape to climb (exercising selection/mutation/elitism for real). The
+    score is a reproducible function of the genome — it measures the search
+    machinery, NOT model capability. Runs tagged ``backend="mock"`` advertise
+    this so the UI never presents these numbers as real.
+    """
+    genome = agent.genome
+    prompt = genome.system_prompt.lower()
+    # Reward task-relevant keywords + reasonable length + moderate temperature.
+    keywords = [w for w in task.lower().split() if len(w) > 3]
+    hits = sum(1 for kw in set(keywords) if kw in prompt)
+    kw_score = hits / max(1, len(set(keywords)))
+    len_score = min(1.0, len(prompt) / 600.0)
+    temp_score = 1.0 - abs(genome.temperature - 0.7) / 1.4
+    return round(0.5 * kw_score + 0.3 * len_score + 0.2 * temp_score, 4)
+
+
+def _run_evolution(
     run_id: str,
     task: str,
     generations: int,
     population: int,
     plugins: list[str],
     db_path: Path,
+    backend: Any,
+    backend_label: str,
+    is_mock: bool,
 ) -> None:
-    """Simulate an evolutionary run without a real LLM backend.
+    """Run the real :class:`EvolutionEngine` and stream events to the WS queue.
 
-    Pushes WSMessage-compatible dicts into ``_run_queues[run_id]``.
-    Persists agents and final run stats to SQLite.
-
-    *db_path* is captured at call time so daemon threads don't pick up
-    a stale global if the caller (e.g. a test) resets ``DB_PATH`` later.
+    Pushes WSMessage-compatible dicts into ``_run_queues[run_id]`` and persists
+    agents + final run stats to SQLite. *db_path* is captured at call time so
+    daemon threads don't pick up a stale global if a test resets ``DB_PATH``.
     """
+    from cambrian.agent import Genome
+    from cambrian.evolution import EvolutionEngine
+    from cambrian.mutator import LLMMutator
+
     q = _run_queues[run_id]
     start = time.monotonic()
-    rng = random.Random(run_id)
 
-    all_agents: list[dict[str, Any]] = []
-    base_fitness = rng.uniform(0.25, 0.45)
+    if is_mock:
+        evaluator: Any = _mock_evaluator
+    else:
+        from cambrian.evaluators.llm_judge import LLMJudgeEvaluator
 
-    try:
-        for gen in range(generations):
-            gen_agents: list[dict[str, Any]] = []
+        evaluator = LLMJudgeEvaluator(judge_backend=backend)
 
-            for i in range(population):
-                agent_id = str(uuid.uuid4())
-                # Fitness gradually improves, with noise
-                noise = rng.uniform(-0.03, 0.05)
-                fitness = min(0.99, base_fitness + gen * rng.uniform(0.04, 0.10) + noise)
-                fitness = max(0.0, round(fitness, 4))
+    # Deterministic seed per run for reproducibility.
+    seed = int(uuid.UUID(run_id).int % (2**32))
+    mutator = LLMMutator(backend=backend, mutation_temperature=0.6)
+    engine = EvolutionEngine(
+        evaluator=evaluator,
+        mutator=mutator,
+        backend=backend,
+        population_size=population,
+        seed=seed,
+    )
 
-                parent_id = all_agents[rng.randrange(len(all_agents))]["id"] if all_agents else None
-                strategy = rng.choice(_STRATEGIES)
-                temperature = round(rng.uniform(0.5, 1.2), 2)
-                prompt_tokens = rng.randint(120, 480)
+    # ── Plugin loading: register requested operators on the engine hooks ──────
+    active_plugins: list[str] = []
+    if plugins:
+        try:
+            registry = PluginRegistry()
+            registry.enable(plugins, engine)
+            active_plugins = registry.active_plugins
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Could not enable plugins %s: %s", plugins, exc)
 
-                fitness_history = [
-                    round(max(0.0, fitness - (gen - j) * rng.uniform(0.04, 0.08)), 4)
-                    for j in range(gen + 1)
-                ]
+    persisted_ids: set[str] = set()
 
-                agent: dict[str, Any] = {
-                    "id": agent_id,
-                    "run_id": run_id,
-                    "generation": gen,
-                    "fitness": fitness,
-                    "temperature": temperature,
-                    "strategy": strategy,
-                    "prompt_tokens": prompt_tokens,
-                    "status": "active",
-                    "parent_id": parent_id,
-                    "genome": (
-                        f"You are an AI agent evolving to solve: {task}\n\n"
-                        f"Strategy: {strategy} | Gen: {gen} | Temp: {temperature}"
-                    ),
-                    "fitness_history": fitness_history,
-                    "plugins_active": plugins[:3],
-                }
-
+    def _persist_and_stream(gen: int, pop: list[Any]) -> None:
+        gen_agents: list[dict[str, Any]] = []
+        for a in pop:
+            fitness = round(float(a.fitness or 0.0), 4)
+            agent: dict[str, Any] = {
+                "id": a.id,
+                "run_id": run_id,
+                "generation": gen,
+                "fitness": fitness,
+                "temperature": round(float(a.genome.temperature), 2),
+                "strategy": a.genome.strategy,
+                "prompt_tokens": a.genome.token_count(),
+                "status": "active",
+                "parent_id": None,
+                "genome": a.genome.system_prompt,
+                "fitness_history": [fitness],
+                "plugins_active": active_plugins[:3],
+            }
+            if a.id not in persisted_ids:
                 _insert_agent(agent, db_path)
-                gen_agents.append(agent)
-                all_agents.append(agent)
-
-                q.put({
-                    "type": "agent_update",
-                    "payload": {k: v for k, v in agent.items() if k != "run_id"},
-                })
-
-            best_gen = max(gen_agents, key=lambda a: a["fitness"])
-            avg_fitness = round(sum(a["fitness"] for a in gen_agents) / len(gen_agents), 4)
-
+                persisted_ids.add(a.id)
+            gen_agents.append(agent)
             q.put({
-                "type": "generation_complete",
-                "payload": {
-                    "generation": gen,
-                    "best_fitness": best_gen["fitness"],
-                    "avg_fitness": avg_fitness,
-                    "diversity": round(rng.uniform(0.3, 0.8), 3),
-                    "agent_ids": [a["id"] for a in gen_agents],
-                },
+                "type": "agent_update",
+                "payload": {k: v for k, v in agent.items() if k != "run_id"},
             })
 
-        # Mark top 20 % as elite
-        sorted_all = sorted(all_agents, key=lambda a: a["fitness"], reverse=True)
-        elite_n = max(1, len(sorted_all) // 5)
-        for a in sorted_all[:elite_n]:
-            _update_agent_status(a["id"], "elite", db_path)
+        best_gen = max(gen_agents, key=lambda x: x["fitness"])
+        avg_fitness = round(sum(x["fitness"] for x in gen_agents) / len(gen_agents), 4)
+        q.put({
+            "type": "generation_complete",
+            "payload": {
+                "generation": gen,
+                "best_fitness": best_gen["fitness"],
+                "avg_fitness": avg_fitness,
+                "backend": backend_label,
+                "agent_ids": [x["id"] for x in gen_agents],
+            },
+        })
 
-        best_overall = sorted_all[0]
+    try:
+        seed_genome = Genome(
+            system_prompt="You are a precise, knowledgeable AI assistant.",
+            model=backend_label,
+        )
+        best = engine.evolve(
+            seed_genomes=[seed_genome],
+            task=task,
+            n_generations=generations,
+            on_generation=_persist_and_stream,
+        )
+
+        # Mark top 20 % across all persisted agents as elite.
+        rows = _fetch_agents_for_run(run_id, db_path)
+        ranked = sorted(rows, key=lambda r: r["fitness"], reverse=True)
+        elite_n = max(1, len(ranked) // 5)
+        for r in ranked[:elite_n]:
+            _update_agent_status(r["id"], "elite", db_path)
+
+        best_fitness = round(float(best.fitness or 0.0), 4) if best else 0.0
         duration = round(time.monotonic() - start, 3)
-        _update_run(run_id, best_overall["fitness"], duration, "completed", db_path)
+        _update_run(run_id, best_fitness, duration, "completed", db_path)
 
         q.put({
             "type": "run_complete",
             "payload": {
                 "run_id": run_id,
-                "best_fitness": best_overall["fitness"],
-                "best_agent_id": best_overall["id"],
+                "best_fitness": best_fitness,
+                "best_agent_id": best.id if best else None,
                 "duration_s": duration,
-                "total_agents": len(all_agents),
+                "total_agents": len(persisted_ids),
+                "backend": backend_label,
+                "simulated": is_mock,
             },
         })
 
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         err_msg = str(exc)
+        logger.exception("Evolution run %s failed", run_id)
         duration = round(time.monotonic() - start, 3)
         try:
             _update_run(run_id, 0.0, duration, "failed", db_path)
-        except Exception:
+        except Exception:  # noqa: BLE001
             pass
-        q.put({"type": "error", "payload": {"message": err_msg}})
+        q.put({"type": "error", "payload": {"message": err_msg, "backend": backend_label}})
 
 
 # ── FastAPI app ───────────────────────────────────────────────────────────────
@@ -597,7 +693,7 @@ def delete_run(run_id: str) -> None:
 
 @app.post("/api/evolve", response_model=EvolveOut, status_code=201)
 def start_evolution(config: EvolutionConfigIn) -> EvolveOut:
-    """Create a run record and launch stub evolution in a background thread."""
+    """Create a run record and launch a real EvolutionEngine in a background thread."""
     run_id = str(uuid.uuid4())
 
     # Capture DB_PATH at request time so the daemon thread is not affected
@@ -606,18 +702,30 @@ def start_evolution(config: EvolutionConfigIn) -> EvolveOut:
     _init_db(db_path)
     _insert_run(run_id, config.task, config.generations, config.population, db_path)
 
+    backend, label, is_mock, warning = _resolve_backend()
+
     q: queue.Queue[dict[str, Any]] = queue.Queue()
     _run_queues[run_id] = q
 
     thread = threading.Thread(
-        target=_stub_evolution,
-        args=(run_id, config.task, config.generations, config.population, config.plugins, db_path),
+        target=_run_evolution,
+        args=(
+            run_id,
+            config.task,
+            config.generations,
+            config.population,
+            config.plugins,
+            db_path,
+            backend,
+            label,
+            is_mock,
+        ),
         daemon=True,
         name=f"evo-{run_id[:8]}",
     )
     thread.start()
 
-    return EvolveOut(run_id=run_id, status="running")
+    return EvolveOut(run_id=run_id, status="running", backend=label, warning=warning)
 
 
 # ── Agents ─────────────────────────────────────────────────────────────────────
