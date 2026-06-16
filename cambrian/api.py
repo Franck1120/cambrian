@@ -392,7 +392,8 @@ def _resolve_backend() -> tuple[Any, str, bool, str | None]:
             return MockBackend(), "mock", True, warning
         from cambrian.backends.gemini import GeminiBackend
 
-        return GeminiBackend(model="gemini-2.0-flash"), "gemini-2.0-flash", False, None
+        model = os.getenv("CAMBRIAN_GEMINI_MODEL", "gemini-2.5-flash")
+        return GeminiBackend(model=model), model, False, None
 
     # Unknown value — fail safe to mock with a warning rather than crash.
     warning = f"Unknown CAMBRIAN_BACKEND={choice!r}; using mock backend."
