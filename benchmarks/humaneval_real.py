@@ -240,6 +240,8 @@ def make_evaluator(problem: dict[str, str]) -> Callable[[Agent, str], float]:
     def _evaluate(agent: Agent, task: str) -> float:
         try:
             response = agent.run(task)
+        except BackendExhausted:
+            raise  # never score a quota-blocked call as a 0.0 failure
         except Exception:
             return 0.0
         code = extract_python_code(response)
@@ -266,6 +268,21 @@ def _problem_task(problem: dict[str, str]) -> str:
 
 # ── Method results ─────────────────────────────────────────────────────────────
 
+class BackendExhausted(RuntimeError):
+    """Raised when the LLM backend fails (quota/rate-limit/auth) so the run
+    can abort loudly instead of silently scoring failed calls as 0.0 — which
+    would corrupt the benchmark into a fake 'everything fails' result."""
+
+
+_RATE_LIMIT_SIGNS = ("429", "resource_exhausted", "quota", "rate limit",
+                     "permission", "401", "403", "exceeded")
+
+
+def _is_backend_exhaustion(exc: Exception) -> bool:
+    msg = str(exc).lower()
+    return isinstance(exc, RuntimeError) and any(s in msg for s in _RATE_LIMIT_SIGNS)
+
+
 @dataclass
 class MethodRun:
     method: str
@@ -274,14 +291,17 @@ class MethodRun:
     n_llm_calls: int
     wall_s: float
     convergence: list[float] = field(default_factory=list)  # best-so-far per eval
+    n_failures: int = 0  # backend calls that errored (quota/rate-limit)
 
 
 class _CountingBackend(LLMBackend):
-    """Wraps a backend to count generate() calls (≈ API cost proxy)."""
+    """Wraps a backend to count generate() calls (≈ API cost proxy) and to
+    detect backend exhaustion (quota/rate-limit) so the harness can abort."""
 
     def __init__(self, inner: LLMBackend) -> None:
         self._inner = inner
         self.calls = 0
+        self.failures = 0
 
     @property
     def model_name(self) -> str:
@@ -289,7 +309,13 @@ class _CountingBackend(LLMBackend):
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
         self.calls += 1
-        return self._inner.generate(prompt, **kwargs)
+        try:
+            return self._inner.generate(prompt, **kwargs)
+        except Exception as exc:
+            self.failures += 1
+            if _is_backend_exhaustion(exc):
+                raise BackendExhausted(str(exc)) from exc
+            raise
 
 
 # ── Baselines ──────────────────────────────────────────────────────────────────
@@ -307,7 +333,8 @@ def run_random(problem: dict, backend: LLMBackend, budget: int, seed: int) -> Me
         score = evaluate(agent, task)
         best = max(best, score)
         curve.append(best)
-    return MethodRun("random", best, budget, counter.calls, time.monotonic() - t0, curve)
+    return MethodRun("random", best, budget, counter.calls, time.monotonic() - t0,
+                     curve, counter.failures)
 
 
 def run_hill(problem: dict, backend: LLMBackend, budget: int, seed: int) -> MethodRun:
@@ -339,7 +366,8 @@ def run_hill(problem: dict, backend: LLMBackend, budget: int, seed: int) -> Meth
             current, current_fit = cand, cand_fit
         best = max(best, cand_fit)
         curve.append(best)
-    return MethodRun("hill", best, budget, counter.calls, time.monotonic() - t0, curve)
+    return MethodRun("hill", best, budget, counter.calls, time.monotonic() - t0,
+                     curve, counter.failures)
 
 
 def run_cambrian(
@@ -379,6 +407,7 @@ def run_cambrian(
         counter.calls,
         time.monotonic() - t0,
         curve,
+        counter.failures,
     )
 
 
@@ -390,7 +419,8 @@ def _resolve_backend() -> tuple[LLMBackend, str, bool]:
     if choice == "gemini" and has_key:
         from cambrian.backends.gemini import GeminiBackend
 
-        return GeminiBackend(model="gemini-2.0-flash"), "gemini-2.0-flash", False
+        model = os.getenv("CAMBRIAN_GEMINI_MODEL", "gemini-2.5-flash")
+        return GeminiBackend(model=model), model, False
     from cambrian.backends.mock import MockBackend
 
     if choice == "gemini" and not has_key:
@@ -402,6 +432,52 @@ def _resolve_backend() -> tuple[LLMBackend, str, bool]:
             file=sys.stderr,
         )
     return MockBackend(), "mock", True
+
+
+def _preflight(backend: LLMBackend) -> None:
+    """One probe call. If the backend is unauthorised / quota-blocked from the
+    start, abort with a clear message instead of producing a fake all-zero run."""
+    try:
+        backend.generate("Reply with the single word OK.", temperature=0, max_tokens=5)
+    except Exception as exc:  # noqa: BLE001
+        if _is_backend_exhaustion(RuntimeError(str(exc))):
+            print(
+                "\nABORT — backend unusable on the very first call:\n"
+                f"  {str(exc)[:300]}\n\n"
+                "  The key authenticates but has no usable quota for this model.\n"
+                "  Fix: generate a standard AI Studio key (https://aistudio.google.com/apikey)\n"
+                "  on a project with the normal free tier, or enable billing. Then re-run.\n",
+                file=sys.stderr,
+            )
+            raise SystemExit(2) from exc
+        # Other errors: surface but let the run proceed (could be transient).
+        print(f"(preflight warning: {str(exc)[:200]})", file=sys.stderr)
+
+
+def _abort_quota(
+    date: str, label: str, reason: str, problems_done: int, rows: list[dict]
+) -> None:
+    """Write an explicit ABORTED artifact (never a misleading verdict) and report."""
+    print("\n" + "=" * 60, file=sys.stderr)
+    print(f"ABORTED — backend exhausted after {problems_done} complete problem(s).",
+          file=sys.stderr)
+    print(f"Reason: {reason}", file=sys.stderr)
+    print("This is NOT a verdict. The quota ran out mid-run, so every blocked\n"
+          "call would have scored a fake 0.0. Re-run with a key that has enough\n"
+          "daily quota (some projects cap the free tier at 20 requests/day/model).",
+          file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    path = RESULTS_DIR / f"humaneval_{date}_ABORTED.json"
+    path.write_text(json.dumps({
+        "status": "ABORTED_BACKEND_EXHAUSTED",
+        "backend": label,
+        "reason": reason,
+        "problems_completed": problems_done,
+        "partial_rows": rows,
+        "note": "Not a verdict. Quota ran out mid-run; results are invalid.",
+    }, indent=2))
+    print(f"Wrote {path}", file=sys.stderr)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -428,7 +504,10 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Problems: {len(problems)} | budget/method: {args.budget} evals | "
           f"GA: pop={args.population} gens={generations} ({ga_evals} evals)")
     print(f"Estimated LLM calls: ~{est_calls} "
-          f"(Gemini free tier ~1500/day)\n")
+          f"(needs a key whose free-tier/daily quota >= this; some projects cap at 20/day)\n")
+
+    if not is_mock:
+        _preflight(backend)
 
     results: dict[str, list[MethodRun]] = {"random": [], "hill": [], "cambrian": []}
     per_problem_rows: list[dict[str, Any]] = []
@@ -436,9 +515,24 @@ def main(argv: list[str] | None = None) -> int:
     for i, problem in enumerate(problems):
         seed = args.seed + i
         print(f"[{i+1}/{len(problems)}] {problem['task_id']} ...", flush=True)
-        r_rand = run_random(problem, backend, args.budget, seed)
-        r_hill = run_hill(problem, backend, args.budget, seed)
-        r_camb = run_cambrian(problem, backend, args.population, generations, seed)
+        try:
+            r_rand = run_random(problem, backend, args.budget, seed)
+            r_hill = run_hill(problem, backend, args.budget, seed)
+            r_camb = run_cambrian(problem, backend, args.population, generations, seed)
+        except BackendExhausted as exc:
+            _abort_quota(args.date, label, str(exc), i, per_problem_rows)
+            return 2
+        # A method that silently logged backend failures (e.g. GA, whose engine
+        # swallows evaluator exceptions) also invalidates the comparison.
+        total_fail = r_rand.n_failures + r_hill.n_failures + r_camb.n_failures
+        if total_fail > 0:
+            _abort_quota(
+                args.date, label,
+                f"{total_fail} backend calls failed (quota/rate-limit) on "
+                f"{problem['task_id']} — comparison invalid",
+                i, per_problem_rows,
+            )
+            return 2
         for r in (r_rand, r_hill, r_camb):
             results[r.method].append(r)
         per_problem_rows.append({
