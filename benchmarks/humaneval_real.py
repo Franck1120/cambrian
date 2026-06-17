@@ -420,7 +420,12 @@ def _resolve_backend() -> tuple[LLMBackend, str, bool]:
         from cambrian.backends.gemini import GeminiBackend
 
         model = os.getenv("CAMBRIAN_GEMINI_MODEL", "gemini-2.5-flash")
-        return GeminiBackend(model=model), model, False
+        # Free tier is often rate-limited (e.g. 5 req/min) with a ~40s retry
+        # delay. Default to many retries so exponential backoff (up to ~2^8s)
+        # rides out the per-minute window instead of failing. Override with
+        # CAMBRIAN_GEMINI_RETRIES. (Does NOT help the per-day cap — that aborts.)
+        retries = int(os.getenv("CAMBRIAN_GEMINI_RETRIES", "8"))
+        return GeminiBackend(model=model, max_retries=retries), model, False
     from cambrian.backends.mock import MockBackend
 
     if choice == "gemini" and not has_key:
