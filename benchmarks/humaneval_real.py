@@ -568,10 +568,25 @@ def main(argv: list[str] | None = None) -> int:
         "mean_wall_s": {m: sum(r.wall_s for r in results[m]) / len(results[m]) for m in results},
     }
 
-    rand_p, camb_p = summary["pass_at_1"]["random"], summary["pass_at_1"]["cambrian"]
+    rand_p, camb_p, hill_p = (
+        summary["pass_at_1"]["random"],
+        summary["pass_at_1"]["cambrian"],
+        summary["pass_at_1"]["hill"],
+    )
     delta = camb_p - rand_p
+    all_p = [rand_p, camb_p, hill_p]
     if is_mock:
         verdict = "MOCK RUN — harness validated, NOT evidence. Re-run with GEMINI_API_KEY."
+    elif min(all_p) >= 0.95:
+        # Ceiling: every method solves (almost) everything → the problems are
+        # too easy for this base model to discriminate. delta=0 here is NOT
+        # 'GA is worthless' — it's 'no measurement possible'. Use harder problems.
+        verdict = ("INCONCLUSIVE (ceiling) — all methods saturate at ~100% pass@1; "
+                   "problems too easy for this model to discriminate. Use harder "
+                   "problems (or a weaker model) so prompt evolution has headroom.")
+    elif max(all_p) <= 0.05:
+        verdict = ("INCONCLUSIVE (floor) — no method solves anything; problems too "
+                   "hard for this model, or evaluation is mis-set. Check setup.")
     elif delta > 0.15:
         verdict = f"GREEN — Cambrian beats random by {delta*100:.0f}pp pass@1. Worth it."
     elif delta >= 0.05:

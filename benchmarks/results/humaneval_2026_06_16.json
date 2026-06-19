@@ -1,0 +1,81 @@
+{
+  "summary": {
+    "backend": "gemini-2.5-flash",
+    "is_mock": false,
+    "n_problems": 2,
+    "budget_per_method": 2,
+    "ga_population": 2,
+    "ga_generations": 1,
+    "pass_at_1": {
+      "random": 1.0,
+      "hill": 1.0,
+      "cambrian": 1.0
+    },
+    "total_llm_calls": {
+      "random": 4,
+      "hill": 4,
+      "cambrian": 8
+    },
+    "mean_wall_s": {
+      "random": 12.827802600011637,
+      "hill": 12.466969350003637,
+      "cambrian": 44.3767935000069
+    },
+    "verdict": "INCONCLUSIVE (ceiling) \u2014 all methods saturate at ~100% pass@1; problems too easy for this model to discriminate. Use harder problems (or a weaker model) so prompt evolution has headroom.",
+    "verdict_note": "PILOT n=2 problems, budget=2 \u2014 NOT a full benchmark. Real path validated end-to-end against live gemini-2.5-flash (calls succeeded, code executed in sandbox, tests ran). Ceiling effect blocks any GA-vs-random measurement."
+  },
+  "per_problem": [
+    {
+      "task_id": "HumanEval/0",
+      "random_pass": 1.0,
+      "hill_pass": 1.0,
+      "cambrian_pass": 1.0,
+      "random_calls": 2,
+      "hill_calls": 2,
+      "cambrian_calls": 4
+    },
+    {
+      "task_id": "HumanEval/2",
+      "random_pass": 1.0,
+      "hill_pass": 1.0,
+      "cambrian_pass": 1.0,
+      "random_calls": 2,
+      "hill_calls": 2,
+      "cambrian_calls": 4
+    }
+  ],
+  "convergence": {
+    "random": [
+      [
+        1.0,
+        1.0
+      ],
+      [
+        1.0,
+        1.0
+      ]
+    ],
+    "hill": [
+      [
+        1.0,
+        1.0
+      ],
+      [
+        1.0,
+        1.0
+      ]
+    ],
+    "cambrian": [
+      [
+        1.0,
+        1.0,
+        1.0
+      ],
+      [
+        1.0,
+        1.0,
+        1.0
+      ]
+    ]
+  }
+}
