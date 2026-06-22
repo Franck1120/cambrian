@@ -16,6 +16,17 @@ Cambrian runs a genetic algorithm over LLM agent genomes — system prompts, tem
 
 ---
 
+## Demo
+
+<!-- TODO: replace with a real asciinema / terminal recording -->
+| Evolve a prompt | Forge code | Live dashboard |
+|-----------------|------------|----------------|
+| ![Evolve demo](docs/demo/evolve.gif) | ![Forge demo](docs/demo/forge.gif) | ![Dashboard demo](docs/demo/dashboard.gif) |
+
+> _GIFs are placeholders — record `cambrian evolve` / `cambrian forge` into `docs/demo/`._
+
+---
+
 ## Quickstart
 
 ```bash
@@ -44,10 +55,13 @@ python examples/demo_end_to_end.py   # runs entirely with a mock backend
 
 ## How it works
 
-```
-Seed genomes → EVALUATE → SELECT → MUTATE (LLM rewrites genome) → next generation
-                   ↑                                                      │
-                   └──────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    SEED["Seed genomes"] --> EVAL["Evaluate<br/>fitness score"]
+    EVAL --> SEL["Select<br/>tournament + elitism"]
+    SEL --> MUT["Mutate<br/>LLM rewrites genome"]
+    MUT -->|"next generation"| EVAL
+    EVAL -.->|"converged"| BEST["Best genome"]
 ```
 
 The LLM mutator reads the current genome and its fitness score, then writes an improved version. Tournament selection + elitism + optional crossover. No gradients. No labelled datasets. Just fitness signal.
@@ -228,3 +242,9 @@ benchmark — run `benchmarks/humaneval_real.py` with a real key (see its header
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+---
+
+## Author
+
+Built by **[Hephios Lab](https://github.com/Franck1120)** ([@Franck1120](https://github.com/Franck1120)).
