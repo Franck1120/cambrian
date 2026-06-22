@@ -10,6 +10,13 @@ from __future__ import annotations
 
 import re
 
+#: Fast / cheap Groq free-tier model recommended for router's cheap tier.
+GROQ_CHEAP_MODEL = "llama-3.1-8b"
+#: Balanced Groq model for medium-complexity tasks.
+GROQ_MEDIUM_MODEL = "llama-3.3-70b"
+#: High-capability model for complex tasks (CLIProxy).
+CLI_PROXY_PREMIUM_MODEL = "gemini-3-pro"
+
 
 # Token thresholds for routing tiers
 _CHEAP_MAX_TOKENS = 100
