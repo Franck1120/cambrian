@@ -21,7 +21,9 @@ from cambrian.safeguards import (
 # ---------------------------------------------------------------------------
 
 
-def _agent(fitness: float = 0.5, prompt: str = "expert analytical step-by-step") -> Agent:
+def _agent(
+    fitness: float = 0.5, prompt: str = "expert analytical step-by-step"
+) -> Agent:
     g = Genome(system_prompt=prompt)
     a = Agent(genome=g)
     a.fitness = fitness

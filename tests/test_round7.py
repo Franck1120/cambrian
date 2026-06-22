@@ -31,7 +31,11 @@ from cambrian.diffcot import (
     make_diffcot_evaluator,
 )
 from cambrian.evaluator import Evaluator
-from cambrian.tool_creation import ToolInventionResult, ToolInventor, ToolPopulationRegistry
+from cambrian.tool_creation import (
+    ToolInventionResult,
+    ToolInventor,
+    ToolPopulationRegistry,
+)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -39,7 +43,9 @@ from cambrian.tool_creation import ToolInventionResult, ToolInventor, ToolPopula
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def _agent(system_prompt: str = "You are helpful.", fitness: float | None = None) -> Agent:
+def _agent(
+    system_prompt: str = "You are helpful.", fitness: float | None = None
+) -> Agent:
     genome = Genome(system_prompt=system_prompt, temperature=0.5)
     agent = Agent(genome=genome)
     if fitness is not None:
@@ -94,7 +100,9 @@ class TestDiffCoTTemperature:
     def _reasoner(self, schedule: str) -> DiffCoTReasoner:
         return DiffCoTReasoner(
             backend=_mock_backend(),
-            config=DiffCoTConfig(n_steps=4, noise_level=0.0, temperature_schedule=schedule),
+            config=DiffCoTConfig(
+                n_steps=4, noise_level=0.0, temperature_schedule=schedule
+            ),
         )
 
     def test_constant_schedule(self) -> None:
@@ -222,7 +230,9 @@ class TestDiffCoTEvaluator:
     def test_make_diffcot_evaluator_factory(self) -> None:
         backend = _mock_backend("x")
         base_eval = _ConstEvaluator(0.6)
-        evaluator = make_diffcot_evaluator(base_eval, backend, n_steps=2, noise_level=0.1)
+        evaluator = make_diffcot_evaluator(
+            base_eval, backend, n_steps=2, noise_level=0.1
+        )
         assert isinstance(evaluator, DiffCoTEvaluator)
 
     def test_make_diffcot_evaluator_scores(self) -> None:
@@ -464,7 +474,9 @@ class TestToolSpec:
         assert spec.timeout == pytest.approx(10.0)
 
     def test_to_dict(self) -> None:
-        spec = ToolSpec(name="echo_tool", description="Echo input", command_template="echo {input}")
+        spec = ToolSpec(
+            name="echo_tool", description="Echo input", command_template="echo {input}"
+        )
         d = spec.to_dict()
         assert d["name"] == "echo_tool"
         assert "command_template" in d
@@ -489,6 +501,7 @@ class TestToolSpec:
         cli_tool = spec.to_cli_tool()
         # Returns a CLITool instance
         from cambrian.cli_tools import CLITool
+
         assert isinstance(cli_tool, CLITool)
 
     def test_tool_spec_defaults(self) -> None:
@@ -517,7 +530,9 @@ class TestGenomeToolSpecs:
 
     def test_genome_from_dict_restores_tool_specs(self) -> None:
         genome = Genome(system_prompt="Test")
-        spec = ToolSpec(name="my_tool", description="d", command_template="wc -w {input}")
+        spec = ToolSpec(
+            name="my_tool", description="d", command_template="wc -w {input}"
+        )
         genome.tool_specs.append(spec)
         d = genome.to_dict()
         restored = Genome.from_dict(d)
@@ -549,7 +564,9 @@ class TestToolInventor:
         agent = _agent()
         # _parse_spec is internal; test via invent_tool
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(returncode=0, stdout="hello world", stderr="")
+            mock_run.return_value = MagicMock(
+                returncode=0, stdout="hello world", stderr=""
+            )
             result = inventor.invent_tool(agent, "echo task")
         # May return None if LLM parsing fails; just check it doesn't raise
         assert result is None or isinstance(result, ToolInventionResult)
@@ -570,7 +587,9 @@ class TestToolInventor:
     def test_inject_tools_adds_to_genome(self) -> None:
         inventor = self._make_inventor("")
         agent = _agent()
-        spec = ToolSpec(name="new_tool", description="New", command_template="echo {input}")
+        spec = ToolSpec(
+            name="new_tool", description="New", command_template="echo {input}"
+        )
         new_agent = inventor.inject_tools(agent, [spec])
         assert len(new_agent.genome.tool_specs) == 1
         assert new_agent.genome.tool_specs[0].name == "new_tool"
@@ -600,7 +619,9 @@ class TestToolInventor:
 
 class TestToolPopulationRegistry:
     def _spec(self, name: str, use_count: int = 0) -> ToolSpec:
-        spec = ToolSpec(name=name, description=f"Desc {name}", command_template=f"echo {name}")
+        spec = ToolSpec(
+            name=name, description=f"Desc {name}", command_template=f"echo {name}"
+        )
         return spec
 
     def test_empty_registry(self) -> None:
@@ -651,7 +672,11 @@ class TestToolPopulationRegistry:
 
     def test_to_dict_from_dict_roundtrip(self) -> None:
         reg = ToolPopulationRegistry()
-        reg.register(ToolSpec(name="rt", description="roundtrip", command_template="echo {input}"))
+        reg.register(
+            ToolSpec(
+                name="rt", description="roundtrip", command_template="echo {input}"
+            )
+        )
         d = reg.to_dict()
         restored = ToolPopulationRegistry.from_dict(d)
         assert len(restored) == 1
@@ -676,6 +701,7 @@ class TestToolPopulationRegistry:
 class TestCausalStrategyExtractor:
     def test_extract_returns_graph(self) -> None:
         from cambrian.causal import CausalStrategyExtractor
+
         backend = _mock_backend(
             "IF complex problem THEN use step-by-step reasoning.\n"
             "IF output is code THEN include docstrings."
@@ -686,6 +712,7 @@ class TestCausalStrategyExtractor:
 
     def test_extract_with_empty_response(self) -> None:
         from cambrian.causal import CausalStrategyExtractor
+
         backend = _mock_backend("")
         extractor = CausalStrategyExtractor(backend=backend)
         graph = extractor.extract("", task="")
@@ -762,14 +789,16 @@ class TestSnapshotCLI:
         for gen in range(n_generations):
             for i in range(agents_per_gen):
                 agent_id = f"agent_{gen}_{i}"
-                nodes.append({
-                    "id": agent_id,
-                    "generation": gen,
-                    "fitness": round(0.5 + gen * 0.1 + i * 0.05, 4),
-                    "system_prompt": f"Gen {gen} agent {i}",
-                    "strategy": "default",
-                    "temperature": 0.5,
-                })
+                nodes.append(
+                    {
+                        "id": agent_id,
+                        "generation": gen,
+                        "fitness": round(0.5 + gen * 0.1 + i * 0.05, 4),
+                        "system_prompt": f"Gen {gen} agent {i}",
+                        "strategy": "default",
+                        "temperature": 0.5,
+                    }
+                )
         data = {"name": "test", "nodes": nodes, "edges": edges}
         return json.dumps(data)
 
@@ -781,11 +810,16 @@ class TestSnapshotCLI:
         lineage_file.write_text(self._make_lineage(3, 3))
 
         runner = CliRunner()
-        result = runner.invoke(cli, [
-            "snapshot",
-            "--memory", str(lineage_file),
-            "--generation", "1",
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "snapshot",
+                "--memory",
+                str(lineage_file),
+                "--generation",
+                "1",
+            ],
+        )
         assert result.exit_code == 0, result.output
         assert "1" in result.output or "generation" in result.output.lower()
 
@@ -797,12 +831,18 @@ class TestSnapshotCLI:
         lineage_file.write_text(self._make_lineage(3, 2))
 
         runner = CliRunner()
-        result = runner.invoke(cli, [
-            "snapshot",
-            "--memory", str(lineage_file),
-            "--generation", "2",
-            "--format", "json",
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "snapshot",
+                "--memory",
+                str(lineage_file),
+                "--generation",
+                "2",
+                "--format",
+                "json",
+            ],
+        )
         assert result.exit_code == 0, result.output
         parsed = json.loads(result.output)
         assert "generation" in parsed or "agents" in parsed or isinstance(parsed, dict)
@@ -815,14 +855,23 @@ class TestSnapshotCLI:
         lineage_file.write_text(self._make_lineage(2, 2))
 
         runner = CliRunner()
-        result = runner.invoke(cli, [
-            "snapshot",
-            "--memory", str(lineage_file),
-            "--generation", "99",
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "snapshot",
+                "--memory",
+                str(lineage_file),
+                "--generation",
+                "99",
+            ],
+        )
         # Should exit non-zero or display error message
-        assert result.exit_code != 0 or "not found" in result.output.lower() or \
-               "no" in result.output.lower() or "generation" in result.output.lower()
+        assert (
+            result.exit_code != 0
+            or "not found" in result.output.lower()
+            or "no" in result.output.lower()
+            or "generation" in result.output.lower()
+        )
 
     def test_snapshot_top_n(self, tmp_path) -> None:
         from click.testing import CliRunner
@@ -832,12 +881,18 @@ class TestSnapshotCLI:
         lineage_file.write_text(self._make_lineage(3, 5))
 
         runner = CliRunner()
-        result = runner.invoke(cli, [
-            "snapshot",
-            "--memory", str(lineage_file),
-            "--generation", "0",
-            "--top", "2",
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "snapshot",
+                "--memory",
+                str(lineage_file),
+                "--generation",
+                "0",
+                "--top",
+                "2",
+            ],
+        )
         assert result.exit_code == 0, result.output
 
     def test_snapshot_missing_file_errors(self, tmp_path) -> None:
@@ -845,9 +900,14 @@ class TestSnapshotCLI:
         from cambrian.cli import main as cli
 
         runner = CliRunner()
-        result = runner.invoke(cli, [
-            "snapshot",
-            "--memory", str(tmp_path / "nonexistent.json"),
-            "--generation", "0",
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "snapshot",
+                "--memory",
+                str(tmp_path / "nonexistent.json"),
+                "--generation",
+                "0",
+            ],
+        )
         assert result.exit_code != 0

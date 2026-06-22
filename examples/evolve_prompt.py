@@ -86,6 +86,7 @@ _STUDENT_QUESTIONS = [
 
 # ── Custom evaluator ──────────────────────────────────────────────────────────
 
+
 class SocraticEvaluator(Evaluator):
     """Evaluates agents on their Socratic tutoring quality.
 
@@ -150,7 +151,7 @@ class SocraticEvaluator(Evaluator):
             # Extract score from JSON or fallback to bare integer
             match = re.search(r'"score"\s*:\s*(\d+(?:\.\d+)?)', raw)
             if not match:
-                match = re.search(r'\b([0-9]|10)\b', raw)
+                match = re.search(r"\b([0-9]|10)\b", raw)
             score = float(match.group(1)) / 10.0 if match else 0.0
             scores.append(min(max(score, 0.0), 1.0))
             logger.debug("  question=%r score=%.2f", q[:40], score)
@@ -181,6 +182,7 @@ _SEED_PROMPTS = [
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
+
 
 def main(args: argparse.Namespace) -> None:
     """Run Socratic tutor system prompt evolution."""
@@ -281,7 +283,9 @@ if __name__ == "__main__":
         description="Evolve a Socratic tutor system prompt"
     )
     parser.add_argument("--model", default="gpt-4o-mini", help="Agent model")
-    parser.add_argument("--judge-model", default=None, help="Judge model (defaults to --model)")
+    parser.add_argument(
+        "--judge-model", default=None, help="Judge model (defaults to --model)"
+    )
     parser.add_argument(
         "--base-url",
         default=os.environ.get("CAMBRIAN_BASE_URL", "https://api.openai.com/v1"),
@@ -289,8 +293,12 @@ if __name__ == "__main__":
     parser.add_argument("--api-key", default=None)
     parser.add_argument("--generations", type=int, default=6)
     parser.add_argument("--population", type=int, default=6)
-    parser.add_argument("--n-questions", type=int, default=3,
-                        help="Student questions sampled per evaluation")
+    parser.add_argument(
+        "--n-questions",
+        type=int,
+        default=3,
+        help="Student questions sampled per evaluation",
+    )
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--output", default=None, help="Save best genome JSON here")
     main(parser.parse_args())

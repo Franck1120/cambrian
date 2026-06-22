@@ -301,7 +301,9 @@ def nsga2_select(
 
     logger.debug(
         "NSGA-II selected %d/%d agents across %d fronts",
-        len(selected), len(population), len(fronts),
+        len(selected),
+        len(population),
+        len(fronts),
     )
     return selected
 
@@ -360,9 +362,6 @@ def attach_diversity_scores(
         if n <= 1:
             vec.scores[objective_name] = 1.0
             continue
-        dists = sorted(
-            _char_dist(prompts[i], prompts[j])
-            for j in range(n) if j != i
-        )
+        dists = sorted(_char_dist(prompts[i], prompts[j]) for j in range(n) if j != i)
         neighbours = dists[:k]
         vec.scores[objective_name] = sum(neighbours) / len(neighbours)

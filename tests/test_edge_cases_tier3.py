@@ -10,6 +10,7 @@ Covers boundary conditions across:
 - glossolalia (GlossaloliaReasoner — latent truncation, synthesiser called)
 - inference_scaling (BestOfN — n=1 edge, BeamSearch single step)
 """
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock

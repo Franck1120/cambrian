@@ -182,14 +182,16 @@ class CurriculumScheduler:
 
         should_advance = (self._consecutive_passing >= self._patience) or forced
 
-        self._history.append({
-            "stage": self._stage_idx,
-            "metric": round(metric_value, 4),
-            "threshold": stage.threshold,
-            "passing": passing,
-            "consecutive": self._consecutive_passing,
-            "advanced": False,
-        })
+        self._history.append(
+            {
+                "stage": self._stage_idx,
+                "metric": round(metric_value, 4),
+                "threshold": stage.threshold,
+                "passing": passing,
+                "consecutive": self._consecutive_passing,
+                "advanced": False,
+            }
+        )
 
         if should_advance and self._stage_idx < len(self._stages) - 1:
             self._stage_idx += 1
@@ -232,15 +234,17 @@ class CurriculumScheduler:
         result: list[dict[str, Any]] = []
         for i, stage in enumerate(self._stages):
             metrics = by_stage.get(i, [])
-            result.append({
-                "stage": i,
-                "task": stage.task[:50],
-                "difficulty": stage.difficulty,
-                "threshold": stage.threshold,
-                "generations_spent": len(metrics),
-                "best_metric": max(metrics) if metrics else 0.0,
-                "mean_metric": sum(metrics) / len(metrics) if metrics else 0.0,
-            })
+            result.append(
+                {
+                    "stage": i,
+                    "task": stage.task[:50],
+                    "difficulty": stage.difficulty,
+                    "threshold": stage.threshold,
+                    "generations_spent": len(metrics),
+                    "best_metric": max(metrics) if metrics else 0.0,
+                    "mean_metric": sum(metrics) / len(metrics) if metrics else 0.0,
+                }
+            )
         return result
 
     @property
@@ -328,10 +332,28 @@ def make_reasoning_curriculum() -> CurriculumScheduler:
         ``advance_patience=3``.
     """
     stages = [
-        CurriculumStage(task="What is 2 + 2? Answer with only the number.", difficulty=0.01, threshold=0.9),
-        CurriculumStage(task="What is the capital of France?", difficulty=0.1, threshold=0.85),
-        CurriculumStage(task="If all cats are mammals and Whiskers is a cat, is Whiskers a mammal? Explain.", difficulty=0.3, threshold=0.75),
-        CurriculumStage(task="A farmer has 17 sheep. All but 9 run away. How many are left? Show your reasoning.", difficulty=0.5, threshold=0.7),
-        CurriculumStage(task="Solve the Tower of Hanoi for 3 discs. List the moves.", difficulty=0.85, threshold=0.6),
+        CurriculumStage(
+            task="What is 2 + 2? Answer with only the number.",
+            difficulty=0.01,
+            threshold=0.9,
+        ),
+        CurriculumStage(
+            task="What is the capital of France?", difficulty=0.1, threshold=0.85
+        ),
+        CurriculumStage(
+            task="If all cats are mammals and Whiskers is a cat, is Whiskers a mammal? Explain.",
+            difficulty=0.3,
+            threshold=0.75,
+        ),
+        CurriculumStage(
+            task="A farmer has 17 sheep. All but 9 run away. How many are left? Show your reasoning.",
+            difficulty=0.5,
+            threshold=0.7,
+        ),
+        CurriculumStage(
+            task="Solve the Tower of Hanoi for 3 discs. List the moves.",
+            difficulty=0.85,
+            threshold=0.6,
+        ),
     ]
     return CurriculumScheduler(stages=stages, metric="mean", advance_patience=3)

@@ -366,7 +366,8 @@ class TestEcosystemEdgeCases:
 
         # No prey below threshold=0.0 → predators all get delta=0
         predator_events = [
-            e for e in events
+            e
+            for e in events
             if eco.get_role(next(a for a in population if a.agent_id == e.agent_id))
             is EcologicalRole.PREDATOR
         ]
@@ -465,7 +466,9 @@ class TestFractalEdgeCases:
         """FractalPopulation with a single seed agent runs without error."""
         backend = _mock_backend()
         evaluator = _mock_evaluator(0.6)
-        config = ScaleConfig(scale=FractalScale.MACRO, population_size=1, n_generations=1)
+        config = ScaleConfig(
+            scale=FractalScale.MACRO, population_size=1, n_generations=1
+        )
         mutator = FractalMutator(backend=backend)
         seed = Genome(system_prompt="single seed genome text for testing purposes")
 
@@ -484,7 +487,9 @@ class TestFractalEdgeCases:
         """FractalPopulation.evolve_step returns an Agent after seeding."""
         backend = _mock_backend()
         evaluator = _mock_evaluator(0.7)
-        config = ScaleConfig(scale=FractalScale.MESO, population_size=2, n_generations=1)
+        config = ScaleConfig(
+            scale=FractalScale.MESO, population_size=2, n_generations=1
+        )
         mutator = FractalMutator(backend=backend)
         seed = Genome(system_prompt="meso scale seed genome for testing")
 

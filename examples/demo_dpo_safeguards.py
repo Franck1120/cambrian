@@ -84,8 +84,10 @@ sel = DPOSelector(beta=0.15, pair_strategy="adjacent")
 pairs = sel.build_pairs(population, task="Write clean Python code")
 print(f"  Built {len(pairs)} preference pairs")
 for p in pairs[:3]:
-    print(f"  chosen={p.chosen.fitness:.2f}  rejected={p.rejected.fitness:.2f}  "
-          f"margin={p.margin:.2f}")
+    print(
+        f"  chosen={p.chosen.fitness:.2f}  rejected={p.rejected.fitness:.2f}  "
+        f"margin={p.margin:.2f}"
+    )
 
 before = [(a.agent_id, a.fitness or 0.0) for a in population]
 sel.apply(population, task="Write clean Python code")
@@ -139,7 +141,9 @@ print("\n--- Safeguard Check (generation 5) ---")
 report = ctrl.check(population, generation=5)
 print(f"  Drift violations: {len(report['drift'])}")
 for ev in report["drift"]:
-    print(f"    agent {ev.agent_id[:8]}... drift={ev.drift_score:.3f} flagged={ev.flagged}")
+    print(
+        f"    agent {ev.agent_id[:8]}... drift={ev.drift_score:.3f} flagged={ev.flagged}"
+    )
 
 print(f"  Anomaly detections: {len(report['anomalies'])}")
 for aid in report["anomalies"]:

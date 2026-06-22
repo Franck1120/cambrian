@@ -1,5 +1,6 @@
 # Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.zeitgeber — ZeitgeberClock and ZeitgeberScheduler."""
+
 from __future__ import annotations
 
 import math
@@ -154,7 +155,9 @@ class TestZeitgeberSchedulerTick:
 
     def test_oscillation_over_full_cycle(self) -> None:
         clk = ZeitgeberClock(period=20)
-        sched = ZeitgeberScheduler(clock=clk, base_mutation_rate=0.5, mutation_range=0.4)
+        sched = ZeitgeberScheduler(
+            clock=clk, base_mutation_rate=0.5, mutation_range=0.4
+        )
         rates = []
         for _ in range(20):
             mr, _ = sched.tick()

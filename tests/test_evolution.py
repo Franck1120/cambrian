@@ -12,6 +12,7 @@ from cambrian.mutator import LLMMutator
 
 # ── Fakes ─────────────────────────────────────────────────────────────────────
 
+
 class _EchoBackend:
     """Minimal backend that returns the input genome JSON unchanged."""
 
@@ -74,6 +75,7 @@ def _seed_genome(prompt: str = "solve the task") -> Genome:
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
 
+
 class TestEvolutionEngine:
     def test_initialize_population_size(self) -> None:
         engine = _make_engine(population_size=6)
@@ -125,7 +127,8 @@ class TestEvolutionEngine:
         # With k=2 tournament from pool of 10, P(best wins) = k/n = 0.2.
         # Expected wins in 200 trials = 40. Threshold at 20 is a safe lower bound.
         wins = sum(
-            1 for _ in range(200)
+            1
+            for _ in range(200)
             if engine.tournament_selection(pop).fitness == pop[-1].fitness
         )
         assert wins > 20  # selection pressure sanity check (expected ~40)

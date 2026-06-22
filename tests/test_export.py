@@ -23,7 +23,9 @@ from cambrian.export import (
 # ---------------------------------------------------------------------------
 
 
-def _make_agent(prompt: str = "You are a helpful assistant.", fitness: float = 0.75) -> Agent:
+def _make_agent(
+    prompt: str = "You are a helpful assistant.", fitness: float = 0.75
+) -> Agent:
     agent = Agent(genome=Genome(system_prompt=prompt))
     agent.fitness = fitness
     return agent

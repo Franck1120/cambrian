@@ -8,8 +8,18 @@ from unittest.mock import MagicMock
 import pytest
 from cambrian.agent import Agent, Genome
 from cambrian.evaluator import Evaluator
-from cambrian.self_play import SelfPlayEvaluator, SelfPlayResult, TournamentRecord, run_tournament
-from cambrian.world_model import WorldModel, WorldModelEvaluator, WorldModelPrediction, world_model_fitness
+from cambrian.self_play import (
+    SelfPlayEvaluator,
+    SelfPlayResult,
+    TournamentRecord,
+    run_tournament,
+)
+from cambrian.world_model import (
+    WorldModel,
+    WorldModelEvaluator,
+    WorldModelPrediction,
+    world_model_fitness,
+)
 from cambrian.utils.logging import JSONLogger, load_json_log
 
 
@@ -24,6 +34,7 @@ def _agent(system_prompt: str = "Test", fitness: float | None = None) -> Agent:
 class _ConstEvaluator(Evaluator):
     def __init__(self, score: float = 0.5) -> None:
         self._score = score
+
     def evaluate(self, agent: Agent, task: str) -> float:
         return self._score
 
@@ -63,13 +74,17 @@ class TestSelfPlayEvaluator:
         assert sp.evaluate(_agent(), "task") == pytest.approx(0.7)
 
     def test_winner_gets_bonus(self) -> None:
-        sp = SelfPlayEvaluator(base_evaluator=_PromptLenEvaluator(), win_bonus=0.1, loss_penalty=0.05)
+        sp = SelfPlayEvaluator(
+            base_evaluator=_PromptLenEvaluator(), win_bonus=0.1, loss_penalty=0.05
+        )
         a, b = _agent("A" * 100), _agent("B" * 40)
         result = sp.compete(a, b, "task")
         assert result.winner_id == a.id and (a.fitness or 0.0) > result.score_a
 
     def test_loser_gets_penalty(self) -> None:
-        sp = SelfPlayEvaluator(base_evaluator=_PromptLenEvaluator(), win_bonus=0.1, loss_penalty=0.05)
+        sp = SelfPlayEvaluator(
+            base_evaluator=_PromptLenEvaluator(), win_bonus=0.1, loss_penalty=0.05
+        )
         a, b = _agent("A" * 100), _agent("B" * 40)
         result = sp.compete(a, b, "task")
         assert (b.fitness or 0.0) < result.score_b
@@ -81,16 +96,22 @@ class TestSelfPlayEvaluator:
     def test_pre_scores(self) -> None:
         sp = SelfPlayEvaluator(base_evaluator=_ConstEvaluator(0.0))
         result = sp.compete(_agent(), _agent(), "task", score_a=0.9, score_b=0.3)
-        assert result.score_a == pytest.approx(0.9) and result.score_b == pytest.approx(0.3)
+        assert result.score_a == pytest.approx(0.9) and result.score_b == pytest.approx(
+            0.3
+        )
 
     def test_fitness_clipped_max(self) -> None:
-        sp = SelfPlayEvaluator(base_evaluator=_ConstEvaluator(0.99), win_bonus=0.5, max_score=1.0)
+        sp = SelfPlayEvaluator(
+            base_evaluator=_ConstEvaluator(0.99), win_bonus=0.5, max_score=1.0
+        )
         a, b = _agent(), _agent()
         sp.compete(a, b, "task", score_a=0.99, score_b=0.5)
         assert (a.fitness or 0.0) <= 1.0
 
     def test_fitness_clipped_min(self) -> None:
-        sp = SelfPlayEvaluator(base_evaluator=_ConstEvaluator(0.01), loss_penalty=0.5, min_score=0.0)
+        sp = SelfPlayEvaluator(
+            base_evaluator=_ConstEvaluator(0.01), loss_penalty=0.5, min_score=0.0
+        )
         a, b = _agent(), _agent()
         sp.compete(a, b, "task", score_a=0.01, score_b=0.8)
         assert (a.fitness or 0.0) >= 0.0
@@ -108,11 +129,16 @@ class TestRunTournament:
         return [_agent("A" * (10 * (i + 1))) for i in range(n)]
 
     def test_returns_record(self) -> None:
-        assert isinstance(run_tournament(self._pop(3), SelfPlayEvaluator(_PromptLenEvaluator()), "t"), TournamentRecord)
+        assert isinstance(
+            run_tournament(self._pop(3), SelfPlayEvaluator(_PromptLenEvaluator()), "t"),
+            TournamentRecord,
+        )
 
     def test_match_count(self) -> None:
         n = 4
-        record = run_tournament(self._pop(n), SelfPlayEvaluator(_PromptLenEvaluator()), "t")
+        record = run_tournament(
+            self._pop(n), SelfPlayEvaluator(_PromptLenEvaluator()), "t"
+        )
         assert record.match_count() == n * (n - 1) // 2
 
     def test_all_agents_have_stats(self) -> None:
@@ -147,10 +173,20 @@ class TestRunTournament:
         assert run_tournament(pop, sp, "t", pre_scores=pre).match_count() == 3
 
     def test_single_agent(self) -> None:
-        assert run_tournament(self._pop(1), SelfPlayEvaluator(_ConstEvaluator(0.5)), "t").match_count() == 0
+        assert (
+            run_tournament(
+                self._pop(1), SelfPlayEvaluator(_ConstEvaluator(0.5)), "t"
+            ).match_count()
+            == 0
+        )
 
     def test_empty(self) -> None:
-        assert run_tournament([], SelfPlayEvaluator(_ConstEvaluator(0.5)), "t").match_count() == 0
+        assert (
+            run_tournament(
+                [], SelfPlayEvaluator(_ConstEvaluator(0.5)), "t"
+            ).match_count()
+            == 0
+        )
 
 
 # ── HyperParams ────────────────────────────────────────────────────────────────
@@ -159,35 +195,53 @@ class TestRunTournament:
 class TestHyperParams:
     def test_defaults(self) -> None:
         from cambrian.meta_evolution import HyperParams
+
         hp = HyperParams()
-        assert 0.0 <= hp.mutation_rate <= 1.0 and hp.temperature > 0.0 and hp.tournament_k >= 1
+        assert (
+            0.0 <= hp.mutation_rate <= 1.0
+            and hp.temperature > 0.0
+            and hp.tournament_k >= 1
+        )
 
     def test_clamp(self) -> None:
         from cambrian.meta_evolution import HyperParams
-        hp = HyperParams(mutation_rate=2.0, crossover_rate=-0.5, temperature=-1.0).clamp()
+
+        hp = HyperParams(
+            mutation_rate=2.0, crossover_rate=-0.5, temperature=-1.0
+        ).clamp()
         assert 0.0 <= hp.mutation_rate <= 1.0 and hp.temperature >= 0.05
 
     def test_perturb_in_bounds(self) -> None:
         from cambrian.meta_evolution import HyperParams
         import random as _rnd
+
         rng = _rnd.Random(42)
         hp = HyperParams()
         for _ in range(20):
             p = hp.perturb(scale=0.1, rng=rng)
-            assert 0.0 <= p.mutation_rate <= 1.0 and p.temperature >= 0.05 and p.tournament_k >= 1
+            assert (
+                0.0 <= p.mutation_rate <= 1.0
+                and p.temperature >= 0.05
+                and p.tournament_k >= 1
+            )
 
     def test_roundtrip(self) -> None:
         from cambrian.meta_evolution import HyperParams
+
         hp = HyperParams(mutation_rate=0.7, crossover_rate=0.2, temperature=0.55)
         r = HyperParams.from_dict(hp.to_dict())
-        assert r.mutation_rate == pytest.approx(0.7) and r.temperature == pytest.approx(0.55)
+        assert r.mutation_rate == pytest.approx(0.7) and r.temperature == pytest.approx(
+            0.55
+        )
 
     def test_repr(self) -> None:
         from cambrian.meta_evolution import HyperParams
+
         assert "HyperParams" in repr(HyperParams())
 
     def test_empty_history(self) -> None:
         from cambrian.meta_evolution import HyperParams
+
         assert HyperParams().fitness_history == []
 
 
@@ -198,6 +252,7 @@ class TestMetaEvolutionEngine:
     def _make(self) -> Any:
         from cambrian.meta_evolution import HyperParams, MetaEvolutionEngine
         from cambrian.mutator import LLMMutator
+
         backend = MagicMock()
         backend.model_name = "mock"
         backend.generate.return_value = (
@@ -222,7 +277,9 @@ class TestMetaEvolutionEngine:
 
     def test_hp_history_grows(self) -> None:
         engine = self._make()
-        engine.evolve([Genome(system_prompt=".")], "t", n_generations=4, meta_interval=2)
+        engine.evolve(
+            [Genome(system_prompt=".")], "t", n_generations=4, meta_interval=2
+        )
         assert len(engine.hp_history) >= 1
 
     def test_fitness_history(self) -> None:
@@ -233,8 +290,12 @@ class TestMetaEvolutionEngine:
     def test_callback(self) -> None:
         engine = self._make()
         calls: list[int] = []
-        engine.evolve([Genome(system_prompt=".")], "t", n_generations=2,
-                      on_generation=lambda g, p, hp: calls.append(g))
+        engine.evolve(
+            [Genome(system_prompt=".")],
+            "t",
+            n_generations=2,
+            on_generation=lambda g, p, hp: calls.append(g),
+        )
         assert len(calls) == 3
 
 
@@ -244,7 +305,9 @@ class TestMetaEvolutionEngine:
 class TestWorldModel:
     def test_predict_empty(self) -> None:
         pred = WorldModel(default_score=0.5).predict("task")
-        assert pred.predicted_score == pytest.approx(0.5) and pred.confidence == pytest.approx(0.0)
+        assert pred.predicted_score == pytest.approx(
+            0.5
+        ) and pred.confidence == pytest.approx(0.0)
 
     def test_update_predict(self) -> None:
         wm = WorldModel()
@@ -270,13 +333,19 @@ class TestWorldModel:
 
     def test_is_uncertain(self) -> None:
         assert WorldModelPrediction(predicted_score=0.5, confidence=0.3).is_uncertain
-        assert not WorldModelPrediction(predicted_score=0.5, confidence=0.8).is_uncertain
+        assert not WorldModelPrediction(
+            predicted_score=0.5, confidence=0.8
+        ).is_uncertain
 
     def test_similarity_exact(self) -> None:
-        assert WorldModel()._similarity("hello world", "hello world") == pytest.approx(1.0)
+        assert WorldModel()._similarity("hello world", "hello world") == pytest.approx(
+            1.0
+        )
 
     def test_similarity_none(self) -> None:
-        assert WorldModel()._similarity("alpha beta", "gamma delta") == pytest.approx(0.0)
+        assert WorldModel()._similarity("alpha beta", "gamma delta") == pytest.approx(
+            0.0
+        )
 
     def test_predict_in_range(self) -> None:
         wm = WorldModel()
@@ -355,7 +424,9 @@ class TestJSONLogger:
 
     def test_fields(self) -> None:
         buf = io.StringIO()
-        entry = JSONLogger(output=buf).log_generation(1, [0.4, 0.6, 0.8], best_agent_id="abc", best_prompt_len=100)
+        entry = JSONLogger(output=buf).log_generation(
+            1, [0.4, 0.6, 0.8], best_agent_id="abc", best_prompt_len=100
+        )
         assert entry["best_fitness"] == pytest.approx(0.8)
         assert entry["min_fitness"] == pytest.approx(0.4)
         assert entry["best_agent_id"] == "abc"
@@ -368,7 +439,9 @@ class TestJSONLogger:
 
     def test_summary(self) -> None:
         buf = io.StringIO()
-        entry = JSONLogger(output=buf, run_id="r").log_run_summary(10, 0.95, best_agent_id="xyz")
+        entry = JSONLogger(output=buf, run_id="r").log_run_summary(
+            10, 0.95, best_agent_id="xyz"
+        )
         assert entry["event"] == "run_complete" and entry["n_generations"] == 10
 
     def test_ndjson(self) -> None:
@@ -401,7 +474,10 @@ class TestJSONLogger:
     def test_empty_fitnesses(self) -> None:
         buf = io.StringIO()
         entry = JSONLogger(output=buf).log_generation(0, [])
-        assert entry["best_fitness"] == pytest.approx(0.0) and entry["population_size"] == 0
+        assert (
+            entry["best_fitness"] == pytest.approx(0.0)
+            and entry["population_size"] == 0
+        )
 
     def test_std_single(self) -> None:
         buf = io.StringIO()
@@ -443,6 +519,7 @@ class TestCompareCLI:
     def test_text_output(self, tmp_path: Path) -> None:
         from click.testing import CliRunner
         from cambrian.cli import main as cli
+
         a, b = tmp_path / "a.json", tmp_path / "b.json"
         _write_run(a, "run_a", [0.3, 0.5, 0.7])
         _write_run(b, "run_b", [0.2, 0.4, 0.6])
@@ -452,10 +529,13 @@ class TestCompareCLI:
     def test_json_output(self, tmp_path: Path) -> None:
         from click.testing import CliRunner
         from cambrian.cli import main as cli
+
         a, b = tmp_path / "a.json", tmp_path / "b.json"
         _write_run(a, "run_a", [0.5, 0.8])
         _write_run(b, "run_b", [0.4, 0.7])
-        result = CliRunner().invoke(cli, ["compare", str(a), str(b), "--format", "json"])
+        result = CliRunner().invoke(
+            cli, ["compare", str(a), str(b), "--format", "json"]
+        )
         assert result.exit_code == 0
         parsed = json.loads(result.output)
         assert "winner" in parsed and "run_a" in parsed
@@ -463,23 +543,36 @@ class TestCompareCLI:
     def test_identifies_winner(self, tmp_path: Path) -> None:
         from click.testing import CliRunner
         from cambrian.cli import main as cli
+
         a, b = tmp_path / "a.json", tmp_path / "b.json"
         _write_run(a, "run_a", [0.9, 0.95])
         _write_run(b, "run_b", [0.1, 0.2])
-        result = CliRunner().invoke(cli, ["compare", str(a), str(b), "--format", "json"])
+        result = CliRunner().invoke(
+            cli, ["compare", str(a), str(b), "--format", "json"]
+        )
         assert result.exit_code == 0 and json.loads(result.output)["winner"] == "run_a"
 
     def test_missing_file(self, tmp_path: Path) -> None:
         from click.testing import CliRunner
         from cambrian.cli import main as cli
-        result = CliRunner().invoke(cli, ["compare", str(tmp_path / "x.json"), str(tmp_path / "y.json")])
+
+        result = CliRunner().invoke(
+            cli, ["compare", str(tmp_path / "x.json"), str(tmp_path / "y.json")]
+        )
         assert result.exit_code != 0
 
     def test_custom_metric(self, tmp_path: Path) -> None:
         from click.testing import CliRunner
         from cambrian.cli import main as cli
+
         a, b = tmp_path / "a.json", tmp_path / "b.json"
         _write_run(a, "run_a", [0.5, 0.6])
         _write_run(b, "run_b", [0.4, 0.5])
-        result = CliRunner().invoke(cli, ["compare", str(a), str(b), "--metric", "mean_fitness", "--format", "json"])
-        assert result.exit_code == 0 and json.loads(result.output)["metric"] == "mean_fitness"
+        result = CliRunner().invoke(
+            cli,
+            ["compare", str(a), str(b), "--metric", "mean_fitness", "--format", "json"],
+        )
+        assert (
+            result.exit_code == 0
+            and json.loads(result.output)["metric"] == "mean_fitness"
+        )

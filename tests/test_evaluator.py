@@ -12,6 +12,7 @@ from cambrian.evaluators.llm_judge import LLMJudgeEvaluator
 
 # ── Fakes ─────────────────────────────────────────────────────────────────────
 
+
 def _make_agent(prompt: str = "test agent") -> Agent:
     return Agent(genome=Genome(system_prompt=prompt))
 
@@ -30,6 +31,7 @@ class _FixedBackend:
 
 # ── LLMJudgeEvaluator ─────────────────────────────────────────────────────────
 
+
 class TestLLMJudgeEvaluator:
     """LLMJudgeEvaluator tests.
 
@@ -46,7 +48,9 @@ class TestLLMJudgeEvaluator:
         score = self._judge('{"score": 8}').evaluate(agent, "test")
         assert score == pytest.approx(0.8)
 
-    def test_parses_plain_number_fallback(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_parses_plain_number_fallback(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         agent = _make_agent()
         monkeypatch.setattr(agent, "run", lambda task: "answer")
         score = self._judge("7").evaluate(agent, "test")
@@ -58,7 +62,9 @@ class TestLLMJudgeEvaluator:
         score = self._judge("I cannot judge this.").evaluate(agent, "test")
         assert score == pytest.approx(0.0)
 
-    def test_score_clamped_to_unit_interval(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_score_clamped_to_unit_interval(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         agent = _make_agent()
         monkeypatch.setattr(agent, "run", lambda task: "answer")
         score = self._judge('{"score": 15}').evaluate(agent, "test")
@@ -72,6 +78,7 @@ class TestLLMJudgeEvaluator:
 
 
 # ── CompositeEvaluator ────────────────────────────────────────────────────────
+
 
 class TestCompositeEvaluator:
     def _fixed_scorer(self, value: float) -> object:

@@ -132,8 +132,13 @@ class ParetoAnalyzer:
             ``pareto_fraction``, ``objectives``.
         """
         if not self._points:
-            return {"total": 0, "pareto_count": 0, "dominated_count": 0,
-                    "pareto_fraction": 0.0, "objectives": self._objective_names}
+            return {
+                "total": 0,
+                "pareto_count": 0,
+                "dominated_count": 0,
+                "pareto_fraction": 0.0,
+                "objectives": self._objective_names,
+            }
         pareto_n = sum(1 for p in self._points if p.is_pareto)
         return {
             "total": len(self._points),
@@ -165,9 +170,8 @@ class ParetoAnalyzer:
         """``True`` if *a* dominates *b* (better or equal on all, strict on at least one)."""
         a_vals = list(a.objectives.values())
         b_vals = list(b.objectives.values())
-        return (
-            all(av >= bv for av, bv in zip(a_vals, b_vals))
-            and any(av > bv for av, bv in zip(a_vals, b_vals))
+        return all(av >= bv for av, bv in zip(a_vals, b_vals)) and any(
+            av > bv for av, bv in zip(a_vals, b_vals)
         )
 
     @staticmethod
@@ -321,9 +325,7 @@ class DiversityTracker:
         for s in strategies:
             counts[s] = counts.get(s, 0) + 1
         n = len(strategies)
-        return -sum(
-            (c / n) * math.log2(c / n) for c in counts.values() if c > 0
-        )
+        return -sum((c / n) * math.log2(c / n) for c in counts.values() if c > 0)
 
     def __repr__(self) -> str:
         return f"DiversityTracker(generations={len(self._snapshots)})"
@@ -459,7 +461,4 @@ class FitnessLandscape:
 
     def __repr__(self) -> str:
         peak = self.peak()
-        return (
-            f"FitnessLandscape({self._n_t}x{self._n_k}, "
-            f"peak_fitness={peak[2]:.4f})"
-        )
+        return f"FitnessLandscape({self._n_t}x{self._n_k}, peak_fitness={peak[2]:.4f})"

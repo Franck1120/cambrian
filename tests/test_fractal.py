@@ -45,7 +45,12 @@ def _mock_evaluator(score: float = 0.5) -> MagicMock:
 
 
 def _simple_genome(prompt: str = "You are helpful.") -> Genome:
-    return Genome(system_prompt=prompt, temperature=0.7, strategy="step-by-step", model="gpt-4o-mini")
+    return Genome(
+        system_prompt=prompt,
+        temperature=0.7,
+        strategy="step-by-step",
+        model="gpt-4o-mini",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -117,7 +122,12 @@ class TestScaleConfigDefaults:
 class TestFractalResult:
     def test_fields_stored(self) -> None:
         genome = _simple_genome()
-        result = FractalResult(scale=FractalScale.MACRO, best_genome=genome, best_fitness=0.8, n_evaluations=12)
+        result = FractalResult(
+            scale=FractalScale.MACRO,
+            best_genome=genome,
+            best_fitness=0.8,
+            n_evaluations=12,
+        )
         assert result.scale is FractalScale.MACRO
         assert result.best_genome is genome
         assert result.best_fitness == pytest.approx(0.8)
@@ -125,17 +135,32 @@ class TestFractalResult:
 
     def test_negative_fitness_clamped_to_zero(self) -> None:
         genome = _simple_genome()
-        result = FractalResult(scale=FractalScale.MICRO, best_genome=genome, best_fitness=-0.5, n_evaluations=1)
+        result = FractalResult(
+            scale=FractalScale.MICRO,
+            best_genome=genome,
+            best_fitness=-0.5,
+            n_evaluations=1,
+        )
         assert result.best_fitness >= 0.0
 
     def test_zero_fitness_accepted(self) -> None:
         genome = _simple_genome()
-        result = FractalResult(scale=FractalScale.MESO, best_genome=genome, best_fitness=0.0, n_evaluations=4)
+        result = FractalResult(
+            scale=FractalScale.MESO,
+            best_genome=genome,
+            best_fitness=0.0,
+            n_evaluations=4,
+        )
         assert result.best_fitness == 0.0
 
     def test_n_evaluations_stored(self) -> None:
         genome = _simple_genome()
-        result = FractalResult(scale=FractalScale.MICRO, best_genome=genome, best_fitness=0.5, n_evaluations=99)
+        result = FractalResult(
+            scale=FractalScale.MICRO,
+            best_genome=genome,
+            best_fitness=0.5,
+            n_evaluations=99,
+        )
         assert result.n_evaluations == 99
 
 
@@ -421,9 +446,15 @@ class TestFractalEvolutionEvolve:
     def _make_fe(self, score: float = 0.6) -> FractalEvolution:
         backend = _mock_backend("improved system prompt text")
         evaluator = _mock_evaluator(score)
-        macro_cfg = ScaleConfig(scale=FractalScale.MACRO, population_size=2, n_generations=1)
-        meso_cfg = ScaleConfig(scale=FractalScale.MESO, population_size=2, n_generations=1)
-        micro_cfg = ScaleConfig(scale=FractalScale.MICRO, population_size=2, n_generations=1)
+        macro_cfg = ScaleConfig(
+            scale=FractalScale.MACRO, population_size=2, n_generations=1
+        )
+        meso_cfg = ScaleConfig(
+            scale=FractalScale.MESO, population_size=2, n_generations=1
+        )
+        micro_cfg = ScaleConfig(
+            scale=FractalScale.MICRO, population_size=2, n_generations=1
+        )
         return FractalEvolution(backend, evaluator, macro_cfg, meso_cfg, micro_cfg)
 
     def test_returns_fractal_result(self) -> None:
@@ -444,9 +475,15 @@ class TestFractalEvolutionEvolve:
     def test_evaluator_called_during_evolve(self) -> None:
         backend = _mock_backend("p")
         evaluator = _mock_evaluator(0.5)
-        macro_cfg = ScaleConfig(scale=FractalScale.MACRO, population_size=2, n_generations=1)
-        meso_cfg = ScaleConfig(scale=FractalScale.MESO, population_size=2, n_generations=1)
-        micro_cfg = ScaleConfig(scale=FractalScale.MICRO, population_size=2, n_generations=1)
+        macro_cfg = ScaleConfig(
+            scale=FractalScale.MACRO, population_size=2, n_generations=1
+        )
+        meso_cfg = ScaleConfig(
+            scale=FractalScale.MESO, population_size=2, n_generations=1
+        )
+        micro_cfg = ScaleConfig(
+            scale=FractalScale.MICRO, population_size=2, n_generations=1
+        )
         fe = FractalEvolution(backend, evaluator, macro_cfg, meso_cfg, micro_cfg)
         fe.evolve(_simple_genome(), "task", n_cycles=1)
         assert evaluator.evaluate.call_count > 0
@@ -477,9 +514,15 @@ class TestFractalEvolutionEvolve:
     def test_backend_called_at_least_once(self) -> None:
         backend = _mock_backend("new text")
         evaluator = _mock_evaluator(0.5)
-        macro_cfg = ScaleConfig(scale=FractalScale.MACRO, population_size=2, n_generations=1)
-        meso_cfg = ScaleConfig(scale=FractalScale.MESO, population_size=2, n_generations=1)
-        micro_cfg = ScaleConfig(scale=FractalScale.MICRO, population_size=2, n_generations=1)
+        macro_cfg = ScaleConfig(
+            scale=FractalScale.MACRO, population_size=2, n_generations=1
+        )
+        meso_cfg = ScaleConfig(
+            scale=FractalScale.MESO, population_size=2, n_generations=1
+        )
+        micro_cfg = ScaleConfig(
+            scale=FractalScale.MICRO, population_size=2, n_generations=1
+        )
         fe = FractalEvolution(backend, evaluator, macro_cfg, meso_cfg, micro_cfg)
         fe.evolve(_simple_genome(), "task", n_cycles=1)
         assert backend.generate.call_count >= 1
@@ -489,9 +532,15 @@ class TestFractalEvolutionEvolve:
         backend = _mock_backend("p")
         evaluator = _mock_evaluator(0.5)
         # population_size=2, n_generations=1 → 2 evaluate calls per scale → 6 total per cycle
-        macro_cfg = ScaleConfig(scale=FractalScale.MACRO, population_size=2, n_generations=1)
-        meso_cfg = ScaleConfig(scale=FractalScale.MESO, population_size=2, n_generations=1)
-        micro_cfg = ScaleConfig(scale=FractalScale.MICRO, population_size=2, n_generations=1)
+        macro_cfg = ScaleConfig(
+            scale=FractalScale.MACRO, population_size=2, n_generations=1
+        )
+        meso_cfg = ScaleConfig(
+            scale=FractalScale.MESO, population_size=2, n_generations=1
+        )
+        micro_cfg = ScaleConfig(
+            scale=FractalScale.MICRO, population_size=2, n_generations=1
+        )
         fe = FractalEvolution(backend, evaluator, macro_cfg, meso_cfg, micro_cfg)
         fe.evolve(_simple_genome(), "task", n_cycles=1)
         # 2 agents * 1 gen * 3 scales = 6 evaluate calls
@@ -506,13 +555,31 @@ class TestFractalEvolutionEvolve:
         """With n_cycles=2, returned fitness should be the best across all cycles."""
         backend = _mock_backend("better")
         # First cycle low, second cycle higher
-        scores = [0.3, 0.3, 0.3, 0.3, 0.3, 0.3,  # cycle 1 (2*3 scales)
-                  0.9, 0.9, 0.9, 0.9, 0.9, 0.9]  # cycle 2
+        scores = [
+            0.3,
+            0.3,
+            0.3,
+            0.3,
+            0.3,
+            0.3,  # cycle 1 (2*3 scales)
+            0.9,
+            0.9,
+            0.9,
+            0.9,
+            0.9,
+            0.9,
+        ]  # cycle 2
         evaluator = MagicMock(spec=Evaluator)
         evaluator.evaluate.side_effect = lambda *_: scores.pop(0) if scores else 0.5
-        macro_cfg = ScaleConfig(scale=FractalScale.MACRO, population_size=2, n_generations=1)
-        meso_cfg = ScaleConfig(scale=FractalScale.MESO, population_size=2, n_generations=1)
-        micro_cfg = ScaleConfig(scale=FractalScale.MICRO, population_size=2, n_generations=1)
+        macro_cfg = ScaleConfig(
+            scale=FractalScale.MACRO, population_size=2, n_generations=1
+        )
+        meso_cfg = ScaleConfig(
+            scale=FractalScale.MESO, population_size=2, n_generations=1
+        )
+        micro_cfg = ScaleConfig(
+            scale=FractalScale.MICRO, population_size=2, n_generations=1
+        )
         fe = FractalEvolution(backend, evaluator, macro_cfg, meso_cfg, micro_cfg)
         result = fe.evolve(_simple_genome(), "task", n_cycles=2)
         # Best result should be from cycle 2 with fitness 0.9

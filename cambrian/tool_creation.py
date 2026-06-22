@@ -55,9 +55,7 @@ class ToolInventor:
         "description": re.compile(
             r"^\s*DESCRIPTION\s*:\s*(.+)$", re.MULTILINE | re.IGNORECASE
         ),
-        "command": re.compile(
-            r"^\s*COMMAND\s*:\s*(.+)$", re.MULTILINE | re.IGNORECASE
-        ),
+        "command": re.compile(r"^\s*COMMAND\s*:\s*(.+)$", re.MULTILINE | re.IGNORECASE),
         "shell": re.compile(r"^\s*SHELL\s*:\s*(.+)$", re.MULTILINE | re.IGNORECASE),
         "test_input": re.compile(
             r"^\s*TEST_INPUT\s*:\s*(.+)$", re.MULTILINE | re.IGNORECASE
@@ -116,8 +114,7 @@ TEST_INPUT: <a realistic sample input to test the tool>
         """
         existing = (
             "\n".join(
-                f"  - {ts.name}: {ts.description}"
-                for ts in agent.genome.tool_specs
+                f"  - {ts.name}: {ts.description}" for ts in agent.genome.tool_specs
             )
             or "  (none)"
         )
@@ -216,9 +213,7 @@ TEST_INPUT: <a realistic sample input to test the tool>
             return None
 
         if not self._NAME_RE.match(name):
-            logger.debug(
-                "ToolInventor._parse_spec: invalid tool name %r", name
-            )
+            logger.debug("ToolInventor._parse_spec: invalid tool name %r", name)
             return None
 
         shell_raw = fields.get("shell", "false").lower()
@@ -291,9 +286,7 @@ class ToolPopulationRegistry:
         Args:
             n: Maximum number of tools to return.
         """
-        sorted_tools = sorted(
-            self._tools.values(), key=lambda ts: ts.author_genome_id
-        )
+        sorted_tools = sorted(self._tools.values(), key=lambda ts: ts.author_genome_id)
         return sorted_tools[:n]
 
     # ------------------------------------------------------------------
@@ -328,9 +321,7 @@ class ToolPopulationRegistry:
 
     def to_dict(self) -> dict[str, Any]:
         """Serialise the registry to a plain dictionary."""
-        return {
-            "tools": {name: spec.to_dict() for name, spec in self._tools.items()}
-        }
+        return {"tools": {name: spec.to_dict() for name, spec in self._tools.items()}}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ToolPopulationRegistry":

@@ -85,9 +85,7 @@ class RewardShaper:
     def __call__(self, agent: Agent, task: str) -> float:
         raw = self._base(agent, task)
         shaped = self.shape(raw, agent, task)
-        logger.debug(
-            "%s: raw=%.4f → shaped=%.4f", type(self).__name__, raw, shaped
-        )
+        logger.debug("%s: raw=%.4f → shaped=%.4f", type(self).__name__, raw, shaped)
         return shaped
 
 
@@ -243,9 +241,7 @@ class RankShaper:
         self._base = base_evaluator
         self._history: deque[float] = deque(maxlen=window_size)
 
-    def rank_population(
-        self, agents: list[Agent], scores: list[float]
-    ) -> list[float]:
+    def rank_population(self, agents: list[Agent], scores: list[float]) -> list[float]:
         """Convert *scores* to fractional ranks in ``[0, 1]``.
 
         Args:
@@ -267,7 +263,9 @@ class RankShaper:
 
     def __call__(self, agent: Agent, task: str) -> float:
         if self._base is None:
-            raise RuntimeError("RankShaper requires a base_evaluator for single-agent mode.")
+            raise RuntimeError(
+                "RankShaper requires a base_evaluator for single-agent mode."
+            )
         raw = self._base(agent, task)
         self._history.append(raw)
         history = list(self._history)
@@ -312,14 +310,17 @@ class CuriosityShaper(RewardShaper):
         """Fraction of remembered prompts that differ from *prompt*."""
         if not self._seen:
             return 1.0
+
         # Use character trigram overlap as a similarity proxy
         def trigrams(s: str) -> set[str]:
-            return {s[i:i+3] for i in range(len(s) - 2)}
+            return {s[i : i + 3] for i in range(len(s) - 2)}
 
         tg = trigrams(prompt)
         diffs = sum(
-            1 for p in self._seen
-            if len(tg | trigrams(p)) == 0 or len(tg & trigrams(p)) / len(tg | trigrams(p)) < 0.5
+            1
+            for p in self._seen
+            if len(tg | trigrams(p)) == 0
+            or len(tg & trigrams(p)) / len(tg | trigrams(p)) < 0.5
         )
         return diffs / len(self._seen)
 
@@ -385,5 +386,7 @@ def build_shaped_evaluator(
                 scale=kwargs.get("curiosity_scale", 0.1),
             )
         else:
-            raise ValueError(f"Unknown shaper {name!r}. Valid: clip, normalise, potential, curiosity")
+            raise ValueError(
+                f"Unknown shaper {name!r}. Valid: clip, normalise, potential, curiosity"
+            )
     return evaluator

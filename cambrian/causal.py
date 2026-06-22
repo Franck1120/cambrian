@@ -265,9 +265,7 @@ class CausalGraph:
         pruned = CausalGraph()
         for edge in self._edges:
             if edge.strength >= min_strength and edge.confidence >= min_confidence:
-                pruned.add_edge(
-                    edge.cause, edge.effect, edge.strength, edge.confidence
-                )
+                pruned.add_edge(edge.cause, edge.effect, edge.strength, edge.confidence)
         return pruned
 
     # ------------------------------------------------------------------

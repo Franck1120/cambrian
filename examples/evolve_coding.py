@@ -47,6 +47,7 @@ logger = get_logger(__name__)
 
 # ── Challenge definitions ─────────────────────────────────────────────────────
 
+
 @dataclass(frozen=True)
 class Challenge:
     """One coding challenge with its expected output and task description."""
@@ -125,6 +126,7 @@ _CHALLENGES: list[Challenge] = [
 
 # ── Multi-challenge evaluator ─────────────────────────────────────────────────
 
+
 class MultiChallengeEvaluator(Evaluator):
     """Evaluates an agent across all :data:`_CHALLENGES`.
 
@@ -164,6 +166,7 @@ class MultiChallengeEvaluator(Evaluator):
             Weighted mean fitness across all challenges, in ``[0.0, 1.0]``.
         """
         from cambrian.agent import Agent as _Agent
+
         assert isinstance(agent, _Agent)
 
         per_challenge: list[float] = []
@@ -193,6 +196,7 @@ _SEED_PROMPT = (
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
+
 
 def main(args: argparse.Namespace) -> None:
     """Run multi-challenge coding evolution."""
@@ -227,7 +231,7 @@ def main(args: argparse.Namespace) -> None:
     seed_genome = Genome(
         system_prompt=_SEED_PROMPT,
         strategy="chain-of-thought",
-        temperature=0.2,   # low temperature → more deterministic code
+        temperature=0.2,  # low temperature → more deterministic code
         model=args.model,
     )
 
@@ -263,6 +267,7 @@ def main(args: argparse.Namespace) -> None:
     if args.output:
         import json
         from pathlib import Path
+
         Path(args.output).write_text(json.dumps(best.genome.to_dict(), indent=2))
         print(f"\nBest genome saved to {args.output}")
 

@@ -76,10 +76,7 @@ class GeminiBackend(LLMBackend):
 
         self._model = model
         self._api_key = (
-            api_key
-            or os.getenv("GEMINI_API_KEY")
-            or os.getenv("GOOGLE_API_KEY")
-            or ""
+            api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""
         )
         self._temperature = temperature
         self._max_tokens = max_tokens
@@ -141,7 +138,7 @@ class GeminiBackend(LLMBackend):
                     content = candidate.content
                     if content is None:
                         continue
-                    for part in (content.parts or []):
+                    for part in content.parts or []:
                         if hasattr(part, "text") and part.text:
                             parts.append(str(part.text))
                 return "".join(parts).strip()
@@ -151,19 +148,32 @@ class GeminiBackend(LLMBackend):
                 # Retry on quota / server errors
                 if any(
                     kw in exc_name.lower()
-                    for kw in ("ratelimit", "quota", "resource", "unavailable", "internal")
+                    for kw in (
+                        "ratelimit",
+                        "quota",
+                        "resource",
+                        "unavailable",
+                        "internal",
+                    )
                 ):
                     last_error = exc
-                    time.sleep(2 ** attempt)
+                    time.sleep(2**attempt)
                     continue
                 # Check message text for retryable signals
                 exc_str = str(exc).lower()
                 if any(
                     kw in exc_str
-                    for kw in ("429", "quota", "rate limit", "503", "500", "unavailable")
+                    for kw in (
+                        "429",
+                        "quota",
+                        "rate limit",
+                        "503",
+                        "500",
+                        "unavailable",
+                    )
                 ):
                     last_error = exc
-                    time.sleep(2 ** attempt)
+                    time.sleep(2**attempt)
                     continue
                 raise RuntimeError(f"Gemini API error: {exc}") from exc
 

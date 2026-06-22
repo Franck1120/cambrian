@@ -128,18 +128,18 @@ class AnthropicBackend(LLMBackend):
 
             except anthropic.RateLimitError as exc:
                 last_error = exc
-                time.sleep(2 ** attempt)
+                time.sleep(2**attempt)
             except anthropic.APIStatusError as exc:
                 if exc.status_code in (500, 502, 503, 529):
                     last_error = exc
-                    time.sleep(2 ** attempt)
+                    time.sleep(2**attempt)
                 else:
                     raise RuntimeError(
                         f"Anthropic API error {exc.status_code}: {exc.message}"
                     ) from exc
             except anthropic.APIConnectionError as exc:
                 last_error = exc
-                time.sleep(2 ** attempt)
+                time.sleep(2**attempt)
 
         raise RuntimeError(
             f"AnthropicBackend failed after {self._max_retries} attempts: {last_error}"

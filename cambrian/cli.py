@@ -24,6 +24,7 @@ try:
     from rich.console import Console
     from rich.panel import Panel
     from rich.table import Table
+
     _RICH = True
 except ImportError:  # pragma: no cover
     _RICH = False
@@ -41,6 +42,7 @@ console = Console() if _RICH else None
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def _make_backend(model: str, base_url: str, api_key: str) -> OpenAICompatBackend:
     return OpenAICompatBackend(
         model=model,
@@ -51,12 +53,11 @@ def _make_backend(model: str, base_url: str, api_key: str) -> OpenAICompatBacken
     )
 
 
-def _make_evaluator(
-    task: str, judge_backend: OpenAICompatBackend | None = None
-) -> Any:
+def _make_evaluator(task: str, judge_backend: OpenAICompatBackend | None = None) -> Any:
     """Return a simple evaluator: LLMJudge if judge backend available, else stub."""
     if judge_backend is not None:
         from cambrian.evaluators.llm_judge import LLMJudgeEvaluator
+
         return LLMJudgeEvaluator(judge_backend=judge_backend)
 
     # Minimal stub — returns 0 so the loop still runs during demos / tests
@@ -78,9 +79,11 @@ def _rich_gen_table(gen: int, population: list[Any]) -> "Table":
 
     for a in sorted(population, key=lambda x: x.fitness or 0.0, reverse=True)[:8]:
         fitness_str = f"{a.fitness:.4f}" if a.fitness is not None else "–"
-        prompt_preview = (a.genome.system_prompt[:37] + "…") if len(
-            a.genome.system_prompt
-        ) > 40 else a.genome.system_prompt
+        prompt_preview = (
+            (a.genome.system_prompt[:37] + "…")
+            if len(a.genome.system_prompt) > 40
+            else a.genome.system_prompt
+        )
         table.add_row(
             a.id[:8],
             fitness_str,
@@ -93,6 +96,7 @@ def _rich_gen_table(gen: int, population: list[Any]) -> "Table":
 
 # ── CLI root ──────────────────────────────────────────────────────────────────
 
+
 @click.group()
 def main() -> None:
     """Cambrian — LLM-guided evolutionary agent optimisation."""
@@ -100,10 +104,12 @@ def main() -> None:
 
 # ── evolve ────────────────────────────────────────────────────────────────────
 
+
 @main.command()
 @click.argument("task")
 @click.option(
-    "--model", "-m",
+    "--model",
+    "-m",
     default="gpt-4o-mini",
     show_default=True,
     help="LLM model used for agents and mutator.",
@@ -127,52 +133,91 @@ def main() -> None:
     help="API key. Falls back to OPENAI_API_KEY env var.",
 )
 @click.option(
-    "--generations", "-g", default=10, show_default=True,
+    "--generations",
+    "-g",
+    default=10,
+    show_default=True,
     help="Number of generations to run.",
 )
 @click.option(
-    "--population", "-p", default=8, show_default=True,
+    "--population",
+    "-p",
+    default=8,
+    show_default=True,
     help="Population size per generation.",
 )
 @click.option(
-    "--mutation-rate", default=0.8, show_default=True,
+    "--mutation-rate",
+    default=0.8,
+    show_default=True,
     help="Probability of mutating each non-elite agent.",
 )
 @click.option(
-    "--crossover-rate", default=0.3, show_default=True,
+    "--crossover-rate",
+    default=0.3,
+    show_default=True,
     help="Probability of crossover vs. direct mutation.",
 )
 @click.option(
-    "--mutation-temp", default=0.6, show_default=True,
+    "--mutation-temp",
+    default=0.6,
+    show_default=True,
     help="Temperature used by the mutator LLM call.",
 )
 @click.option(
-    "--seed-prompt", default=None,
+    "--seed-prompt",
+    default=None,
     help="Initial system prompt. Defaults to a generic problem-solver.",
 )
 @click.option(
-    "--output", "-o", default=None,
+    "--output",
+    "-o",
+    default=None,
     help="Path to write the best genome JSON at the end.",
 )
 @click.option(
-    "--memory-out", default=None,
+    "--memory-out",
+    default=None,
     help="Path to write the full lineage graph JSON.",
 )
 @click.option(
-    "--seed", default=None, type=int,
+    "--seed",
+    default=None,
+    type=int,
     help="Random seed for reproducibility.",
 )
 @click.option(
-    "--tournament-k", default=3, show_default=True,
+    "--tournament-k",
+    default=3,
+    show_default=True,
     help="Tournament size for parent selection.",
 )
 @click.option(
-    "--compress-every", default=0, show_default=True,
+    "--compress-every",
+    default=0,
+    show_default=True,
     help="Apply prompt compression every N generations (0 = off).",
 )
 @click.option(
-    "--compress-tokens", default=256, show_default=True,
+    "--compress-tokens",
+    default=256,
+    show_default=True,
     help="Max token budget when compressing prompts.",
+)
+@click.option(
+    "--enable",
+    default=None,
+    help=(
+        "Comma-separated list of plugins to enable for this run. "
+        "Example: --enable dream,quorum,tabu"
+    ),
+)
+@click.option(
+    "--config",
+    "config_file",
+    default=None,
+    type=click.Path(exists=False),
+    help="Path to a YAML config file (may specify plugins.enabled list).",
 )
 def evolve(
     task: str,
@@ -192,6 +237,8 @@ def evolve(
     tournament_k: int,
     compress_every: int,
     compress_tokens: int,
+    enable: str | None,
+    config_file: str | None,
 ) -> None:
     """Run evolutionary optimisation for TASK.
 
@@ -205,15 +252,11 @@ def evolve(
         api_key = os.environ.get("OPENAI_API_KEY", "")
 
     if not api_key:
-        click.echo(
-            "Error: no API key. Set OPENAI_API_KEY or pass --api-key.", err=True
-        )
+        click.echo("Error: no API key. Set OPENAI_API_KEY or pass --api-key.", err=True)
         sys.exit(1)
 
     backend = _make_backend(model, base_url, api_key)
-    judge_backend = _make_backend(
-        judge_model or model, base_url, api_key
-    )
+    judge_backend = _make_backend(judge_model or model, base_url, api_key)
 
     mutator = LLMMutator(backend=backend, mutation_temperature=mutation_temp)
     evaluator = _make_evaluator(task, judge_backend)
@@ -230,6 +273,45 @@ def evolve(
         compress_interval=compress_every,
         compress_max_tokens=compress_tokens,
     )
+
+    # -- Plugin loading --------------------------------------------------------
+    _plugin_names: list[str] = []
+    if enable:
+        _plugin_names.extend(n.strip() for n in enable.split(",") if n.strip())
+    if config_file:
+        import pathlib as _pl
+
+        if _pl.Path(config_file).exists():
+            try:
+                from cambrian.plugin_registry import PluginRegistry as _PR
+
+                _pr = _PR()
+                _pr.load_from_yaml(config_file, engine)
+                if _RICH and console is not None:
+                    console.print(
+                        f"[dim]Plugins from config:[/dim] {_pr.active_plugins}"
+                    )
+                else:
+                    click.echo(f"Plugins from config: {_pr.active_plugins}")
+            except Exception as _exc:
+                click.echo(
+                    f"Warning: could not load plugins from {config_file}: {_exc}",
+                    err=True,
+                )
+    if _plugin_names:
+        try:
+            from cambrian.plugin_registry import PluginRegistry as _PlugReg
+
+            _reg = _PlugReg()
+            _reg.enable(_plugin_names, engine)
+            if _RICH and console is not None:
+                console.print(f"[dim]Plugins enabled:[/dim] {_plugin_names}")
+            else:
+                click.echo(f"Plugins enabled: {_plugin_names}")
+        except Exception as _exc:
+            click.echo(
+                f"Warning: could not enable plugins {_plugin_names}: {_exc}", err=True
+            )
 
     initial_prompt = seed_prompt or (
         "You are a precise and knowledgeable AI assistant. "
@@ -264,15 +346,17 @@ def evolve(
 
     if _RICH and console is not None:
         console.rule("[bold green]Evolution complete")
-        console.print(Panel(
-            f"[bold]Best fitness:[/bold] {best.fitness:.4f}\n"
-            f"[bold]Model:[/bold] {best.genome.model}\n"
-            f"[bold]Temperature:[/bold] {best.genome.temperature}\n"
-            f"[bold]Strategy:[/bold] {best.genome.strategy}\n\n"
-            f"[bold]System prompt:[/bold]\n{best.genome.system_prompt}",
-            title="Best Genome",
-            border_style="green",
-        ))
+        console.print(
+            Panel(
+                f"[bold]Best fitness:[/bold] {best.fitness:.4f}\n"
+                f"[bold]Model:[/bold] {best.genome.model}\n"
+                f"[bold]Temperature:[/bold] {best.genome.temperature}\n"
+                f"[bold]Strategy:[/bold] {best.genome.strategy}\n\n"
+                f"[bold]System prompt:[/bold]\n{best.genome.system_prompt}",
+                title="Best Genome",
+                border_style="green",
+            )
+        )
     else:
         click.echo(f"\nBest fitness: {best.fitness:.4f}")
         click.echo(f"System prompt: {best.genome.system_prompt[:200]}")
@@ -290,6 +374,7 @@ def evolve(
 
 # ── stats (legacy text summary) ───────────────────────────────────────────────
 
+
 @main.command()
 @click.argument("memory_file", type=click.Path(exists=True))
 def stats(memory_file: str) -> None:
@@ -305,7 +390,9 @@ def stats(memory_file: str) -> None:
     stats = mem.generation_stats()
 
     if _RICH and console is not None:
-        table = Table(title=f"Run: {mem.name}", show_header=True, header_style="bold magenta")
+        table = Table(
+            title=f"Run: {mem.name}", show_header=True, header_style="bold magenta"
+        )
         table.add_column("Generation", justify="right")
         table.add_column("Count", justify="right")
         table.add_column("Best", justify="right")
@@ -326,21 +413,26 @@ def stats(memory_file: str) -> None:
 
         top = mem.get_top_ancestors(n=3)
         if top:
-            console.print(Panel(
-                "\n".join(
-                    f"[bold]{a['agent_id'][:10]}[/bold]  fitness={a.get('fitness', 0):.4f}"
-                    f"  gen={a.get('generation', '?')}"
-                    for a in top
-                ),
-                title="Top 3 Ancestors",
-                border_style="cyan",
-            ))
+            console.print(
+                Panel(
+                    "\n".join(
+                        f"[bold]{a['agent_id'][:10]}[/bold]  fitness={a.get('fitness', 0):.4f}"
+                        f"  gen={a.get('generation', '?')}"
+                        for a in top
+                    ),
+                    title="Top 3 Ancestors",
+                    border_style="cyan",
+                )
+            )
     else:
         for gen, s in sorted(stats.items()):
-            click.echo(f"Gen {gen:3d}  count={int(s['count'])}  best={s['best']:.4f}  mean={s['mean']:.4f}")
+            click.echo(
+                f"Gen {gen:3d}  count={int(s['count'])}  best={s['best']:.4f}  mean={s['mean']:.4f}"
+            )
 
 
 # ── distill ───────────────────────────────────────────────────────────────────
+
 
 @main.command()
 @click.argument("genome_file", type=click.Path(exists=True))
@@ -353,25 +445,30 @@ def distill(genome_file: str) -> None:
     genome = Genome.from_dict(data)
 
     if _RICH and console is not None:
-        console.print(Panel(
-            f"[bold]Model:[/bold] {genome.model}\n"
-            f"[bold]Temperature:[/bold] {genome.temperature}\n"
-            f"[bold]Strategy:[/bold] {genome.strategy}\n"
-            f"[bold]Tools:[/bold] {', '.join(genome.tools) or 'none'}\n\n"
-            f"[bold]System Prompt:[/bold]\n{genome.system_prompt}",
-            title=f"Genome — {genome_file}",
-            border_style="blue",
-        ))
+        console.print(
+            Panel(
+                f"[bold]Model:[/bold] {genome.model}\n"
+                f"[bold]Temperature:[/bold] {genome.temperature}\n"
+                f"[bold]Strategy:[/bold] {genome.strategy}\n"
+                f"[bold]Tools:[/bold] {', '.join(genome.tools) or 'none'}\n\n"
+                f"[bold]System Prompt:[/bold]\n{genome.system_prompt}",
+                title=f"Genome — {genome_file}",
+                border_style="blue",
+            )
+        )
     else:
         click.echo(json.dumps(data, indent=2))
 
 
 # ── analyze ───────────────────────────────────────────────────────────────────
 
+
 @main.command()
 @click.argument("memory_file", type=click.Path(exists=True))
 @click.option(
-    "--top", default=5, show_default=True,
+    "--top",
+    default=5,
+    show_default=True,
     help="Number of top agents to show in the lineage section.",
 )
 def analyze(memory_file: str, top: int) -> None:
@@ -416,7 +513,9 @@ def analyze(memory_file: str, top: int) -> None:
         for gen, s in sorted(gen_stats.items()):
             best = s["best"]
             delta = best - prev_best
-            delta_str = f"[green]+{delta:.4f}[/]" if delta > 0 else f"[red]{delta:.4f}[/]"
+            delta_str = (
+                f"[green]+{delta:.4f}[/]" if delta > 0 else f"[red]{delta:.4f}[/]"
+            )
             bar_len = int(best * 20)
             bar = "█" * bar_len + "░" * (20 - bar_len)
             tbl.add_row(
@@ -463,12 +562,18 @@ def analyze(memory_file: str, top: int) -> None:
 
     diversity_lines = []
     unique_strats = set(strategies)
-    diversity_lines.append(f"Unique strategies : {', '.join(sorted(unique_strats)) or 'n/a'}")
+    diversity_lines.append(
+        f"Unique strategies : {', '.join(sorted(unique_strats)) or 'n/a'}"
+    )
     if temperatures:
         diversity_lines.append(
             f"Temperature range : {min(temperatures):.2f} – {max(temperatures):.2f}"
             f"  (mean={_stats.mean(temperatures):.2f}"
-            + (f", stdev={_stats.stdev(temperatures):.2f}" if len(temperatures) > 1 else "")
+            + (
+                f", stdev={_stats.stdev(temperatures):.2f}"
+                if len(temperatures) > 1
+                else ""
+            )
             + ")"
         )
     if prompt_lengths:
@@ -480,16 +585,27 @@ def analyze(memory_file: str, top: int) -> None:
     # Stagnation: count gens where best didn't improve by >0.001
     gens_sorted = sorted(gen_stats.items())
     stagnant = sum(
-        1 for i in range(1, len(gens_sorted))
+        1
+        for i in range(1, len(gens_sorted))
         if gens_sorted[i][1]["best"] - gens_sorted[i - 1][1]["best"] < 0.001
     )
     diversity_lines.append(
         f"Stagnant gens     : {stagnant}/{len(gens_sorted) - 1}"
-        + (" [WARNING: consider increasing mutation rate]" if stagnant > len(gens_sorted) // 2 else "")
+        + (
+            " [WARNING: consider increasing mutation rate]"
+            if stagnant > len(gens_sorted) // 2
+            else ""
+        )
     )
 
     if _RICH and console is not None:
-        console.print(Panel("\n".join(diversity_lines), title="Diversity Metrics", border_style="yellow"))
+        console.print(
+            Panel(
+                "\n".join(diversity_lines),
+                title="Diversity Metrics",
+                border_style="yellow",
+            )
+        )
     else:
         click.echo("\nDiversity Metrics")
         click.echo("-" * 40)
@@ -504,13 +620,15 @@ def analyze(memory_file: str, top: int) -> None:
         lineage_str = " → ".join(aid[:8] for aid in lineage)
 
         if _RICH and console is not None:
-            console.print(Panel(
-                f"[bold]Best agent:[/bold] {best_id[:10]}  "
-                f"fitness={top_agents[0].get('fitness', 0):.4f}\n\n"
-                f"[bold]Lineage ({len(lineage)} ancestors):[/bold]\n{lineage_str}",
-                title=f"Top {top} Agents & Lineage",
-                border_style="green",
-            ))
+            console.print(
+                Panel(
+                    f"[bold]Best agent:[/bold] {best_id[:10]}  "
+                    f"fitness={top_agents[0].get('fitness', 0):.4f}\n\n"
+                    f"[bold]Lineage ({len(lineage)} ancestors):[/bold]\n{lineage_str}",
+                    title=f"Top {top} Agents & Lineage",
+                    border_style="green",
+                )
+            )
 
             top_tbl = Table(show_header=True, header_style="bold magenta")
             top_tbl.add_column("Rank")
@@ -526,7 +644,9 @@ def analyze(memory_file: str, top: int) -> None:
                 )
             console.print(top_tbl)
         else:
-            click.echo(f"\nBest agent: {best_id[:10]}  fitness={top_agents[0].get('fitness', 0):.4f}")
+            click.echo(
+                f"\nBest agent: {best_id[:10]}  fitness={top_agents[0].get('fitness', 0):.4f}"
+            )
             click.echo(f"Lineage ({len(lineage)} ancestors): {lineage_str}")
             click.echo("\nTop agents:")
             for rank, a in enumerate(top_agents, 1):
@@ -539,13 +659,18 @@ def analyze(memory_file: str, top: int) -> None:
 
 # ── distill-agent ─────────────────────────────────────────────────────────────
 
+
 @main.command("distill-agent")
 @click.option(
-    "--agent", "agent_file", required=True, type=click.Path(exists=True),
+    "--agent",
+    "agent_file",
+    required=True,
+    type=click.Path(exists=True),
     help="Path to the evolved genome JSON (written by --output).",
 )
 @click.option(
-    "--target", required=True,
+    "--target",
+    required=True,
     help="Target model identifier for the distilled agent (e.g. gemma-4-12b, llama3.2).",
 )
 @click.option(
@@ -556,15 +681,21 @@ def analyze(memory_file: str, top: int) -> None:
     help="OpenAI-compatible API base URL for the distillation backend.",
 )
 @click.option(
-    "--api-key", default=None, envvar="OPENAI_API_KEY",
+    "--api-key",
+    default=None,
+    envvar="OPENAI_API_KEY",
     help="API key for the distillation backend.",
 )
 @click.option(
-    "--output", "-o", default=None,
+    "--output",
+    "-o",
+    default=None,
     help="Path to save the distilled genome JSON. Defaults to <agent_file>.distilled.json",
 )
 @click.option(
-    "--max-tokens", default=150, show_default=True,
+    "--max-tokens",
+    default=150,
+    show_default=True,
     help="Target prompt length (in tokens) for the distilled agent.",
 )
 def distill_agent(
@@ -592,9 +723,12 @@ def distill_agent(
 
     data = json.loads(Path(agent_file).read_text())
     from cambrian.agent import Genome as _Genome
+
     source_genome = _Genome.from_dict(data)
 
-    click.echo(f"Source genome: model={source_genome.model}  tokens={source_genome.token_count()}")
+    click.echo(
+        f"Source genome: model={source_genome.model}  tokens={source_genome.token_count()}"
+    )
     click.echo(f"Target model : {target}  max_tokens={max_tokens}")
     click.echo("")
 
@@ -630,7 +764,9 @@ def distill_agent(
                 distilled_genome.system_prompt = adapted.strip()
                 click.echo("LLM-assisted adaptation applied.")
         except Exception as exc:
-            click.echo(f"LLM adaptation skipped ({exc.__class__.__name__}): {exc}", err=True)
+            click.echo(
+                f"LLM adaptation skipped ({exc.__class__.__name__}): {exc}", err=True
+            )
     else:
         click.echo("No API key: using structural compression only.")
 
@@ -642,16 +778,20 @@ def distill_agent(
     reduction = (1 - final_tokens / max(source_genome.token_count(), 1)) * 100
 
     if _RICH and console is not None:
-        console.print(Panel(
-            f"[bold]Source:[/bold] {source_genome.model}  {source_genome.token_count()} tokens\n"
-            f"[bold]Target:[/bold] {target}  {final_tokens} tokens  "
-            f"([green]-{reduction:.0f}%[/green] reduction)\n\n"
-            f"[bold]Distilled prompt:[/bold]\n{distilled_genome.system_prompt}",
-            title="Distillation Complete",
-            border_style="green",
-        ))
+        console.print(
+            Panel(
+                f"[bold]Source:[/bold] {source_genome.model}  {source_genome.token_count()} tokens\n"
+                f"[bold]Target:[/bold] {target}  {final_tokens} tokens  "
+                f"([green]-{reduction:.0f}%[/green] reduction)\n\n"
+                f"[bold]Distilled prompt:[/bold]\n{distilled_genome.system_prompt}",
+                title="Distillation Complete",
+                border_style="green",
+            )
+        )
     else:
-        click.echo(f"Tokens: {source_genome.token_count()} → {final_tokens} (-{reduction:.0f}%)")
+        click.echo(
+            f"Tokens: {source_genome.token_count()} → {final_tokens} (-{reduction:.0f}%)"
+        )
         click.echo(f"Distilled prompt: {distilled_genome.system_prompt[:200]}")
 
     out_path = output or agent_file.replace(".json", f".distilled.{target}.json")
@@ -664,19 +804,27 @@ def distill_agent(
 
 @main.command()
 @click.option(
-    "--port", default=8501, show_default=True,
+    "--port",
+    default=8501,
+    show_default=True,
     help="TCP port for the Streamlit server.",
 )
 @click.option(
-    "--log-file", default="cambrian_log.json", show_default=True,
+    "--log-file",
+    default="cambrian_log.json",
+    show_default=True,
     help="Path to the Evolve log JSON written by the evolution engine.",
 )
 @click.option(
-    "--forge-log-file", default="forge_log.json", show_default=True,
+    "--forge-log-file",
+    default="forge_log.json",
+    show_default=True,
     help="Path to the Forge log JSON written by forge runs.",
 )
 @click.option(
-    "--no-browser", is_flag=True, default=False,
+    "--no-browser",
+    is_flag=True,
+    default=False,
     help="Do not open a browser tab automatically.",
 )
 def dashboard(port: int, log_file: str, forge_log_file: str, no_browser: bool) -> None:
@@ -691,6 +839,7 @@ def dashboard(port: int, log_file: str, forge_log_file: str, no_browser: bool) -
     """
     try:
         from cambrian.dashboard import run_dashboard
+
         click.echo(f"Starting dashboard on http://localhost:{port} ...")
         run_dashboard(
             port=port,
@@ -707,7 +856,10 @@ def dashboard(port: int, log_file: str, forge_log_file: str, no_browser: bool) -
 
 @main.command()
 @click.option(
-    "--agent", "agent_file", required=True, type=click.Path(exists=True),
+    "--agent",
+    "agent_file",
+    required=True,
+    type=click.Path(exists=True),
     help="Path to an evolved genome JSON file (written by --output or export_genome_json).",
 )
 @click.argument("task")
@@ -719,23 +871,31 @@ def dashboard(port: int, log_file: str, forge_log_file: str, no_browser: bool) -
     help="OpenAI-compatible API base URL.",
 )
 @click.option(
-    "--api-key", default=None, envvar="OPENAI_API_KEY",
+    "--api-key",
+    default=None,
+    envvar="OPENAI_API_KEY",
     help="API key. Falls back to OPENAI_API_KEY env var.",
 )
 @click.option(
-    "--model", default=None,
+    "--model",
+    default=None,
     help="Override the genome's model (e.g. to route to a different backend).",
 )
 @click.option(
-    "--temperature", default=None, type=float,
+    "--temperature",
+    default=None,
+    type=float,
     help="Override the genome's sampling temperature.",
 )
 @click.option(
-    "--max-tokens", default=1024, show_default=True,
+    "--max-tokens",
+    default=1024,
+    show_default=True,
     help="Max tokens for the agent response.",
 )
 @click.option(
-    "--format", "output_format",
+    "--format",
+    "output_format",
     type=click.Choice(["text", "json"]),
     default="text",
     show_default=True,
@@ -777,10 +937,14 @@ def run(
         genome.temperature = temperature
 
     if output_format != "json":
-        click.echo(f"Agent: {genome.genome_id}  model={genome.model}  temp={genome.temperature}", err=True)
+        click.echo(
+            f"Agent: {genome.genome_id}  model={genome.model}  temp={genome.temperature}",
+            err=True,
+        )
 
     backend = _make_backend(genome.model, base_url, api_key)
     from cambrian.agent import Agent as _Agent
+
     agent_obj = _Agent(genome=genome, backend=backend)
 
     t0 = time.monotonic()
@@ -812,21 +976,31 @@ def run(
 
 @main.command()
 @click.option(
-    "--memory", "memory_file", required=True, type=click.Path(exists=True),
+    "--memory",
+    "memory_file",
+    required=True,
+    type=click.Path(exists=True),
     help="Path to a lineage JSON file written by --memory-out.",
 )
 @click.option(
-    "--generation", "-g", required=True, type=int,
+    "--generation",
+    "-g",
+    required=True,
+    type=int,
     help="Generation number to display.",
 )
 @click.option(
-    "--top", default=5, show_default=True,
+    "--top",
+    default=5,
+    show_default=True,
     help="Number of top agents to show.",
 )
 @click.option(
-    "--format", "output_format",
+    "--format",
+    "output_format",
     type=click.Choice(["text", "json"]),
-    default="text", show_default=True,
+    default="text",
+    show_default=True,
     help="Output format.",
 )
 def snapshot(memory_file: str, generation: int, top: int, output_format: str) -> None:
@@ -856,14 +1030,16 @@ def snapshot(memory_file: str, generation: int, top: int, output_format: str) ->
 
     if not nodes:
         # Fall back: show available generations
-        available = sorted({
-            attrs.get("generation")
-            for _, attrs in mem._graph.nodes(data=True)
-            if attrs.get("generation") is not None
-        })
+        available = sorted(
+            {
+                attrs.get("generation")
+                for _, attrs in mem._graph.nodes(data=True)
+                if attrs.get("generation") is not None
+            }
+        )
         click.echo(
-            f"No agents found at generation {generation}. "
-            f"Available: {available}", err=True
+            f"No agents found at generation {generation}. Available: {available}",
+            err=True,
         )
         sys.exit(1)
 
@@ -896,6 +1072,7 @@ def snapshot(memory_file: str, generation: int, top: int, output_format: str) ->
 
     if _RICH and console is not None:
         from rich.table import Table
+
         tbl = Table(
             title=f"Population Snapshot — Generation {generation}",
             show_header=True,
@@ -930,8 +1107,10 @@ def snapshot(memory_file: str, generation: int, top: int, output_format: str) ->
             f"Best: {best_fit:.4f}  Mean: {mean_fit:.4f}[/dim]"
         )
     else:
-        click.echo(f"Generation {generation}  |  agents={len(nodes)}  "
-                   f"best={best_fit:.4f}  mean={mean_fit:.4f}")
+        click.echo(
+            f"Generation {generation}  |  agents={len(nodes)}  "
+            f"best={best_fit:.4f}  mean={mean_fit:.4f}"
+        )
         click.echo("-" * 70)
         for rank, (nid, attrs) in enumerate(nodes[:top], 1):
             genome = attrs.get("genome") or {}
@@ -959,7 +1138,11 @@ def snapshot(memory_file: str, generation: int, top: int, output_format: str) ->
     default="text",
     help="Output format.",
 )
-@click.option("--metric", default="best_fitness", help="Metric to compare (default: best_fitness).")
+@click.option(
+    "--metric",
+    default="best_fitness",
+    help="Metric to compare (default: best_fitness).",
+)
 def compare(run1: str, run2: str, output_format: str, metric: str) -> None:
     """Compare two evolution run logs written by JSONLogger.
 
@@ -1038,7 +1221,11 @@ def compare(run1: str, run2: str, output_format: str, metric: str) -> None:
         table.add_row("Generations", str(len(gens_a)), str(len(gens_b)))
         table.add_row(f"Final {metric}", f"{final_a:.4f}", f"{final_b:.4f}")
         table.add_row(f"Best {metric}", f"{best_a:.4f}", f"{best_b:.4f}")
-        table.add_row("Winner", "✓" if run_id_a == winner else "", "✓" if run_id_b == winner else "")
+        table.add_row(
+            "Winner",
+            "✓" if run_id_a == winner else "",
+            "✓" if run_id_b == winner else "",
+        )
         table.add_row("Δ (best)", f"{delta:.4f}", "")
         console.print(table)
 
@@ -1062,6 +1249,74 @@ def compare(run1: str, run2: str, output_format: str, metric: str) -> None:
         click.echo(f"\nWinner: {winner}  (Δ={delta:.4f})")
 
 
+# ── plugins ───────────────────────────────────────────────────────────────────
+
+
+@main.command()
+@click.option(
+    "--category",
+    default=None,
+    help="Filter plugins by category (e.g. memory, selection, evaluation).",
+)
+def plugins(category: str | None) -> None:
+    """List all available Cambrian plugins with metadata.
+
+    Shows each plugin's name, category, description, and measured impact.
+
+    \\b
+    Example:
+        cambrian plugins
+        cambrian plugins --category memory
+    """
+    from cambrian.plugin_registry import PluginRegistry
+
+    registry = PluginRegistry()
+    all_plugins = registry.list_all()
+
+    if category:
+        all_plugins = [p for p in all_plugins if p.get("category") == category]
+
+    if not all_plugins:
+        click.echo(
+            "No plugins found." + (f" (category={category!r})" if category else "")
+        )
+        return
+
+    if _RICH and console is not None:
+        from rich.table import Table
+
+        table = Table(
+            title="Available Cambrian Plugins",
+            show_header=True,
+            header_style="bold cyan",
+        )
+        table.add_column("Name", style="bold", width=22)
+        table.add_column("Category", width=14)
+        table.add_column("Description", width=55)
+        table.add_column("Impact", width=20)
+
+        for meta in all_plugins:
+            table.add_row(
+                str(meta.get("name", "")),
+                str(meta.get("category", "")),
+                str(meta.get("description", "")),
+                str(meta.get("impact") or "—"),
+            )
+        console.print(table)
+    else:
+        click.echo(f"{'Name':<22}  {'Category':<14}  Description")
+        click.echo("-" * 80)
+        for meta in all_plugins:
+            click.echo(
+                f"{str(meta.get('name', '')):<22}  "
+                f"{str(meta.get('category', '')):<14}  "
+                f"{str(meta.get('description', ''))[:50]}"
+            )
+
+
+# ── version ───────────────────────────────────────────────────────────────────
+
+
 @main.command()
 def version() -> None:
     """Print Cambrian version."""
@@ -1073,22 +1328,52 @@ def version() -> None:
 
 @main.command("meta-evolve")
 @click.argument("task")
-@click.option("--model", "-m", default="gpt-4o-mini", show_default=True,
-              help="LLM model identifier.")
-@click.option("--base-url", default="https://api.openai.com/v1", show_default=True,
-              envvar="CAMBRIAN_BASE_URL", help="OpenAI-compatible API base URL.")
-@click.option("--api-key", default=None, envvar="OPENAI_API_KEY",
-              help="API key (falls back to OPENAI_API_KEY env var).")
-@click.option("--generations", "-g", default=10, show_default=True,
-              help="Total number of generations.")
-@click.option("--population", "-p", default=6, show_default=True,
-              help="Population size.")
-@click.option("--meta-interval", default=2, show_default=True,
-              help="Run a hyperparameter meta-step every N generations.")
-@click.option("--output", "-o", default="meta_best.json", show_default=True,
-              help="Path to save the best genome JSON.")
-@click.option("--memory-out", default=None,
-              help="Path to save lineage JSON (optional).")
+@click.option(
+    "--model",
+    "-m",
+    default="gpt-4o-mini",
+    show_default=True,
+    help="LLM model identifier.",
+)
+@click.option(
+    "--base-url",
+    default="https://api.openai.com/v1",
+    show_default=True,
+    envvar="CAMBRIAN_BASE_URL",
+    help="OpenAI-compatible API base URL.",
+)
+@click.option(
+    "--api-key",
+    default=None,
+    envvar="OPENAI_API_KEY",
+    help="API key (falls back to OPENAI_API_KEY env var).",
+)
+@click.option(
+    "--generations",
+    "-g",
+    default=10,
+    show_default=True,
+    help="Total number of generations.",
+)
+@click.option(
+    "--population", "-p", default=6, show_default=True, help="Population size."
+)
+@click.option(
+    "--meta-interval",
+    default=2,
+    show_default=True,
+    help="Run a hyperparameter meta-step every N generations.",
+)
+@click.option(
+    "--output",
+    "-o",
+    default="meta_best.json",
+    show_default=True,
+    help="Path to save the best genome JSON.",
+)
+@click.option(
+    "--memory-out", default=None, help="Path to save lineage JSON (optional)."
+)
 def meta_evolve(
     task: str,
     model: str,
@@ -1139,7 +1424,9 @@ def meta_evolve(
         backend=backend,
         population_size=population,
     )
-    seeds = [Genome(system_prompt=f"Agent {i}: help with {task}") for i in range(population)]
+    seeds = [
+        Genome(system_prompt=f"Agent {i}: help with {task}") for i in range(population)
+    ]
 
     if _RICH and console is not None:
         console.rule(f"[bold cyan]Meta-Evolution[/bold cyan]  task={task!r}")
@@ -1180,7 +1467,9 @@ def meta_evolve(
 
     if _RICH and console is not None:
         console.rule("[bold green]Done[/bold green]")
-        console.print(f"Best fitness : [bold green]{best.fitness or 0.0:.4f}[/bold green]")
+        console.print(
+            f"Best fitness : [bold green]{best.fitness or 0.0:.4f}[/bold green]"
+        )
         console.print(f"Genome saved : {out_path}")
     else:
         click.echo(f"\nBest fitness: {best.fitness or 0.0:.4f}")
@@ -1192,18 +1481,46 @@ def meta_evolve(
 
 @main.command()
 @click.argument("task")
-@click.option("--model", "-m", default="gpt-4o-mini", show_default=True,
-              help="LLM model identifier.")
-@click.option("--base-url", default="https://api.openai.com/v1", show_default=True,
-              envvar="CAMBRIAN_BASE_URL", help="OpenAI-compatible API base URL.")
-@click.option("--api-key", default=None, envvar="OPENAI_API_KEY",
-              help="API key (falls back to OPENAI_API_KEY env var).")
-@click.option("--agents-file", "-a", default=None, type=click.Path(exists=True),
-              help="JSON file containing a list of genome dicts to load as agents.")
-@click.option("--population", "-p", default=6, show_default=True,
-              help="Random population size (used when --agents-file is not given).")
-@click.option("--output", "-o", default=None,
-              help="Path to save tournament record JSON (optional).")
+@click.option(
+    "--model",
+    "-m",
+    default="gpt-4o-mini",
+    show_default=True,
+    help="LLM model identifier.",
+)
+@click.option(
+    "--base-url",
+    default="https://api.openai.com/v1",
+    show_default=True,
+    envvar="CAMBRIAN_BASE_URL",
+    help="OpenAI-compatible API base URL.",
+)
+@click.option(
+    "--api-key",
+    default=None,
+    envvar="OPENAI_API_KEY",
+    help="API key (falls back to OPENAI_API_KEY env var).",
+)
+@click.option(
+    "--agents-file",
+    "-a",
+    default=None,
+    type=click.Path(exists=True),
+    help="JSON file containing a list of genome dicts to load as agents.",
+)
+@click.option(
+    "--population",
+    "-p",
+    default=6,
+    show_default=True,
+    help="Random population size (used when --agents-file is not given).",
+)
+@click.option(
+    "--output",
+    "-o",
+    default=None,
+    help="Path to save tournament record JSON (optional).",
+)
 def tournament(
     task: str,
     model: str,
@@ -1235,12 +1552,18 @@ def tournament(
         if isinstance(data, list):
             agents = [Agent(genome=Genome.from_dict(d)) for d in data]
         else:
-            raise click.ClickException("agents-file must contain a JSON list of genome dicts")
+            raise click.ClickException(
+                "agents-file must contain a JSON list of genome dicts"
+            )
     else:
-        agents = [Agent(genome=Genome(system_prompt=f"Agent {i}: help with {task}"))
-                  for i in range(population)]
+        agents = [
+            Agent(genome=Genome(system_prompt=f"Agent {i}: help with {task}"))
+            for i in range(population)
+        ]
 
-    sp_eval = SelfPlayEvaluator(base_evaluator=evaluator, win_bonus=0.1, loss_penalty=0.05)
+    sp_eval = SelfPlayEvaluator(
+        base_evaluator=evaluator, win_bonus=0.1, loss_penalty=0.05
+    )
 
     click.echo(f"Running tournament: {len(agents)} agents, task={task!r}")
     record = run_tournament(agents, sp_eval, task)
@@ -1309,7 +1632,8 @@ def tournament(
 @main.command()
 @click.argument("task")
 @click.option(
-    "--model", "-m",
+    "--model",
+    "-m",
     default="gpt-4o-mini",
     show_default=True,
     help="LLM model for code mutation and evaluation.",
@@ -1328,13 +1652,15 @@ def tournament(
     help="API key. Falls back to OPENAI_API_KEY env var.",
 )
 @click.option(
-    "--generations", "-g",
+    "--generations",
+    "-g",
     default=8,
     show_default=True,
     help="Number of evolutionary generations.",
 )
 @click.option(
-    "--population", "-p",
+    "--population",
+    "-p",
     default=6,
     show_default=True,
     help="Population size per generation.",
@@ -1357,8 +1683,7 @@ def tournament(
     "test_cases",
     multiple=True,
     help=(
-        "[code mode] Test case in 'INPUT:EXPECTED' format. "
-        "Repeat for multiple cases."
+        "[code mode] Test case in 'INPUT:EXPECTED' format. Repeat for multiple cases."
     ),
 )
 @click.option(
@@ -1373,7 +1698,8 @@ def tournament(
     help="[pipeline mode] Path to a Pipeline JSON file used as the seed.",
 )
 @click.option(
-    "--output", "-o",
+    "--output",
+    "-o",
     default=None,
     help="Output path: forge_best.py (code) or forge_best.json (pipeline).",
 )
@@ -1424,7 +1750,9 @@ def forge(
     if _RICH and console is not None:
         console.rule(f"[bold cyan]Cambrian Forge — {mode} mode[/bold cyan]")
         console.print(f"[dim]Task:[/dim] {task}")
-        console.print(f"[dim]Model:[/dim] {model}  [dim]Gens:[/dim] {generations}  [dim]Pop:[/dim] {population}")
+        console.print(
+            f"[dim]Model:[/dim] {model}  [dim]Gens:[/dim] {generations}  [dim]Pop:[/dim] {population}"
+        )
 
     if mode == "code":
         # --- Code mode ---
@@ -1434,7 +1762,10 @@ def forge(
                 inp, _, exp = tc_str.partition(":")
                 parsed_tests.append({"input": inp, "expected": exp})
             else:
-                logger.warning("Ignoring malformed --test-case %r (expected 'INPUT:EXPECTED')", tc_str)
+                logger.warning(
+                    "Ignoring malformed --test-case %r (expected 'INPUT:EXPECTED')",
+                    tc_str,
+                )
 
         seed_src = ""
         if seed_code:
@@ -1466,9 +1797,13 @@ def forge(
                     f"  Gen [bold]{gen:3d}[/bold]  best=[green]{best_score:.4f}[/green]  mean={mean_score:.4f}"
                 )
             else:
-                click.echo(f"  Gen {gen:3d}  best={best_score:.4f}  mean={mean_score:.4f}")
+                click.echo(
+                    f"  Gen {gen:3d}  best={best_score:.4f}  mean={mean_score:.4f}"
+                )
 
-        click.echo(f"Evolving code for {generations} generations (population={population}) ...")
+        click.echo(
+            f"Evolving code for {generations} generations (population={population}) ..."
+        )
         best = engine.evolve(
             seed=seed,
             task=task,
@@ -1481,7 +1816,9 @@ def forge(
 
         if _RICH and console is not None:
             console.rule("[bold green]Done[/bold green]")
-            console.print(f"Best fitness: [bold green]{best.fitness or 0.0:.4f}[/bold green]")
+            console.print(
+                f"Best fitness: [bold green]{best.fitness or 0.0:.4f}[/bold green]"
+            )
             console.print(f"Output: {out_path}")
         else:
             click.echo(f"\nBest fitness: {best.fitness or 0.0:.4f}")
@@ -1531,9 +1868,13 @@ def forge(
                     f"  Gen [bold]{gen:3d}[/bold]  best=[green]{best_score:.4f}[/green]  mean={mean_score:.4f}"
                 )
             else:
-                click.echo(f"  Gen {gen:3d}  best={best_score:.4f}  mean={mean_score:.4f}")
+                click.echo(
+                    f"  Gen {gen:3d}  best={best_score:.4f}  mean={mean_score:.4f}"
+                )
 
-        click.echo(f"Evolving pipeline for {generations} generations (population={population}) ...")
+        click.echo(
+            f"Evolving pipeline for {generations} generations (population={population}) ..."
+        )
         best_pl = engine_pl.evolve(
             seed=seed_pl,
             task=task,
@@ -1546,10 +1887,98 @@ def forge(
 
         if _RICH and console is not None:
             console.rule("[bold green]Done[/bold green]")
-            console.print(f"Best fitness: [bold green]{best_pl.fitness or 0.0:.4f}[/bold green]")
+            console.print(
+                f"Best fitness: [bold green]{best_pl.fitness or 0.0:.4f}[/bold green]"
+            )
             console.print(f"Steps: {len(best_pl.steps)}")
             console.print(f"Output: {out_path}")
         else:
             click.echo(f"\nBest fitness: {best_pl.fitness or 0.0:.4f}")
             click.echo(f"Steps: {len(best_pl.steps)}")
             click.echo(f"Output: {out_path}")
+
+
+# ── serve ─────────────────────────────────────────────────────────────────────
+
+
+@main.command()
+@click.option(
+    "--port",
+    "-p",
+    default=8000,
+    show_default=True,
+    help="TCP port for the API server.",
+)
+@click.option(
+    "--host",
+    default="127.0.0.1",
+    show_default=True,
+    help="Host address to bind.",
+)
+@click.option(
+    "--reload",
+    is_flag=True,
+    default=False,
+    help="Enable auto-reload on code changes (development mode).",
+)
+@click.option(
+    "--db",
+    default="cambrian.db",
+    show_default=True,
+    help="Path to the SQLite database file.",
+)
+def serve(port: int, host: str, reload: bool, db: str) -> None:
+    """Launch the FastAPI REST + WebSocket server for the React UI.
+
+    \\b
+    Endpoints:
+        GET  /api/health
+        GET  /api/plugins       GET/POST /api/plugins/{name}/enable|disable
+        GET  /api/models
+        GET/DELETE /api/runs    GET /api/runs/{id}/agents
+        POST /api/evolve        -> starts evolution, returns run_id
+        GET  /api/agents/{id}
+        WS   /ws/evolve/{run_id}
+
+    \\b
+    Examples:
+        cambrian serve
+        cambrian serve --port 8080 --host 0.0.0.0
+        cambrian serve --reload --db /tmp/dev.db
+    """  # noqa: RUF001
+    try:
+        import uvicorn
+    except ImportError:
+        click.echo(
+            "uvicorn is not installed. Run: pip install 'cambrian-ai[server]'",
+            err=True,
+        )
+        raise SystemExit(1)
+
+    from pathlib import Path as _Path
+    import cambrian.api as _api
+
+    db_path = _Path(db)
+    _api.DB_PATH = db_path
+    _api._init_db(db_path)
+
+    if _RICH and console is not None:
+        console.print(
+            f"[bold cyan]Cambrian API[/bold cyan] "
+            f"[dim]v{__version__}[/dim]  "
+            f"http://{host}:{port}"  # noqa: RUF001
+        )
+        console.print(f"  [dim]DB:[/dim] {db_path.resolve()}")
+        console.print(f"  [dim]Docs:[/dim] http://{host}:{port}/api/docs")
+    else:
+        click.echo(f"Cambrian API v{__version__}  ->  http://{host}:{port}")
+        click.echo(f"  DB:   {db_path.resolve()}")
+        click.echo(f"  Docs: http://{host}:{port}/api/docs")
+
+    uvicorn.run(
+        "cambrian.api:app",
+        host=host,
+        port=port,
+        reload=reload,
+        log_level="info",
+    )

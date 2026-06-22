@@ -17,6 +17,7 @@ from cambrian.router import ModelRouter
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
+
 def _agent(prompt: str = "x", temperature: float = 0.5, fitness: float = 0.5) -> Agent:
     a = Agent(genome=Genome(system_prompt=prompt, temperature=temperature))
     a._fitness = fitness
@@ -24,6 +25,7 @@ def _agent(prompt: str = "x", temperature: float = 0.5, fitness: float = 0.5) ->
 
 
 # ── SemanticCache ─────────────────────────────────────────────────────────────
+
 
 class TestSemanticCache:
     def test_miss_returns_none(self) -> None:
@@ -75,8 +77,8 @@ class TestSemanticCache:
     def test_hit_rate(self) -> None:
         c = SemanticCache()
         c.set("p", "r")
-        c.get("p")          # hit
-        c.get("missing")    # miss
+        c.get("p")  # hit
+        c.get("missing")  # miss
         assert c.hit_rate() == pytest.approx(0.5)
 
     def test_hit_rate_zero_when_empty(self) -> None:
@@ -93,6 +95,7 @@ class TestSemanticCache:
 
 
 # ── caveman_compress ──────────────────────────────────────────────────────────
+
 
 class TestCavemanCompress:
     def test_removes_stopwords(self) -> None:
@@ -121,6 +124,7 @@ class TestCavemanCompress:
 
 
 # ── procut_prune ──────────────────────────────────────────────────────────────
+
 
 class TestProcutPrune:
     def _genome(self, prompt: str) -> Genome:
@@ -160,6 +164,7 @@ class TestProcutPrune:
 
 # ── ModelRouter ───────────────────────────────────────────────────────────────
 
+
 class TestModelRouter:
     def test_short_simple_task_routes_cheap(self) -> None:
         r = ModelRouter()
@@ -184,8 +189,10 @@ class TestModelRouter:
         assert len(r.routing_log) == 2
 
     def test_routing_stats_counts(self) -> None:
-        r = ModelRouter(cheap_model="cheap", medium_model="medium", premium_model="premium")
-        r.route("hi")          # cheap
+        r = ModelRouter(
+            cheap_model="cheap", medium_model="medium", premium_model="premium"
+        )
+        r.route("hi")  # cheap
         r.route("implement a complex algorithm")  # premium
         stats = r.routing_stats()
         assert stats.get("cheap", 0) >= 1
@@ -197,6 +204,7 @@ class TestModelRouter:
 
 
 # ── MAPElites ─────────────────────────────────────────────────────────────────
+
 
 class TestMAPElites:
     def test_empty_archive(self) -> None:
@@ -260,6 +268,7 @@ class TestMAPElites:
 
 # ── EvolutionaryMemory ────────────────────────────────────────────────────────
 
+
 class TestEvolutionaryMemory:
     def test_add_and_count(self) -> None:
         m = EvolutionaryMemory(name="test")
@@ -298,7 +307,9 @@ class TestEvolutionaryMemory:
     def test_lineage_with_parent(self) -> None:
         m = EvolutionaryMemory()
         m.add_agent("parent", generation=0, fitness=0.5, genome_snapshot={})
-        m.add_agent("child", generation=1, fitness=0.7, genome_snapshot={}, parents=["parent"])
+        m.add_agent(
+            "child", generation=1, fitness=0.7, genome_snapshot={}, parents=["parent"]
+        )
         lineage = m.get_lineage("child")
         assert "parent" in lineage
         assert "child" in lineage

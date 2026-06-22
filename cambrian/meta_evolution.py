@@ -97,7 +97,9 @@ class HyperParams:
             fitness_history=list(self.fitness_history),
         )
 
-    def perturb(self, scale: float = 0.05, rng: random.Random | None = None) -> "HyperParams":
+    def perturb(
+        self, scale: float = 0.05, rng: random.Random | None = None
+    ) -> "HyperParams":
         """Return a new HyperParams with small Gaussian perturbations.
 
         Args:
@@ -235,7 +237,9 @@ class MetaEvolutionEngine:
 
     def _meta_step(self, population: list[Agent], task: str) -> HyperParams:
         """Try n_candidates perturbations; return the best-performing hp."""
-        candidates = [self.hp.perturb(self._meta_lr, self._rng) for _ in range(self._n_candidates)]
+        candidates = [
+            self.hp.perturb(self._meta_lr, self._rng) for _ in range(self._n_candidates)
+        ]
         best_hp = self.hp
         best_fitness = self._mean_fitness(population)
 
@@ -297,7 +301,9 @@ class MetaEvolutionEngine:
             if not candidates:
                 return
             local_best = max(candidates, key=lambda a: a.fitness or 0.0)
-            if best_agent is None or (local_best.fitness or 0.0) > (best_agent.fitness or 0.0):
+            if best_agent is None or (local_best.fitness or 0.0) > (
+                best_agent.fitness or 0.0
+            ):
                 best_agent = local_best
 
         _update_best(population)
@@ -333,7 +339,7 @@ class MetaEvolutionEngine:
         if best_agent is None and population:
             best_agent = max(population, key=lambda a: a.fitness or 0.0)
 
-        return best_agent  # type: ignore[return-value]
+        return best_agent
 
     @property
     def hp_history(self) -> list[HyperParams]:

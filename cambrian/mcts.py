@@ -274,8 +274,14 @@ class MCTSSelector:
             ``mean_visits``, ``best_reward``.
         """
         if not self._node_map:
-            return {"nodes": 0, "visits": 0, "roots": 0, "max_depth": 0,
-                    "mean_visits": 0.0, "best_reward": 0.0}
+            return {
+                "nodes": 0,
+                "visits": 0,
+                "roots": 0,
+                "max_depth": 0,
+                "mean_visits": 0.0,
+                "best_reward": 0.0,
+            }
 
         nodes_list = list(self._node_map.values())
         total_visits = sum(n.visits for n in nodes_list)
@@ -291,9 +297,7 @@ class MCTSSelector:
             "best_reward": best_reward,
         }
 
-    def prune_stale_roots(
-        self, active_ids: set[str], keep_best: int = 5
-    ) -> None:
+    def prune_stale_roots(self, active_ids: set[str], keep_best: int = 5) -> None:
         """Remove root nodes whose agents are no longer in the population.
 
         Keeps the *keep_best* highest-reward roots regardless of activity
@@ -303,10 +307,7 @@ class MCTSSelector:
             active_ids: Set of agent IDs currently in the population.
             keep_best: Minimum number of roots to keep regardless of activity.
         """
-        stale = [
-            rid for rid in list(self._roots)
-            if rid not in active_ids
-        ]
+        stale = [rid for rid in list(self._roots) if rid not in active_ids]
         # Sort stale roots by mean reward; keep the best ones
         stale.sort(
             key=lambda rid: self._roots[rid].mean_reward,

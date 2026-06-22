@@ -108,9 +108,7 @@ class Island:
             if migrant.fitness is not None:
                 clone.fitness = migrant.fitness  # preserve fitness across migration
             self.population[i] = clone
-        logger.debug(
-            "Island %d received %d migrants", self.island_id, n_replace
-        )
+        logger.debug("Island %d received %d migrants", self.island_id, n_replace)
 
 
 # ── Archipelago ────────────────────────────────────────────────────────────────
@@ -193,7 +191,11 @@ class Archipelago:
                 self._islands[neighbour_id].receive_migrants(migrants)
 
         self._total_migrations += 1
-        logger.debug("Migration event #%d: %d migrants/island", self._total_migrations, n_migrants)
+        logger.debug(
+            "Migration event #%d: %d migrants/island",
+            self._total_migrations,
+            n_migrants,
+        )
 
     # ── Main evolution loop ────────────────────────────────────────────────────
 
@@ -253,10 +255,14 @@ class Archipelago:
         for i, island in enumerate(self._islands):
             engine = self._engines[i]
             # Assign genomes round-robin
-            island_seeds = [
-                seed_genomes[j % len(seed_genomes)]
-                for j in range(i, i + self._island_size)
-            ] if seed_genomes else []
+            island_seeds = (
+                [
+                    seed_genomes[j % len(seed_genomes)]
+                    for j in range(i, i + self._island_size)
+                ]
+                if seed_genomes
+                else []
+            )
             # Use engine internals to build initial population
             population = engine._seed_population(island_seeds, self._island_size)
             engine._evaluate_population(population, task)
@@ -304,13 +310,15 @@ class Archipelago:
         summaries: list[dict[str, Any]] = []
         for island in self._islands:
             alive = [a.fitness for a in island.population if a.fitness is not None]
-            summaries.append({
-                "island_id": island.island_id,
-                "size": len(island.population),
-                "generations": island.generation,
-                "best_fitness": max(alive) if alive else None,
-                "mean_fitness": sum(alive) / len(alive) if alive else None,
-            })
+            summaries.append(
+                {
+                    "island_id": island.island_id,
+                    "size": len(island.population),
+                    "generations": island.generation,
+                    "best_fitness": max(alive) if alive else None,
+                    "mean_fitness": sum(alive) / len(alive) if alive else None,
+                }
+            )
         return summaries
 
     @property

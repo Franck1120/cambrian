@@ -26,8 +26,7 @@ def _agent(prompt: str = "You are helpful.", fitness: float = 0.5) -> Agent:
 def _population(n: int = 4) -> list[Agent]:
     fitnesses = [0.2 * (i + 1) for i in range(n)]
     return [
-        _agent(f"agent {i}", fit)
-        for i, fit in zip(range(n), fitnesses, strict=False)
+        _agent(f"agent {i}", fit) for i, fit in zip(range(n), fitnesses, strict=False)
     ]
 
 
@@ -75,7 +74,7 @@ class TestSemanticCache:
     def test_hit_rate_after_hit(self) -> None:
         cache = SemanticCache()
         cache.set("prompt", "resp")
-        cache.get("prompt")   # hit
+        cache.get("prompt")  # hit
         rate = cache.hit_rate()
         assert isinstance(rate, float)
         assert rate > 0.0
@@ -117,7 +116,7 @@ class TestSemanticCache:
         cache = SemanticCache()
         cache.set("p1", "r1")
         cache.set("p2", "r2")
-        cache.get("p1")    # hit
+        cache.get("p1")  # hit
         cache.get("miss")  # miss
         rate = cache.hit_rate()
         assert 0.0 < rate < 1.0
@@ -158,7 +157,9 @@ class TestCavemanCompress:
     def test_preserves_content_words(self) -> None:
         result = caveman_compress("implement binary search algorithm")
         # Domain words should survive compression
-        assert any(word in result for word in ["implement", "binary", "search", "algorithm"])
+        assert any(
+            word in result for word in ["implement", "binary", "search", "algorithm"]
+        )
 
     def test_deterministic(self) -> None:
         text = "the quick brown fox jumps over the lazy dog"
@@ -223,9 +224,11 @@ class TestModelRouter:
         router = ModelRouter(
             cheap_model="cheap", medium_model="medium", premium_model="premium"
         )
-        router.route("hi")         # cheap
-        router.route("hello")      # cheap
-        router.route("implement a complex algorithm with step-by-step details")  # premium
+        router.route("hi")  # cheap
+        router.route("hello")  # cheap
+        router.route(
+            "implement a complex algorithm with step-by-step details"
+        )  # premium
         stats = router.routing_stats()
         assert isinstance(stats, dict)
         assert stats.get("cheap", 0) >= 2
@@ -292,7 +295,14 @@ class TestDiversityTracker:
         tracker = DiversityTracker()
         pop = [_agent(f"agent {i}", 0.1 * i) for i in range(6)]
         # Manually set different strategies
-        strategies = ["step-by-step", "concise", "detailed", "chain-of-thought", "few-shot", "zero-shot"]
+        strategies = [
+            "step-by-step",
+            "concise",
+            "detailed",
+            "chain-of-thought",
+            "few-shot",
+            "zero-shot",
+        ]
         for agent, strat in zip(pop, strategies, strict=False):
             agent.genome.strategy = strat
         tracker.record(0, pop)
@@ -436,7 +446,9 @@ class TestParetoAnalyzer:
         analyzer = ParetoAnalyzer()
         pop = _population(5)
         analyzer.compute(pop)
-        assert len(analyzer.pareto_agents()) + len(analyzer.dominated_agents()) == len(pop)
+        assert len(analyzer.pareto_agents()) + len(analyzer.dominated_agents()) == len(
+            pop
+        )
 
     def test_summary_dict_keys(self) -> None:
         analyzer = ParetoAnalyzer()

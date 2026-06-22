@@ -27,14 +27,16 @@ from cambrian.mutator import LLMMutator
 
 
 _KEYWORDS = ["expert", "step-by-step", "systematic", "analytical", "verify"]
-_GOOD_GENOME = json.dumps({
-    "system_prompt": "expert step-by-step systematic analytical verify",
-    "strategy": "step-by-step",
-    "temperature": 0.7,
-    "model": "gpt-4o-mini",
-    "tools": [],
-    "few_shot_examples": [],
-})
+_GOOD_GENOME = json.dumps(
+    {
+        "system_prompt": "expert step-by-step systematic analytical verify",
+        "strategy": "step-by-step",
+        "temperature": 0.7,
+        "model": "gpt-4o-mini",
+        "tools": [],
+        "few_shot_examples": [],
+    }
+)
 
 
 def _mock_backend() -> MagicMock:
@@ -159,7 +161,11 @@ class TestEcosystemPerformance:
 
     def test_metamorphosis_1000agents_under_1s(self) -> None:
         """Advancing 1000 agents one generation completes in <1s."""
-        from cambrian.metamorphosis import MetamorphosisController, PhaseConfig, MetamorphicPhase
+        from cambrian.metamorphosis import (
+            MetamorphosisController,
+            PhaseConfig,
+            MetamorphicPhase,
+        )
 
         backend = _mock_backend()
         ctrl = MetamorphosisController(
@@ -189,8 +195,10 @@ class TestDriftDetectorPerformance:
         from cambrian.safeguards import GoalDriftDetector
 
         det = GoalDriftDetector(drift_threshold=0.4)
-        agents = [Agent(genome=Genome(system_prompt=f"expert agent prompt number {i}"))
-                  for i in range(500)]
+        agents = [
+            Agent(genome=Genome(system_prompt=f"expert agent prompt number {i}"))
+            for i in range(500)
+        ]
         intent = "expert agent prompt systematic analytical"
         for a in agents:
             det.register(a, intent=intent)

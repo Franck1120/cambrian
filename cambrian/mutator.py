@@ -120,9 +120,7 @@ class LLMMutator:
             if traces:
                 trace_lines = ["\nStigmergy traces (proven high-scoring patterns):"]
                 for tr in traces:
-                    trace_lines.append(
-                        f"  [score={tr.score:.3f}] {tr.content[:120]}"
-                    )
+                    trace_lines.append(f"  [score={tr.score:.3f}] {tr.content[:120]}")
                 few_shot_block += "\n".join(trace_lines) + "\n"
 
         prompt = _MUTATE_TEMPLATE.format(
@@ -166,14 +164,20 @@ class LLMMutator:
         """
         prompt = _CROSSOVER_TEMPLATE.format(
             genome_a=json.dumps(parent_a.genome.to_dict(), indent=2),
-            fitness_a=f"{parent_a.fitness:.4f}" if parent_a.fitness is not None else "0",
+            fitness_a=f"{parent_a.fitness:.4f}"
+            if parent_a.fitness is not None
+            else "0",
             genome_b=json.dumps(parent_b.genome.to_dict(), indent=2),
-            fitness_b=f"{parent_b.fitness:.4f}" if parent_b.fitness is not None else "0",
+            fitness_b=f"{parent_b.fitness:.4f}"
+            if parent_b.fitness is not None
+            else "0",
             task=task or "general problem solving",
         )
 
         # Choose the higher-fitness parent as the base for the offspring
-        base_parent = parent_a if (parent_a.fitness or 0) >= (parent_b.fitness or 0) else parent_b
+        base_parent = (
+            parent_a if (parent_a.fitness or 0) >= (parent_b.fitness or 0) else parent_b
+        )
 
         try:
             raw = self._backend.generate(
@@ -230,8 +234,8 @@ class LLMMutator:
         for i, (sa, sb) in enumerate(zip(sents_a, sents_b)):
             mixed.append(sa if i % 2 == 0 else sb)
         # Append any remaining sentences from the longer parent
-        mixed.extend(sents_a[len(sents_b):])
-        mixed.extend(sents_b[len(sents_a):])
+        mixed.extend(sents_a[len(sents_b) :])
+        mixed.extend(sents_b[len(sents_a) :])
 
         return Genome(
             system_prompt=" ".join(mixed),

@@ -140,7 +140,9 @@ class ConstitutionalWrapper:
                 agent.genome.system_prompt = revised_prompt
                 logger.debug(
                     "ConstitutionalWrapper: agent %s prompt revised (%d → %d chars)",
-                    agent.id[:8], len(original_prompt), len(revised_prompt),
+                    agent.id[:8],
+                    len(original_prompt),
+                    len(revised_prompt),
                 )
             score = self._base(agent, task)
         finally:
@@ -190,7 +192,9 @@ class ConstitutionalWrapper:
                 )
                 critiques.append(critique.strip())
             except Exception as exc:
-                logger.warning("Critique call failed for principle %r: %s", principle[:40], exc)
+                logger.warning(
+                    "Critique call failed for principle %r: %s", principle[:40], exc
+                )
                 critiques.append("")
 
         return critiques

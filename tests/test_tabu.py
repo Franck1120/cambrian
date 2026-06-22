@@ -1,5 +1,6 @@
 # Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.tabu — TabuList and TabuMutator."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock
@@ -165,7 +166,9 @@ class TestTabuMutatorMutate:
             max_retries=3,
         )
         result = mutator.mutate(_make_agent(), "task")
-        assert result.genome.system_prompt == "brand new completely different prompt gamma"
+        assert (
+            result.genome.system_prompt == "brand new completely different prompt gamma"
+        )
 
     def test_returns_first_candidate_after_exhausting_retries(self) -> None:
         tabu_list = TabuList()

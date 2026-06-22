@@ -107,6 +107,4 @@ class CodeEvaluator(Evaluator):
         return 0.5
 
     def __repr__(self) -> str:
-        return (
-            f"CodeEvaluator(expected={self._expected!r}, timeout={self._timeout})"
-        )
+        return f"CodeEvaluator(expected={self._expected!r}, timeout={self._timeout})"

@@ -85,9 +85,9 @@ def _load_json(path: str) -> list[dict[str, Any]] | None:
         return None
 
 
-def _flatten_evolve(generations: list[dict[str, Any]]) -> tuple[
-    list[int], list[float], list[float], list[dict[str, Any]]
-]:
+def _flatten_evolve(
+    generations: list[dict[str, Any]],
+) -> tuple[list[int], list[float], list[float], list[dict[str, Any]]]:
     """Extract per-generation series and a flat agent list from Evolve log."""
     gen_numbers: list[int] = []
     best_fitness: list[float] = []
@@ -111,9 +111,9 @@ def _flatten_evolve(generations: list[dict[str, Any]]) -> tuple[
     return gen_numbers, best_fitness, mean_fitness, all_agents
 
 
-def _flatten_forge(generations: list[dict[str, Any]]) -> tuple[
-    list[int], list[float], list[float], list[dict[str, Any]]
-]:
+def _flatten_forge(
+    generations: list[dict[str, Any]],
+) -> tuple[list[int], list[float], list[float], list[dict[str, Any]]]:
     """Extract per-generation series and a flat population list from Forge log."""
     gen_numbers: list[int] = []
     best_fitness: list[float] = []
@@ -180,11 +180,13 @@ def _render_evolve_tab(
         import altair as alt
         import pandas as pd
 
-        df_fitness = pd.DataFrame({
-            "Generation": gen_numbers + gen_numbers,
-            "Fitness": best_fitness + mean_fitness,
-            "Series": ["Best"] * len(gen_numbers) + ["Mean"] * len(gen_numbers),
-        })
+        df_fitness = pd.DataFrame(
+            {
+                "Generation": gen_numbers + gen_numbers,
+                "Fitness": best_fitness + mean_fitness,
+                "Series": ["Best"] * len(gen_numbers) + ["Mean"] * len(gen_numbers),
+            }
+        )
         chart = (
             alt.Chart(df_fitness)
             .mark_line(point=True)
@@ -200,7 +202,10 @@ def _render_evolve_tab(
     except ImportError:
         try:
             import pandas as pd
-            df = pd.DataFrame({"Best": best_fitness, "Mean": mean_fitness}, index=gen_numbers)
+
+            df = pd.DataFrame(
+                {"Best": best_fitness, "Mean": mean_fitness}, index=gen_numbers
+            )
             st.line_chart(df)
         except ImportError:
             st.write("Install `pandas` and `altair` for charts.")
@@ -210,52 +215,63 @@ def _render_evolve_tab(
     st.subheader("Population Table")
 
     gen_choice = st.slider(
-        "Generation", min_value=min(gen_numbers), max_value=max(gen_numbers),
-        value=max(gen_numbers), step=1, key="evolve_gen_slider",
+        "Generation",
+        min_value=min(gen_numbers),
+        max_value=max(gen_numbers),
+        value=max(gen_numbers),
+        step=1,
+        key="evolve_gen_slider",
     )
 
     gen_agents = [a for a in all_agents if a.get("_generation") == gen_choice]
-    top_n = st.slider("Show top N agents", min_value=3, max_value=20, value=10, key="evolve_topn")
+    top_n = st.slider(
+        "Show top N agents", min_value=3, max_value=20, value=10, key="evolve_topn"
+    )
     gen_agents_sorted = sorted(
         gen_agents, key=lambda a: float(a.get("fitness") or 0.0), reverse=True
     )[:top_n]
 
     try:
         import pandas as pd
+
         rows = []
         for a in gen_agents_sorted:
             genome = a.get("genome", {})
-            rows.append({
-                "ID": str(a.get("id", ""))[:8],
-                "Fitness": round(float(a.get("fitness") or 0.0), 4),
-                "Model": genome.get("model", ""),
-                "Temp": round(float(genome.get("temperature", 0.7)), 2),
-                "Strategy": genome.get("strategy", ""),
-                "Tokens": len(genome.get("system_prompt", "")) // 4,
-            })
+            rows.append(
+                {
+                    "ID": str(a.get("id", ""))[:8],
+                    "Fitness": round(float(a.get("fitness") or 0.0), 4),
+                    "Model": genome.get("model", ""),
+                    "Temp": round(float(genome.get("temperature", 0.7)), 2),
+                    "Strategy": genome.get("strategy", ""),
+                    "Tokens": len(genome.get("system_prompt", "")) // 4,
+                }
+            )
         st.dataframe(pd.DataFrame(rows), use_container_width=True)
     except ImportError:
         for a in gen_agents_sorted:
             st.json(a)
 
     # ── Best genome viewer ──
-    all_sorted = sorted(all_agents, key=lambda a: float(a.get("fitness") or 0.0), reverse=True)
+    all_sorted = sorted(
+        all_agents, key=lambda a: float(a.get("fitness") or 0.0), reverse=True
+    )
     if all_sorted:
         st.divider()
         st.subheader("Best Genome")
         best = all_sorted[0]
         genome = best.get("genome", {})
         with st.expander(
-            f"Agent {str(best.get('id',''))[:8]}  "
+            f"Agent {str(best.get('id', ''))[:8]}  "
             f"fitness={float(best.get('fitness') or 0):.4f}  "
-            f"gen={best.get('_generation','?')}"
+            f"gen={best.get('_generation', '?')}"
         ):
             st.markdown("**System prompt:**")
             st.code(genome.get("system_prompt", "(empty)"), language="text")
             st.markdown(
-                f"**Model:** `{genome.get('model','')}`  "
+                f"**Model:** `{genome.get('model', '')}`  "
                 f"**Temp:** `{genome.get('temperature', 0.7)}`  "
-                f"**Strategy:** `{genome.get('strategy','')}`"
+                f"**Strategy:** `{genome.get('strategy', '')}`"
             )
         # Export
         export_json = json.dumps(genome, indent=2)
@@ -276,16 +292,21 @@ def _render_evolve_tab(
             {
                 "Temp bucket": f"{round(float(a.get('genome', {}).get('temperature', 0.7)) * 2) / 2:.1f}",
                 "Token bucket": f"{(len(a.get('genome', {}).get('system_prompt', '')) // 4 // 100) * 100}–"
-                                f"{(len(a.get('genome', {}).get('system_prompt', '')) // 4 // 100) * 100 + 99}",
+                f"{(len(a.get('genome', {}).get('system_prompt', '')) // 4 // 100) * 100 + 99}",
                 "Fitness": float(a.get("fitness") or 0.0),
             }
             for a in all_agents
         ]
         if heatmap_rows:
             df_heat = pd.DataFrame(heatmap_rows)
-            pivot = df_heat.groupby(["Temp bucket", "Token bucket"])["Fitness"].mean().reset_index()
+            pivot = (
+                df_heat.groupby(["Temp bucket", "Token bucket"])["Fitness"]
+                .mean()
+                .reset_index()
+            )
             try:
                 import altair as alt
+
                 heat_chart = (
                     alt.Chart(pivot)
                     .mark_rect()
@@ -354,11 +375,13 @@ def _render_forge_tab(
         import altair as alt
         import pandas as pd
 
-        df_f = pd.DataFrame({
-            "Generation": gen_numbers + gen_numbers,
-            "Fitness": best_fitness + mean_fitness,
-            "Series": ["Best"] * len(gen_numbers) + ["Mean"] * len(gen_numbers),
-        })
+        df_f = pd.DataFrame(
+            {
+                "Generation": gen_numbers + gen_numbers,
+                "Fitness": best_fitness + mean_fitness,
+                "Series": ["Best"] * len(gen_numbers) + ["Mean"] * len(gen_numbers),
+            }
+        )
         chart = (
             alt.Chart(df_f)
             .mark_line(point=True)
@@ -374,7 +397,12 @@ def _render_forge_tab(
     except ImportError:
         try:
             import pandas as pd
-            st.line_chart(pd.DataFrame({"Best": best_fitness, "Mean": mean_fitness}, index=gen_numbers))
+
+            st.line_chart(
+                pd.DataFrame(
+                    {"Best": best_fitness, "Mean": mean_fitness}, index=gen_numbers
+                )
+            )
         except ImportError:
             st.write("Install `pandas` and `altair` for charts.")
 
@@ -382,12 +410,18 @@ def _render_forge_tab(
 
     # ── Generation slider ──
     gen_choice = st.slider(
-        "Generation", min_value=min(gen_numbers), max_value=max(gen_numbers),
-        value=max(gen_numbers), step=1, key="forge_gen_slider",
+        "Generation",
+        min_value=min(gen_numbers),
+        max_value=max(gen_numbers),
+        value=max(gen_numbers),
+        step=1,
+        key="forge_gen_slider",
     )
 
     gen_population = [a for a in all_agents if a.get("_generation") == gen_choice]
-    gen_sorted = sorted(gen_population, key=lambda a: float(a.get("fitness") or 0.0), reverse=True)
+    gen_sorted = sorted(
+        gen_population, key=lambda a: float(a.get("fitness") or 0.0), reverse=True
+    )
 
     if mode == "code":
         _render_code_forge(st, gen_sorted, all_agents, gen_numbers)
@@ -406,17 +440,20 @@ def _render_code_forge(
     st.subheader("Code Population")
     try:
         import pandas as pd
+
         rows = []
         for a in gen_sorted:
             g = a.get("genome", {})
             code = g.get("code", "")
-            rows.append({
-                "ID": str(a.get("id", ""))[:8],
-                "Fitness": round(float(a.get("fitness") or 0.0), 4),
-                "Version": g.get("version", 0),
-                "Lines": code.count("\n") + 1 if code else 0,
-                "Entry point": g.get("entry_point", ""),
-            })
+            rows.append(
+                {
+                    "ID": str(a.get("id", ""))[:8],
+                    "Fitness": round(float(a.get("fitness") or 0.0), 4),
+                    "Version": g.get("version", 0),
+                    "Lines": code.count("\n") + 1 if code else 0,
+                    "Entry point": g.get("entry_point", ""),
+                }
+            )
         st.dataframe(pd.DataFrame(rows), use_container_width=True)
     except ImportError:
         for a in gen_sorted:
@@ -426,7 +463,9 @@ def _render_code_forge(
     if gen_sorted:
         best = gen_sorted[0]
         g = best.get("genome", {})
-        st.subheader(f"Best Code — Gen {best.get('_generation','?')} (fitness {float(best.get('fitness') or 0):.4f})")
+        st.subheader(
+            f"Best Code — Gen {best.get('_generation', '?')} (fitness {float(best.get('fitness') or 0):.4f})"
+        )
         st.code(g.get("code", "(empty)"), language="python")
 
         # Test-case pass/fail grid
@@ -435,12 +474,15 @@ def _render_code_forge(
             st.subheader("Test Cases")
             try:
                 import pandas as pd
+
                 tc_rows = []
                 for tc in test_cases:
-                    tc_rows.append({
-                        "Input": str(tc.get("input", "")),
-                        "Expected": str(tc.get("expected", "")),
-                    })
+                    tc_rows.append(
+                        {
+                            "Input": str(tc.get("input", "")),
+                            "Expected": str(tc.get("expected", "")),
+                        }
+                    )
                 st.dataframe(pd.DataFrame(tc_rows), use_container_width=True)
             except ImportError:
                 st.json(test_cases)
@@ -464,17 +506,20 @@ def _render_pipeline_forge(
     st.subheader("Pipeline Population")
     try:
         import pandas as pd
+
         rows = []
         for a in gen_sorted:
             g = a.get("genome", {})
             steps = g.get("steps", [])
-            rows.append({
-                "ID": str(a.get("id", a.get("pipeline_id", "")))[:8],
-                "Fitness": round(float(a.get("fitness") or 0.0), 4),
-                "Version": g.get("version", 0),
-                "Steps": len(steps),
-                "Name": g.get("name", ""),
-            })
+            rows.append(
+                {
+                    "ID": str(a.get("id", a.get("pipeline_id", "")))[:8],
+                    "Fitness": round(float(a.get("fitness") or 0.0), 4),
+                    "Version": g.get("version", 0),
+                    "Steps": len(steps),
+                    "Name": g.get("name", ""),
+                }
+            )
         st.dataframe(pd.DataFrame(rows), use_container_width=True)
     except ImportError:
         for a in gen_sorted:
@@ -489,7 +534,9 @@ def _render_pipeline_forge(
             f"Best Pipeline — fitness {float(best.get('fitness') or 0):.4f} — {len(steps)} steps"
         )
         for i, step in enumerate(steps, 1):
-            with st.expander(f"Step {i}: {step.get('name','?')} [{step.get('role','?')}] temp={step.get('temperature', 0.7):.2f}"):
+            with st.expander(
+                f"Step {i}: {step.get('name', '?')} [{step.get('role', '?')}] temp={step.get('temperature', 0.7):.2f}"
+            ):
                 st.code(step.get("system_prompt", "(empty)"), language="text")
 
         # Export
@@ -552,9 +599,7 @@ def _build_app(log_file: str, forge_log_file: str = "forge_log.json") -> None:
     with tab_forge:
         _render_forge_tab(st, forge_log_file)
 
-    st.caption(
-        f"Cambrian Evolution Dashboard · auto-refresh every {refresh_interval}s"
-    )
+    st.caption(f"Cambrian Evolution Dashboard · auto-refresh every {refresh_interval}s")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -605,9 +650,13 @@ def run_dashboard(
         launcher_path = f.name
 
     cmd = [
-        sys.executable, "-m", "streamlit", "run",
+        sys.executable,
+        "-m",
+        "streamlit",
+        "run",
         launcher_path,
-        "--server.port", str(port),
+        "--server.port",
+        str(port),
     ]
     if not open_browser:
         cmd += ["--server.headless", "true"]

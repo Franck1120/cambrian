@@ -35,6 +35,7 @@ class _EchoBackend:
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
         import re
+
         m = re.search(r"\{[\s\S]+\}", prompt)
         return m.group(0) if m else "{}"
 
@@ -52,7 +53,9 @@ def _make_engine(evaluator=None, pop_size: int = 4) -> EvolutionEngine:
     )
 
 
-def _make_agent(system_prompt: str = "Test prompt", fitness: float | None = None) -> Agent:
+def _make_agent(
+    system_prompt: str = "Test prompt", fitness: float | None = None
+) -> Agent:
     g = Genome(system_prompt=system_prompt)
     a = Agent(genome=g)
     if fitness is not None:
@@ -148,7 +151,9 @@ class TestFewShotExamplesInGenome:
         """few_shot_examples round-trips through to_dict/from_dict."""
         g = Genome(few_shot_examples=[{"task": "x", "score": 0.8, "response": "y"}])
         restored = Genome.from_dict(g.to_dict())
-        assert restored.few_shot_examples == [{"task": "x", "score": 0.8, "response": "y"}]
+        assert restored.few_shot_examples == [
+            {"task": "x", "score": 0.8, "response": "y"}
+        ]
 
     def test_empty_by_default(self) -> None:
         assert Genome().few_shot_examples == []
@@ -205,6 +210,7 @@ class TestVarianceAwareEvaluator:
         result = ev.evaluate(agent, "task")
         mean = (1.0 + 0.0 + 0.5) / 3
         import statistics
+
         var = statistics.variance([1.0, 0.0, 0.5])
         expected = mean - var
         assert result == pytest.approx(max(0.0, expected), abs=0.01)
@@ -280,9 +286,7 @@ class TestVarianceAwareEvaluator:
     def test_repr(self) -> None:
         from cambrian.evaluators.variance_aware import VarianceAwareEvaluator
 
-        ev = VarianceAwareEvaluator(
-            evaluators=[lambda a, t: 0.5, lambda a, t: 0.6]
-        )
+        ev = VarianceAwareEvaluator(evaluators=[lambda a, t: 0.5, lambda a, t: 0.6])
         assert "VarianceAwareEvaluator" in repr(ev)
 
 
@@ -333,7 +337,9 @@ class TestAutoCompression:
     def test_compress_population_shortens_long_prompt(self) -> None:
         """_compress_population pruning actually reduces overlong multi-paragraph prompts."""
         # procut_prune requires multiple paragraphs (split on \n\n) to prune
-        paragraph = "This is a sentence for testing compression. " * 8  # ~88 tokens per paragraph
+        paragraph = (
+            "This is a sentence for testing compression. " * 8
+        )  # ~88 tokens per paragraph
         long_prompt = "\n\n".join([paragraph] * 10)  # 10 paragraphs, ~880 tokens
         backend = _EchoBackend()
         mutator = LLMMutator(backend=backend, fallback_on_error=True)
@@ -371,7 +377,10 @@ class TestAutoCompression:
             seed=0,
         )
 
-        with patch("cambrian.evolution.EvolutionEngine._compress_population", wraps=engine._compress_population) as mock:
+        with patch(
+            "cambrian.evolution.EvolutionEngine._compress_population",
+            wraps=engine._compress_population,
+        ) as mock:
             engine.evolve(
                 seed_genomes=[Genome(system_prompt="short")],
                 task="test",
@@ -458,7 +467,9 @@ class TestPopulationSaveLoad:
         path = tmp_path / "pop.json"
         engine.save_population(path, [a])
         loaded = engine.load_population(path)
-        assert loaded[0].genome.few_shot_examples == [{"task": "x", "score": 0.9, "response": "r"}]
+        assert loaded[0].genome.few_shot_examples == [
+            {"task": "x", "score": 0.9, "response": "r"}
+        ]
 
 
 # ── AnthropicBackend ──────────────────────────────────────────────────────────
@@ -468,12 +479,14 @@ class TestAnthropicBackend:
     def test_import_without_sdk_raises(self) -> None:
         """When the anthropic package is absent, instantiation raises ImportError."""
         import sys
+
         original = sys.modules.get("anthropic")
         sys.modules["anthropic"] = None  # type: ignore[assignment]
         try:
             # Force re-import
             import importlib
             import cambrian.backends.anthropic as _mod
+
             importlib.reload(_mod)
             with pytest.raises(ImportError, match="anthropic"):
                 _mod.AnthropicBackend()
@@ -500,6 +513,7 @@ class TestAnthropicBackend:
 
     def test_generate_with_mock_sdk(self) -> None:
         """generate() correctly calls client.messages.create and returns text."""
+        pytest.importorskip("anthropic")
         from cambrian.backends.anthropic import AnthropicBackend
 
         mock_block = MagicMock()
@@ -528,6 +542,7 @@ class TestAnthropicBackend:
 
     def test_temperature_clamped(self) -> None:
         """Temperature above 1.0 is clamped to 1.0 for Claude."""
+        pytest.importorskip("anthropic")
         from cambrian.backends.anthropic import AnthropicBackend
 
         mock_block = MagicMock()
@@ -553,7 +568,7 @@ class TestAnthropicBackend:
 
     def test_retry_on_rate_limit(self) -> None:
         """RateLimitError triggers retries with back-off."""
-        import anthropic as _anthropic
+        _anthropic = pytest.importorskip("anthropic")
 
         from cambrian.backends.anthropic import AnthropicBackend
 
@@ -585,8 +600,10 @@ class TestAnthropicBackend:
         b._max_retries = 3
         b._timeout = 10.0
 
-        with patch("anthropic.Anthropic", return_value=mock_client), \
-             patch("time.sleep"):
+        with (
+            patch("anthropic.Anthropic", return_value=mock_client),
+            patch("time.sleep"),
+        ):
             result = b.generate("hi")
 
         assert result == "ok"
@@ -594,7 +611,7 @@ class TestAnthropicBackend:
 
     def test_exhausted_retries_raise(self) -> None:
         """After max_retries failures, RuntimeError is raised."""
-        import anthropic as _anthropic
+        _anthropic = pytest.importorskip("anthropic")
 
         from cambrian.backends.anthropic import AnthropicBackend
 
@@ -613,8 +630,10 @@ class TestAnthropicBackend:
         b._max_retries = 2
         b._timeout = 10.0
 
-        with patch("anthropic.Anthropic", return_value=mock_client), \
-             patch("time.sleep"):
+        with (
+            patch("anthropic.Anthropic", return_value=mock_client),
+            patch("time.sleep"),
+        ):
             with pytest.raises(RuntimeError, match="failed after"):
                 b.generate("hi")
 
@@ -642,11 +661,16 @@ class TestCLIFlags:
             runner.invoke(
                 main,
                 [
-                    "evolve", "test task",
-                    "--tournament-k", "5",
-                    "--api-key", "test-key",
-                    "--generations", "1",
-                    "--population", "3",
+                    "evolve",
+                    "test task",
+                    "--tournament-k",
+                    "5",
+                    "--api-key",
+                    "test-key",
+                    "--generations",
+                    "1",
+                    "--population",
+                    "3",
                 ],
             )
 
@@ -672,11 +696,16 @@ class TestCLIFlags:
             runner.invoke(
                 main,
                 [
-                    "evolve", "test",
-                    "--compress-every", "3",
-                    "--api-key", "test-key",
-                    "--generations", "1",
-                    "--population", "3",
+                    "evolve",
+                    "test",
+                    "--compress-every",
+                    "3",
+                    "--api-key",
+                    "test-key",
+                    "--generations",
+                    "1",
+                    "--population",
+                    "3",
                 ],
             )
 
@@ -699,7 +728,7 @@ class TestAnalyzeCommand:
                     "strategy": "step-by-step" if i % 2 == 0 else "concise",
                     "temperature": 0.5 + i * 0.05,
                 },
-                parents=[f"agent_{i-1}"] if i > 0 else None,
+                parents=[f"agent_{i - 1}"] if i > 0 else None,
             )
         path = tmp_path / "lineage.json"
         path.write_text(mem.to_json())

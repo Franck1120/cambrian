@@ -10,6 +10,7 @@ from cambrian.agent import Agent, Genome
 
 # ── Genome ────────────────────────────────────────────────────────────────────
 
+
 class TestGenome:
     def test_defaults(self) -> None:
         g = Genome(system_prompt="hello")
@@ -46,6 +47,7 @@ class TestGenome:
 
 
 # ── Agent ─────────────────────────────────────────────────────────────────────
+
 
 class TestAgent:
     def _make_agent(self, prompt: str = "test") -> Agent:

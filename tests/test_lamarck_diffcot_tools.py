@@ -39,6 +39,7 @@ class TestLamarckianAdapter:
     def _adapter(self, threshold: float = 0.5) -> LamarckianAdapter:
         def evaluator(agent: Agent, task: str) -> float:
             return agent.fitness or 0.0
+
         return LamarckianAdapter(base_evaluator=evaluator, capture_threshold=threshold)
 
     def test_adapter_construction(self) -> None:
@@ -140,7 +141,13 @@ class TestDiffCoTReasoner:
             task="Explain entropy",
         )
         # DiffCoTResult must have a final output string
-        assert hasattr(result, "output") or hasattr(result, "final_answer") or isinstance(result.output if hasattr(result, "output") else result, object)
+        assert (
+            hasattr(result, "output")
+            or hasattr(result, "final_answer")
+            or isinstance(
+                result.output if hasattr(result, "output") else result, object
+            )
+        )
 
     def test_backend_called_multiple_times(self) -> None:
         backend = _backend("step answer")
@@ -218,7 +225,9 @@ class TestToolSpec:
         assert spec.author_genome_id == ""
 
     def test_custom_timeout(self) -> None:
-        spec = ToolSpec(name="t", description="d", command_template="cmd {input}", timeout=30.0)
+        spec = ToolSpec(
+            name="t", description="d", command_template="cmd {input}", timeout=30.0
+        )
         assert spec.timeout == pytest.approx(30.0)
 
 
@@ -229,7 +238,9 @@ class TestToolSpec:
 
 class TestToolPopulationRegistry:
     def _spec(self, name: str = "tool_a") -> ToolSpec:
-        return ToolSpec(name=name, description=f"desc of {name}", command_template="cmd {input}")
+        return ToolSpec(
+            name=name, description=f"desc of {name}", command_template="cmd {input}"
+        )
 
     def test_register_and_get(self) -> None:
         registry = ToolPopulationRegistry()

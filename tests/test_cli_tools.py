@@ -58,7 +58,9 @@ class TestCLIToolRun:
         assert isinstance(result, CLIToolResult)
 
     def test_echo_tool_works(self) -> None:
-        tool = CLITool(name="echo_tool", command_template="python -c \"print('{input}')\"")
+        tool = CLITool(
+            name="echo_tool", command_template="python -c \"print('{input}')\""
+        )
         result = tool.run("hello_world")
         assert result.ok is True
         assert "hello_world" in result.output
@@ -72,7 +74,7 @@ class TestCLIToolRun:
     def test_timeout_returns_error_result(self) -> None:
         tool = CLITool(
             name="slow",
-            command_template="python -c \"import time; time.sleep(5)\"",
+            command_template='python -c "import time; time.sleep(5)"',
             timeout=0.1,
         )
         result = tool.run("x")
@@ -102,7 +104,7 @@ class TestCLIToolRun:
         assert result.exit_code == 0
 
     def test_exit_code_nonzero_on_failure(self) -> None:
-        tool = CLITool(name="t", command_template="python -c \"import sys; sys.exit(1)\"")
+        tool = CLITool(name="t", command_template='python -c "import sys; sys.exit(1)"')
         result = tool.run("x")
         assert result.exit_code != 0
         assert result.ok is False

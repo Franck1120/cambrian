@@ -224,10 +224,14 @@ n2 = registry.inherit(child, grandchild)
 
 print(f"Marks transferred parent->child: {n1}")
 print(f"Marks transferred child->grandchild: {n2}")
-print(f"Grandchild marks: {[(m.name, f'{m.strength:.2f}') for m in registry.get_marks(grandchild)]}")
+print(
+    f"Grandchild marks: {[(m.name, f'{m.strength:.2f}') for m in registry.get_marks(grandchild)]}"
+)
 
 genome_with_epi = registry.apply_to_genome(grandchild)
-print(f"Genome with epigenetic context (first 150 chars):\n  {genome_with_epi.system_prompt[:150]!r}")
+print(
+    f"Genome with epigenetic context (first 150 chars):\n  {genome_with_epi.system_prompt[:150]!r}"
+)
 
 # ---------------------------------------------------------------------------
 # TIER 4: HGT

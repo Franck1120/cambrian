@@ -321,7 +321,9 @@ class WorldModelEvaluator(Evaluator):
             return raw_score
 
         prediction_error = abs(prediction.predicted_score - raw_score)
-        blended = world_model_fitness(raw_score, prediction_error, self._accuracy_weight)
+        blended = world_model_fitness(
+            raw_score, prediction_error, self._accuracy_weight
+        )
 
         logger.debug(
             "Agent %s: raw=%.4f predicted=%.4f error=%.4f blended=%.4f",

@@ -29,7 +29,11 @@ from cambrian.dream import DreamPhase
 from cambrian.ecosystem import EcosystemConfig, EcosystemInteraction
 from cambrian.evaluator import Evaluator
 from cambrian.memory import EvolutionaryMemory
-from cambrian.metamorphosis import MetamorphicPhase, MetamorphosisController, PhaseConfig
+from cambrian.metamorphosis import (
+    MetamorphicPhase,
+    MetamorphosisController,
+    PhaseConfig,
+)
 from cambrian.neuromodulation import NeuromodulatorBank
 from cambrian.quorum import QuorumSensor
 
@@ -76,7 +80,9 @@ print("Cambrian -- Full Evolution Stack Demo (offline, mocked)")
 print("=" * 70)
 
 rng = random.Random(42)
-backend = _mock_backend("You are an expert agent using step-by-step systematic reasoning.")
+backend = _mock_backend(
+    "You are an expert agent using step-by-step systematic reasoning."
+)
 evaluator = _MockEvaluator()
 
 # --- Components ---
@@ -185,8 +191,10 @@ for gen in range(1, N_GENERATIONS + 1):
     # 3. Neuromodulation
     state = neuro.modulate(population, generation=gen)
     effective_mr = (mutation_rate + state.mutation_rate) / 2.0
-    print(f"  Neuro: mr={state.mutation_rate:.3f}  sp={state.selection_pressure:.3f}  "
-          f"dopa={state.dopamine:.2f}")
+    print(
+        f"  Neuro: mr={state.mutation_rate:.3f}  sp={state.selection_pressure:.3f}  "
+        f"dopa={state.dopamine:.2f}"
+    )
     print(f"  Effective mutation_rate={effective_mr:.3f}")
 
     # 4. Ecosystem interaction
@@ -201,8 +209,10 @@ for gen in range(1, N_GENERATIONS + 1):
         ev = morph_ctrl.advance(a, generation=gen, fitness=a.fitness or 0.0)
         if ev is not None:
             morph_events.append(ev)
-            print(f"  Metamorphosis: agent {a.id[:8]}... "
-                  f"{ev.from_phase.value} -> {ev.to_phase.value}")
+            print(
+                f"  Metamorphosis: agent {a.id[:8]}... "
+                f"{ev.from_phase.value} -> {ev.to_phase.value}"
+            )
 
     # 6. Dream phase (every 3 generations)
     if dream.should_dream(gen):

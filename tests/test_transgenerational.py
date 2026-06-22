@@ -1,5 +1,6 @@
 # Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.transgenerational — TransgenerationalRegistry."""
+
 from __future__ import annotations
 
 import pytest

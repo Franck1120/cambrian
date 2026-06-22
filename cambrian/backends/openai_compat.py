@@ -21,6 +21,33 @@ import httpx
 
 from cambrian.backends.base import LLMBackend
 
+# -- Model catalogs -----------------------------------------------------------
+
+#: Groq free-tier models (14 400 req/day). Use base_url="https://api.groq.com/openai/v1".
+GROQ_MODELS: tuple[str, ...] = (
+    "gpt-oss-120b",
+    "gpt-oss-20b",
+    "kimi-k2-instruct",  # 262K context window
+    "qwen3-32b",
+    "llama-4-scout",
+    "llama-3.3-70b",
+    "llama-3.1-8b",
+)
+
+#: CLIProxyAPI models (local proxy on port 8317).
+#: Use base_url="http://localhost:8317/v1" and api_key="jarvis-local-key".
+CLI_PROXY_MODELS: tuple[str, ...] = (
+    # Antigravity provider
+    "gemini-3-pro",
+    "gemini-3-flash",
+    "gpt-oss-120b",
+    # Codex provider
+    "gpt-5",
+    "gpt-5.4",
+    # Gemini CLI provider
+    "gemini-2.5-pro",
+)
+
 
 class OpenAICompatBackend(LLMBackend):
     """HTTP backend for any OpenAI-compatible API.
@@ -51,9 +78,7 @@ class OpenAICompatBackend(LLMBackend):
     ) -> None:
         self._model = model
         self._base_url = (
-            base_url
-            or os.getenv("CAMBRIAN_BASE_URL")
-            or self.DEFAULT_BASE_URL
+            base_url or os.getenv("CAMBRIAN_BASE_URL") or self.DEFAULT_BASE_URL
         ).rstrip("/")
         self._api_key = (
             api_key
@@ -111,7 +136,7 @@ class OpenAICompatBackend(LLMBackend):
 
                 # Retryable errors
                 if response.status_code in (429, 500, 502, 503, 504):
-                    wait = 2 ** attempt
+                    wait = 2**attempt
                     time.sleep(wait)
                     last_error = RuntimeError(
                         f"HTTP {response.status_code}: {response.text[:200]}"
@@ -125,11 +150,35 @@ class OpenAICompatBackend(LLMBackend):
 
             except httpx.TimeoutException as exc:
                 last_error = exc
-                time.sleep(2 ** attempt)
+                time.sleep(2**attempt)
             except httpx.RequestError as exc:
                 last_error = exc
-                time.sleep(2 ** attempt)
+                time.sleep(2**attempt)
 
         raise RuntimeError(
             f"Backend call failed after {self._max_retries} attempts: {last_error}"
         )
+
+
+def groq_backend(
+    model: str = "llama-3.3-70b",
+    api_key: str | None = None,
+    **kwargs: Any,
+) -> OpenAICompatBackend:
+    """Create an :class:`OpenAICompatBackend` pre-configured for Groq.
+
+    Args:
+        model: One of :data:`GROQ_MODELS`. Default ``"llama-3.3-70b"``.
+        api_key: Groq API key. Falls back to ``GROQ_API_KEY`` env var.
+        **kwargs: Forwarded to :class:`OpenAICompatBackend`.
+
+    Returns:
+        Configured backend ready to call the Groq API.
+    """
+    resolved_key = api_key or os.getenv("GROQ_API_KEY") or ""
+    return OpenAICompatBackend(
+        model=model,
+        base_url="https://api.groq.com/openai/v1",
+        api_key=resolved_key,
+        **kwargs,
+    )

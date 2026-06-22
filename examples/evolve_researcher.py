@@ -48,7 +48,12 @@ from cambrian.export import export_genome_json, export_standalone
 from cambrian.lamarck import LamarckianAdapter
 from cambrian.memory import EvolutionaryMemory
 from cambrian.mutator import LLMMutator
-from cambrian.pareto import ObjectiveVector, brevity_objective, fitness_objective, nsga2_select
+from cambrian.pareto import (
+    ObjectiveVector,
+    brevity_objective,
+    fitness_objective,
+    nsga2_select,
+)
 from cambrian.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -110,10 +115,12 @@ SEED_GENOMES = [
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evolve a research agent.")
     parser.add_argument(
-        "--topic", default="machine learning for drug discovery",
+        "--topic",
+        default="machine learning for drug discovery",
         help="Research topic to optimise for.",
     )
     parser.add_argument("--generations", type=int, default=10)
@@ -123,8 +130,11 @@ def main() -> None:
     parser.add_argument("--api-key", default=None)
     parser.add_argument("--output", default="researcher_best.json")
     parser.add_argument("--memory-out", default="researcher_lineage.json")
-    parser.add_argument("--export-script", default=None,
-                        help="Also export as a standalone Python script.")
+    parser.add_argument(
+        "--export-script",
+        default=None,
+        help="Also export as a standalone Python script.",
+    )
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
@@ -259,13 +269,16 @@ def main() -> None:
                 "brevity": brevity_objective(a, max_tokens=500),
             },
         )
-        for a in last_pop if a.fitness is not None
+        for a in last_pop
+        if a.fitness is not None
     ]
     pareto_agents = nsga2_select(last_pop, last_vecs, target_size=3)
     print(f"Pareto-optimal agents (fitness × brevity): {len(pareto_agents)}")
     for pa in pareto_agents:
-        print(f"  {pa.id[:10]}  fitness={pa.fitness:.4f}  "
-              f"prompt_len={len(pa.genome.system_prompt)}")
+        print(
+            f"  {pa.id[:10]}  fitness={pa.fitness:.4f}  "
+            f"prompt_len={len(pa.genome.system_prompt)}"
+        )
 
     # ── Save results ──────────────────────────────────────────────────────────
     print("\n--- Best Agent ---")

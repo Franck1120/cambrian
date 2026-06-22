@@ -72,7 +72,9 @@ class TestApiKeyIsolation:
         assert "FAKE-KEY" not in result.stdout
         assert result.stdout.strip() == "NOT_SET"
 
-    def test_arbitrary_secret_not_in_sandbox(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_arbitrary_secret_not_in_sandbox(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.setenv("MY_SECRET_TOKEN", "super-secret-value-xyz")
         result = run_in_sandbox(_code_print_env("MY_SECRET_TOKEN"))
         assert result.success
@@ -98,11 +100,19 @@ class TestWhitelistEnforcement:
         assert "PYTHONPATH" in _SANDBOX_SAFE_KEYS
 
     def test_safe_keys_does_not_contain_api_keys(self) -> None:
-        for key in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY",
-                    "AWS_SECRET_ACCESS_KEY", "GITHUB_TOKEN", "CAMBRIAN_API_KEY"):
+        for key in (
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "GEMINI_API_KEY",
+            "AWS_SECRET_ACCESS_KEY",
+            "GITHUB_TOKEN",
+            "CAMBRIAN_API_KEY",
+        ):
             assert key not in _SANDBOX_SAFE_KEYS, f"{key} must not be in safe keys"
 
-    def test_dump_all_env_cannot_leak_keys(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_dump_all_env_cannot_leak_keys(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Sandboxed code that dumps ALL env vars must not expose API keys."""
         monkeypatch.setenv("OPENAI_API_KEY", "sk-LEAK-ME")
         code = "import os; print('\\n'.join(os.environ.keys()))"

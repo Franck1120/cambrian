@@ -25,6 +25,7 @@ from cambrian.utils.sandbox import SandboxResult, run_in_sandbox, extract_python
 
 # ── Genome edge cases ─────────────────────────────────────────────────────────
 
+
 class TestGenomeEdgeCases:
     def test_empty_system_prompt(self) -> None:
         g = Genome(system_prompt="")
@@ -67,11 +68,12 @@ class TestGenomeEdgeCases:
         assert g2.genome_id == "abc12345"
 
     def test_json_serialisation_valid_json(self) -> None:
-        g = Genome(system_prompt="Check JSON: {\"key\": \"value\"}")
+        g = Genome(system_prompt='Check JSON: {"key": "value"}')
         json.dumps(g.to_dict())  # must not raise
 
 
 # ── Agent edge cases ──────────────────────────────────────────────────────────
+
 
 class TestAgentEdgeCases:
     def test_clone_chain(self) -> None:
@@ -106,6 +108,7 @@ class TestAgentEdgeCases:
 
 
 # ── SemanticCache edge cases ──────────────────────────────────────────────────
+
 
 class TestCacheEdgeCases:
     def test_max_size_one(self) -> None:
@@ -150,6 +153,7 @@ class TestCacheEdgeCases:
 
 # ── Compress edge cases ───────────────────────────────────────────────────────
 
+
 class TestCompressEdgeCases:
     def test_caveman_only_stopwords(self) -> None:
         result = caveman_compress("the a an is are")
@@ -184,6 +188,7 @@ class TestCompressEdgeCases:
 
 
 # ── Router edge cases ─────────────────────────────────────────────────────────
+
 
 class TestRouterEdgeCases:
     def test_empty_task_routes_cheap(self) -> None:
@@ -222,8 +227,11 @@ class TestRouterEdgeCases:
 
 # ── MAPElites edge cases ──────────────────────────────────────────────────────
 
+
 class TestMAPElitesEdgeCases:
-    def _agent(self, prompt: str = "x", temp: float = 0.5, fitness: float = 0.5) -> Agent:
+    def _agent(
+        self, prompt: str = "x", temp: float = 0.5, fitness: float = 0.5
+    ) -> Agent:
         a = Agent(genome=Genome(system_prompt=prompt, temperature=temp))
         a._fitness = fitness
         return a
@@ -250,14 +258,15 @@ class TestMAPElitesEdgeCases:
         # "s " * 500 = 1000 chars ≈ 250 tokens → bucket 1 (clamped to min(1, 1))
         # _TEMPERATURE_BUCKETS: < 0.4 → cold (0), >= 0.8 → hot (clamped to 1 in 2-bucket grid)
         me = MAPElites(n_prompt_buckets=2, n_temp_buckets=2)
-        me.add(self._agent("s", temp=0.1, fitness=0.5))           # short, cold → (0, 0)
-        me.add(self._agent("s " * 500, temp=0.1, fitness=0.5))    # long, cold  → (1, 0)
-        me.add(self._agent("s", temp=1.0, fitness=0.5))           # short, hot  → (0, 1)
-        me.add(self._agent("s " * 500, temp=1.0, fitness=0.5))    # long, hot   → (1, 1)
+        me.add(self._agent("s", temp=0.1, fitness=0.5))  # short, cold → (0, 0)
+        me.add(self._agent("s " * 500, temp=0.1, fitness=0.5))  # long, cold  → (1, 0)
+        me.add(self._agent("s", temp=1.0, fitness=0.5))  # short, hot  → (0, 1)
+        me.add(self._agent("s " * 500, temp=1.0, fitness=0.5))  # long, hot   → (1, 1)
         assert me.coverage() == pytest.approx(1.0)
 
 
 # ── EvolutionaryMemory edge cases ─────────────────────────────────────────────
+
 
 class TestMemoryEdgeCases:
     def test_update_nonexistent_agent(self) -> None:
@@ -284,8 +293,13 @@ class TestMemoryEdgeCases:
         m.add_agent(prev, generation=0, fitness=0.1, genome_snapshot={})
         for i in range(1, 10):
             agent_id = f"a{i}"
-            m.add_agent(agent_id, generation=i, fitness=float(i) / 10,
-                        genome_snapshot={}, parents=[prev])
+            m.add_agent(
+                agent_id,
+                generation=i,
+                fitness=float(i) / 10,
+                genome_snapshot={},
+                parents=[prev],
+            )
             prev = agent_id
         lineage = m.get_lineage("a9")
         assert "a0" in lineage
@@ -300,6 +314,7 @@ class TestMemoryEdgeCases:
 
 
 # ── Sandbox edge cases ────────────────────────────────────────────────────────
+
 
 class TestSandboxEdgeCases:
     def test_successful_execution(self) -> None:
@@ -355,8 +370,10 @@ class TestSandboxEdgeCases:
 
 # ── LLMMutator edge cases ─────────────────────────────────────────────────────
 
+
 class _BadBackend:
     """Backend that always raises."""
+
     model_name = "bad"
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
@@ -365,12 +382,16 @@ class _BadBackend:
 
 class _JsonBackend:
     """Backend that returns valid genome JSON."""
+
     model_name = "json"
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
         import re
+
         m = re.search(r"\{[\s\S]+\}", prompt)
-        return m.group(0) if m else json.dumps(Genome(system_prompt="fallback").to_dict())
+        return (
+            m.group(0) if m else json.dumps(Genome(system_prompt="fallback").to_dict())
+        )
 
 
 class TestMutatorEdgeCases:
@@ -430,4 +451,6 @@ class TestMutatorEdgeCases:
         g_b = Genome(system_prompt="Alt one. Alt two.")
         child = LLMMutator._deterministic_crossover(g_a, g_b)
         assert child.system_prompt != ""
-        assert child.temperature == pytest.approx((g_a.temperature + g_b.temperature) / 2)
+        assert child.temperature == pytest.approx(
+            (g_a.temperature + g_b.temperature) / 2
+        )
