@@ -151,7 +151,7 @@ class PluginRegistry:
             FileNotFoundError: If *config_path* does not exist.
         """
         try:
-            import yaml  # type: ignore[import-untyped]
+            import yaml
         except ImportError as exc:
             raise ImportError(
                 "PyYAML is required for YAML config loading: pip install pyyaml"
