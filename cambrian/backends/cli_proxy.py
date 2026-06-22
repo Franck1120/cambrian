@@ -16,6 +16,8 @@ Usage::
 
 from __future__ import annotations
 
+from typing import Any
+
 from cambrian.backends.openai_compat import OpenAICompatBackend
 
 #: Default CLIProxy base URL.
@@ -51,8 +53,11 @@ class CLIProxyBackend(OpenAICompatBackend):
         model: str = "gemini-3-pro",
         base_url: str = CLI_PROXY_BASE_URL,
         api_key: str = CLI_PROXY_API_KEY,
-        **kwargs: object,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
-            model=model, base_url=base_url, api_key=api_key, **kwargs,
+            model=model,
+            base_url=base_url,
+            api_key=api_key,
+            **kwargs,
         )

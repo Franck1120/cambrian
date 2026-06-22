@@ -177,7 +177,9 @@ class MixtureOfAgents:
                 temperature=self._agg_temp,
             )
         except Exception as exc:
-            logger.warning("MoA aggregator failed: %s — returning best individual response", exc)
+            logger.warning(
+                "MoA aggregator failed: %s — returning best individual response", exc
+            )
             answer = max(responses, key=len)  # longest ≈ most detailed
 
         return answer
@@ -284,7 +286,9 @@ class QuantumTunneler:
                 )
                 new_genome.system_prompt = new_prompt.strip()
             except Exception as exc:
-                logger.warning("QuantumTunneler LLM prompt failed: %s — using random strategy", exc)
+                logger.warning(
+                    "QuantumTunneler LLM prompt failed: %s — using random strategy", exc
+                )
                 new_genome.system_prompt = (
                     f"Approach this task using {new_genome.strategy} reasoning."
                 )
@@ -298,13 +302,16 @@ class QuantumTunneler:
         self._tunnel_count += 1
         logger.debug(
             "QuantumTunneler: tunneled agent %s → %s (temp=%.2f, strategy=%s)",
-            agent.id[:8], tunneled.id[:8], new_genome.temperature, new_genome.strategy,
+            agent.id[:8],
+            tunneled.id[:8],
+            new_genome.temperature,
+            new_genome.strategy,
         )
         return tunneled
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

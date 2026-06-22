@@ -49,7 +49,7 @@ class ApoptosisEvent:
     """Record of a single apoptosis (removal) event."""
 
     agent_id: str
-    reason: str          # "stagnation" | "floor"
+    reason: str  # "stagnation" | "floor"
     fitness_at_death: float
     generation: int
 
@@ -201,7 +201,7 @@ class ApoptosisController:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

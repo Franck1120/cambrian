@@ -13,7 +13,7 @@ import json
 import random
 import time
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 from cambrian.agent import Agent, Genome
 from cambrian.backends.base import LLMBackend
@@ -91,7 +91,7 @@ class EvolutionEngine:
         self._best_agent: Agent | None = None
 
         # ── Plugin hook system ────────────────────────────────────────────────
-        self._hooks: dict[str, list] = {
+        self._hooks: dict[str, list[Any]] = {
             "pre_mutation": [],
             "post_mutation": [],
             "pre_selection": [],
@@ -143,9 +143,7 @@ class EvolutionEngine:
         """
         if hook_name not in self._hooks:
             valid = ", ".join(sorted(self._hooks))
-            raise ValueError(
-                f"Unknown hook {hook_name!r}. Valid hooks: {valid}"
-            )
+            raise ValueError(f"Unknown hook {hook_name!r}. Valid hooks: {valid}")
         self._hooks[hook_name].append(fn)
 
     def _run_hooks(self, hook_name: str, **kwargs: object) -> None:
@@ -182,9 +180,7 @@ class EvolutionEngine:
 
         return population
 
-    def evaluate_population(
-        self, population: list[Agent], task: str
-    ) -> list[Agent]:
+    def evaluate_population(self, population: list[Agent], task: str) -> list[Agent]:
         """Evaluate every agent in *population* that has no fitness score yet.
 
         Args:
@@ -205,7 +201,9 @@ class EvolutionEngine:
                 logger.warning("Evaluator raised %s: %s", type(exc).__name__, exc)
                 score = 0.0
             agent._fitness = float(score)
-            self._run_hooks("post_evaluation", agent=agent, score=float(score), task=task)
+            self._run_hooks(
+                "post_evaluation", agent=agent, score=float(score), task=task
+            )
             elapsed = time.monotonic() - t0
             logger.debug(
                 "Evaluated agent %s: fitness=%.4f (%.2fs)", agent.id[:8], score, elapsed
@@ -292,11 +290,9 @@ class EvolutionEngine:
             "Evolution complete. Best fitness=%.4f",
             self._best_agent.fitness if self._best_agent else 0.0,
         )
-        return self._best_agent  # type: ignore[return-value]
+        return self._best_agent
 
-    def evolve_generation(
-        self, population: list[Agent], task: str
-    ) -> list[Agent]:
+    def evolve_generation(self, population: list[Agent], task: str) -> list[Agent]:
         """Produce the next generation from the current *population*.
 
         Steps:
@@ -312,7 +308,9 @@ class EvolutionEngine:
         Returns:
             Next generation population of the same size.
         """
-        self._run_hooks("pre_selection", population=population, generation=self._generation)
+        self._run_hooks(
+            "pre_selection", population=population, generation=self._generation
+        )
         population.sort(key=lambda a: a.fitness or 0.0, reverse=True)
 
         # Elites survive unchanged
@@ -355,7 +353,9 @@ class EvolutionEngine:
             next_gen.append(child)
 
         next_gen = self.evaluate_population(next_gen, task)
-        self._run_hooks("post_selection", population=next_gen, generation=self._generation)
+        self._run_hooks(
+            "post_selection", population=next_gen, generation=self._generation
+        )
         return next_gen
 
     def tournament_selection(self, population: list[Agent]) -> Agent:
@@ -414,7 +414,9 @@ class EvolutionEngine:
             raise ValueError(f"Cannot parse population file {path}: {exc}") from exc
 
         if not isinstance(data, list):
-            raise ValueError(f"Population file must be a JSON array, got {type(data).__name__}")
+            raise ValueError(
+                f"Population file must be a JSON array, got {type(data).__name__}"
+            )
 
         population: list[Agent] = []
         for entry in data:
@@ -437,9 +439,12 @@ class EvolutionEngine:
     def _compress_population(self, population: list[Agent]) -> list[Agent]:
         """Apply procut_prune to all agents to prevent prompt bloat."""
         from cambrian.compress import procut_prune
+
         compressed = []
         for agent in population:
-            new_genome = procut_prune(agent.genome, max_tokens=self._compress_max_tokens)
+            new_genome = procut_prune(
+                agent.genome, max_tokens=self._compress_max_tokens
+            )
             if new_genome.system_prompt != agent.genome.system_prompt:
                 agent.genome = new_genome
             compressed.append(agent)
@@ -449,7 +454,9 @@ class EvolutionEngine:
         for agent in population:
             if agent.fitness is None:
                 continue
-            if self._best_agent is None or agent.fitness > (self._best_agent.fitness or 0.0):
+            if self._best_agent is None or agent.fitness > (
+                self._best_agent.fitness or 0.0
+            ):
                 self._best_agent = agent
 
     @staticmethod

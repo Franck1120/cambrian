@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _tokenize(text: str) -> set[str]:
     """Return a set of lowercase word tokens from *text*, punctuation stripped.
 
@@ -67,6 +68,7 @@ def _jaccard(a: set[str], b: set[str]) -> float:
 # DriftEvent
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class DriftEvent:
     """Record of a single drift measurement for one agent at one generation.
@@ -92,6 +94,7 @@ class DriftEvent:
 # ---------------------------------------------------------------------------
 # GoalDriftDetector
 # ---------------------------------------------------------------------------
+
 
 class GoalDriftDetector:
     """Detect semantic drift between an agent's original intent and its prompt.
@@ -170,8 +173,7 @@ class GoalDriftDetector:
         agent_id = agent.agent_id
         if agent_id not in self._intents:
             raise KeyError(
-                f"Agent '{agent_id}' has not been registered. "
-                "Call register() first."
+                f"Agent '{agent_id}' has not been registered. Call register() first."
             )
 
         intent_tokens = self._intent_tokens[agent_id]
@@ -234,6 +236,7 @@ class GoalDriftDetector:
 # ---------------------------------------------------------------------------
 # FitnessAnomalyDetector
 # ---------------------------------------------------------------------------
+
 
 class FitnessAnomalyDetector:
     """Detect reward-hacking via statistical anomaly detection on fitness.
@@ -329,16 +332,13 @@ class FitnessAnomalyDetector:
         for agent in population:
             self.record(agent, generation)
 
-        return [
-            agent.agent_id
-            for agent in population
-            if self.is_anomalous(agent)
-        ]
+        return [agent.agent_id for agent in population if self.is_anomalous(agent)]
 
 
 # ---------------------------------------------------------------------------
 # SafeguardController
 # ---------------------------------------------------------------------------
+
 
 class SafeguardController:
     """Orchestrate drift and anomaly detection across an evolving population.
@@ -450,7 +450,7 @@ class SafeguardController:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

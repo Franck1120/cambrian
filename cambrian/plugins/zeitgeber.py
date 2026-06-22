@@ -49,7 +49,7 @@ class ZeitgeberState:
     """State snapshot at one tick."""
 
     generation: int
-    phase: float               # 0 .. 2pi
+    phase: float  # 0 .. 2pi
     exploration_factor: float  # 0 = full exploitation, 1 = full exploration
     mutation_rate: float
     acceptance_threshold: float
@@ -103,9 +103,9 @@ class ZeitgeberClock:
 
     def phase(self) -> float:
         """Current phase in [0, 2pi]."""
-        return (
-            2 * math.pi * self._generation / self._period + self._phase_offset
-        ) % (2 * math.pi)
+        return (2 * math.pi * self._generation / self._period + self._phase_offset) % (
+            2 * math.pi
+        )
 
     def exploration_factor(self) -> float:
         """Return exploration factor in [0, 1].
@@ -184,9 +184,7 @@ class ZeitgeberScheduler:
             0.0, min(1.0, self._base_mr + self._mr_range * (ef - 0.5) * 2)
         )
         # High exploration -> lower acceptance threshold (accept more freely)
-        threshold = max(
-            0.0, min(1.0, self._base_th - self._th_range * (ef - 0.5) * 2)
-        )
+        threshold = max(0.0, min(1.0, self._base_th - self._th_range * (ef - 0.5) * 2))
 
         state = ZeitgeberState(
             generation=self._clock.generation,
@@ -208,7 +206,7 @@ class ZeitgeberScheduler:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

@@ -160,7 +160,9 @@ class DPOSelector:
             else:
                 chosen, rejected = b, a
             margin = _fitness_of(chosen) - _fitness_of(rejected)
-            pairs.append(DPOPair(chosen=chosen, rejected=rejected, task=task, margin=margin))
+            pairs.append(
+                DPOPair(chosen=chosen, rejected=rejected, task=task, margin=margin)
+            )
 
         return pairs
 
@@ -278,7 +280,9 @@ class DPOTrainer:
         pairs: list[DPOPair] = []
         for chosen, rejected in zip(top_half, bottom_half):
             margin = _fitness_of(chosen) - _fitness_of(rejected)
-            pairs.append(DPOPair(chosen=chosen, rejected=rejected, task=task, margin=margin))
+            pairs.append(
+                DPOPair(chosen=chosen, rejected=rejected, task=task, margin=margin)
+            )
 
         return pairs
 
@@ -303,11 +307,15 @@ class DPOTrainer:
             A new :class:`Agent` with a potentially improved genome.
         """
         if not pairs:
-            logger.debug("DPOTrainer.refine: no pairs — cloning agent %s", agent.agent_id)
+            logger.debug(
+                "DPOTrainer.refine: no pairs — cloning agent %s", agent.agent_id
+            )
             return agent.clone()
 
         chosen_prompts = "\n---\n".join(p.chosen.genome.system_prompt for p in pairs)
-        rejected_prompts = "\n---\n".join(p.rejected.genome.system_prompt for p in pairs)
+        rejected_prompts = "\n---\n".join(
+            p.rejected.genome.system_prompt for p in pairs
+        )
 
         refinement_prompt = (
             f"You are an expert AI prompt engineer.\n\n"
@@ -404,7 +412,7 @@ class DPOTrainer:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

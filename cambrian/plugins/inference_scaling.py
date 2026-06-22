@@ -263,10 +263,14 @@ class BeamSearch:
             candidates: list[str] = []
             for beam in beams:
                 for _ in range(self._bf):
-                    prompt = f"{system}\n\n{user}\n\nContinuation of:\n{beam}\n\nContinue:"
+                    prompt = (
+                        f"{system}\n\n{user}\n\nContinuation of:\n{beam}\n\nContinue:"
+                    )
                     try:
                         cont = str(
-                            self._backend.generate(prompt, temperature=self._temperature)
+                            self._backend.generate(
+                                prompt, temperature=self._temperature
+                            )
                         )
                     except Exception:  # noqa: BLE001
                         cont = beam
@@ -282,7 +286,7 @@ class BeamSearch:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

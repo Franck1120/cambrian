@@ -94,9 +94,9 @@ class CascadeResult:
     """Result from a cascade query."""
 
     response: str
-    level_index: int        # 0-based index of the level that produced the answer
+    level_index: int  # 0-based index of the level that produced the answer
     confidence: float
-    attempts: int           # total number of levels tried
+    attempts: int  # total number of levels tried
 
 
 # ---------------------------------------------------------------------------
@@ -189,7 +189,7 @@ class LLMCascade:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

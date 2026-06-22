@@ -32,6 +32,7 @@ import sqlite3
 import threading
 import time
 import uuid
+from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
 
@@ -229,7 +230,9 @@ def _get_conn(path: Path | None = None) -> sqlite3.Connection:
 # ── DB operations ─────────────────────────────────────────────────────────────
 
 
-def _insert_run(run_id: str, task: str, generations: int, population: int, path: Path | None = None) -> None:
+def _insert_run(
+    run_id: str, task: str, generations: int, population: int, path: Path | None = None
+) -> None:
     with _get_conn(path) as conn:
         conn.execute(
             "INSERT INTO runs (id, task, generations, population, created_at, status) VALUES (?,?,?,?,?,?)",
@@ -239,18 +242,23 @@ def _insert_run(run_id: str, task: str, generations: int, population: int, path:
 
 def _fetch_run(run_id: str, path: Path | None = None) -> sqlite3.Row | None:
     with _get_conn(path) as conn:
-        return conn.execute("SELECT * FROM runs WHERE id=?", (run_id,)).fetchone()
+        row: sqlite3.Row | None = conn.execute(
+            "SELECT * FROM runs WHERE id=?", (run_id,)
+        ).fetchone()
+        return row
 
 
 def _fetch_all_runs(path: Path | None = None) -> list[sqlite3.Row]:
     with _get_conn(path) as conn:
-        return conn.execute(
-            "SELECT * FROM runs ORDER BY created_at DESC"
-        ).fetchall()
+        return conn.execute("SELECT * FROM runs ORDER BY created_at DESC").fetchall()
 
 
 def _update_run(
-    run_id: str, best_fitness: float, duration_s: float, status: str, path: Path | None = None
+    run_id: str,
+    best_fitness: float,
+    duration_s: float,
+    status: str,
+    path: Path | None = None,
 ) -> None:
     with _get_conn(path) as conn:
         conn.execute(
@@ -306,9 +314,10 @@ def _fetch_agents_for_run(run_id: str, path: Path | None = None) -> list[sqlite3
 
 def _fetch_agent(agent_id: str, path: Path | None = None) -> sqlite3.Row | None:
     with _get_conn(path) as conn:
-        return conn.execute(
+        row: sqlite3.Row | None = conn.execute(
             "SELECT * FROM agents WHERE id=?", (agent_id,)
         ).fetchone()
+        return row
 
 
 # ── Conversion helpers ────────────────────────────────────────────────────────
@@ -346,7 +355,14 @@ def _row_to_agent(row: sqlite3.Row) -> AgentOut:
 
 # ── Stub evolution (runs in background thread) ────────────────────────────────
 
-_STRATEGIES = ["reflexion", "chain-of-thought", "tree-of-thought", "react", "direct", "moa"]
+_STRATEGIES = [
+    "reflexion",
+    "chain-of-thought",
+    "tree-of-thought",
+    "react",
+    "direct",
+    "moa",
+]
 
 
 def _stub_evolution(
@@ -380,10 +396,16 @@ def _stub_evolution(
                 agent_id = str(uuid.uuid4())
                 # Fitness gradually improves, with noise
                 noise = rng.uniform(-0.03, 0.05)
-                fitness = min(0.99, base_fitness + gen * rng.uniform(0.04, 0.10) + noise)
+                fitness = min(
+                    0.99, base_fitness + gen * rng.uniform(0.04, 0.10) + noise
+                )
                 fitness = max(0.0, round(fitness, 4))
 
-                parent_id = all_agents[rng.randrange(len(all_agents))]["id"] if all_agents else None
+                parent_id = (
+                    all_agents[rng.randrange(len(all_agents))]["id"]
+                    if all_agents
+                    else None
+                )
                 strategy = rng.choice(_STRATEGIES)
                 temperature = round(rng.uniform(0.5, 1.2), 2)
                 prompt_tokens = rng.randint(120, 480)
@@ -415,24 +437,30 @@ def _stub_evolution(
                 gen_agents.append(agent)
                 all_agents.append(agent)
 
-                q.put({
-                    "type": "agent_update",
-                    "payload": {k: v for k, v in agent.items() if k != "run_id"},
-                })
+                q.put(
+                    {
+                        "type": "agent_update",
+                        "payload": {k: v for k, v in agent.items() if k != "run_id"},
+                    }
+                )
 
             best_gen = max(gen_agents, key=lambda a: a["fitness"])
-            avg_fitness = round(sum(a["fitness"] for a in gen_agents) / len(gen_agents), 4)
+            avg_fitness = round(
+                sum(a["fitness"] for a in gen_agents) / len(gen_agents), 4
+            )
 
-            q.put({
-                "type": "generation_complete",
-                "payload": {
-                    "generation": gen,
-                    "best_fitness": best_gen["fitness"],
-                    "avg_fitness": avg_fitness,
-                    "diversity": round(rng.uniform(0.3, 0.8), 3),
-                    "agent_ids": [a["id"] for a in gen_agents],
-                },
-            })
+            q.put(
+                {
+                    "type": "generation_complete",
+                    "payload": {
+                        "generation": gen,
+                        "best_fitness": best_gen["fitness"],
+                        "avg_fitness": avg_fitness,
+                        "diversity": round(rng.uniform(0.3, 0.8), 3),
+                        "agent_ids": [a["id"] for a in gen_agents],
+                    },
+                }
+            )
 
         # Mark top 20 % as elite
         sorted_all = sorted(all_agents, key=lambda a: a["fitness"], reverse=True)
@@ -444,16 +472,18 @@ def _stub_evolution(
         duration = round(time.monotonic() - start, 3)
         _update_run(run_id, best_overall["fitness"], duration, "completed", db_path)
 
-        q.put({
-            "type": "run_complete",
-            "payload": {
-                "run_id": run_id,
-                "best_fitness": best_overall["fitness"],
-                "best_agent_id": best_overall["id"],
-                "duration_s": duration,
-                "total_agents": len(all_agents),
-            },
-        })
+        q.put(
+            {
+                "type": "run_complete",
+                "payload": {
+                    "run_id": run_id,
+                    "best_fitness": best_overall["fitness"],
+                    "best_agent_id": best_overall["id"],
+                    "duration_s": duration,
+                    "total_agents": len(all_agents),
+                },
+            }
+        )
 
     except Exception as exc:
         err_msg = str(exc)
@@ -467,8 +497,9 @@ def _stub_evolution(
 
 # ── FastAPI app ───────────────────────────────────────────────────────────────
 
+
 @asynccontextmanager
-async def _lifespan(application: FastAPI):  # noqa: ANN001
+async def _lifespan(application: FastAPI) -> AsyncIterator[None]:  # noqa: ANN001
     _init_db(DB_PATH)
     yield
 
@@ -611,7 +642,14 @@ def start_evolution(config: EvolutionConfigIn) -> EvolveOut:
 
     thread = threading.Thread(
         target=_stub_evolution,
-        args=(run_id, config.task, config.generations, config.population, config.plugins, db_path),
+        args=(
+            run_id,
+            config.task,
+            config.generations,
+            config.population,
+            config.plugins,
+            db_path,
+        ),
         daemon=True,
         name=f"evo-{run_id[:8]}",
     )

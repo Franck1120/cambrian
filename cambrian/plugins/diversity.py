@@ -20,8 +20,8 @@ if TYPE_CHECKING:
 
 
 # Bucket boundaries for the two MAP-Elites dimensions
-_PROMPT_LENGTH_BUCKETS = [0, 100, 300, float("inf")]   # tokens (rough chars/4)
-_TEMPERATURE_BUCKETS = [0.0, 0.4, 0.8, 2.1]            # temperature ranges
+_PROMPT_LENGTH_BUCKETS = [0, 100, 300, float("inf")]  # tokens (rough chars/4)
+_TEMPERATURE_BUCKETS = [0.0, 0.4, 0.8, 2.1]  # temperature ranges
 
 
 def _prompt_bucket(system_prompt: str) -> int:
@@ -86,7 +86,11 @@ class MAPElites:
         t = min(_temp_bucket(agent.genome.temperature), self._n_t - 1)
 
         current = self._grid[p][t]
-        if current is None or (current.fitness is None) or agent.fitness > current.fitness:
+        if (
+            current is None
+            or (current.fitness is None)
+            or agent.fitness > current.fitness
+        ):
             self._grid[p][t] = agent
             self._total_added += 1
             return True
@@ -106,9 +110,7 @@ class MAPElites:
     @property
     def occupancy(self) -> int:
         """Number of non-empty grid cells."""
-        return sum(
-            1 for row in self._grid for cell in row if cell is not None
-        )
+        return sum(1 for row in self._grid for cell in row if cell is not None)
 
     @property
     def capacity(self) -> int:
@@ -132,7 +134,7 @@ class MAPElites:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

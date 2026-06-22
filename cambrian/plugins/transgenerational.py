@@ -41,9 +41,9 @@ from cambrian.agent import Agent, Genome
 class EpigeneMark:
     """An epigenetic annotation attached to an agent."""
 
-    name: str              # e.g. "step-by-step", "verify-output"
-    strength: float        # 0.0 – 1.0
-    generation_born: int   # generation when the mark was first recorded
+    name: str  # e.g. "step-by-step", "verify-output"
+    strength: float  # 0.0 – 1.0
+    generation_born: int  # generation when the mark was first recorded
     source_agent_id: str
 
 
@@ -200,7 +200,7 @@ class TransgenerationalRegistry:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

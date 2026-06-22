@@ -90,7 +90,9 @@ class PipelineStep:
 
     def __repr__(self) -> str:
         preview = self.system_prompt[:40].replace("\n", " ")
-        return f"PipelineStep(name={self.name!r}, role={self.role!r}, prompt={preview!r})"
+        return (
+            f"PipelineStep(name={self.name!r}, role={self.role!r}, prompt={preview!r})"
+        )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -270,13 +272,17 @@ class PipelineMutator:
             task=task or "improve the pipeline",
             version=pipeline.version,
             fitness=(
-                f"{pipeline.fitness:.4f}" if pipeline.fitness is not None else "not evaluated"
+                f"{pipeline.fitness:.4f}"
+                if pipeline.fitness is not None
+                else "not evaluated"
             ),
             pipeline_json=_json.dumps(pipeline.to_dict(), indent=2),
         )
 
         try:
-            raw = self._backend.generate(prompt, system=_MUTATE_SYSTEM, temperature=self._temp)
+            raw = self._backend.generate(
+                prompt, system=_MUTATE_SYSTEM, temperature=self._temp
+            )
             child = self._parse_pipeline(raw, pipeline)
         except Exception:
             if self._fallback:
@@ -294,7 +300,9 @@ class PipelineMutator:
             child.steps = [s.clone() for s in pipeline.steps] or [PipelineStep()]
         return child
 
-    def crossover(self, parent_a: Pipeline, parent_b: Pipeline, task: str = "") -> Pipeline:
+    def crossover(
+        self, parent_a: Pipeline, parent_b: Pipeline, task: str = ""
+    ) -> Pipeline:
         """Combine steps from two pipelines.
 
         Args:
@@ -307,18 +315,28 @@ class PipelineMutator:
         """
         import json as _json
 
-        base = parent_a if (parent_a.fitness or 0.0) >= (parent_b.fitness or 0.0) else parent_b
+        base = (
+            parent_a
+            if (parent_a.fitness or 0.0) >= (parent_b.fitness or 0.0)
+            else parent_b
+        )
 
         prompt = _CROSSOVER_TEMPLATE.format(
             task=task or "solve the problem",
-            fitness_a=f"{parent_a.fitness:.4f}" if parent_a.fitness is not None else "0",
+            fitness_a=f"{parent_a.fitness:.4f}"
+            if parent_a.fitness is not None
+            else "0",
             pipeline_a=_json.dumps(parent_a.to_dict(), indent=2),
-            fitness_b=f"{parent_b.fitness:.4f}" if parent_b.fitness is not None else "0",
+            fitness_b=f"{parent_b.fitness:.4f}"
+            if parent_b.fitness is not None
+            else "0",
             pipeline_b=_json.dumps(parent_b.to_dict(), indent=2),
         )
 
         try:
-            raw = self._backend.generate(prompt, system=_CROSSOVER_SYSTEM, temperature=self._temp)
+            raw = self._backend.generate(
+                prompt, system=_CROSSOVER_SYSTEM, temperature=self._temp
+            )
             child = self._parse_pipeline(raw, base)
         except Exception:
             if self._fallback:
@@ -435,7 +453,7 @@ class PipelineEvaluator:
             raw = self._backend.generate(
                 prompt, system=_JUDGE_SYSTEM, temperature=self._judge_temp
             )
-            score = float(re.search(r"-?[\d.]+", raw).group())  # type: ignore[union-attr]
+            score = float(re.search(r"-?[\d.]+", raw).group())
             return max(0.0, min(1.0, score))
         except Exception:
             return 0.5  # Neutral on parse failure
@@ -522,7 +540,8 @@ class PipelineEvolutionEngine:
             scores = [p.fitness or 0.0 for p in population]
             logger.info(
                 "PipelineEvo gen %d/%d — best=%.4f mean=%.4f",
-                gen, n_generations,
+                gen,
+                n_generations,
                 max(scores) if scores else 0.0,
                 sum(scores) / max(len(scores), 1),
             )
@@ -532,7 +551,7 @@ class PipelineEvolutionEngine:
         if self._best is None and population:
             self._best = max(population, key=lambda p: p.fitness or 0.0)
 
-        return self._best  # type: ignore[return-value]
+        return self._best
 
     # ── Internals ─────────────────────────────────────────────────────────────
 
@@ -551,7 +570,9 @@ class PipelineEvolutionEngine:
             pipeline.fitness = score
             logger.debug(
                 "Pipeline %s: fitness=%.4f steps=%d",
-                pipeline.pipeline_id, score, len(pipeline.steps),
+                pipeline.pipeline_id,
+                score,
+                len(pipeline.steps),
             )
         return population
 

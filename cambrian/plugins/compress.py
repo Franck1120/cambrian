@@ -16,18 +16,87 @@ import re
 from cambrian.agent import Genome
 
 # English stopwords and filler phrases to strip
-_STOPWORDS: frozenset[str] = frozenset({
-    "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
-    "have", "has", "had", "do", "does", "did", "will", "would", "could",
-    "should", "may", "might", "shall", "can", "need", "dare", "ought",
-    "and", "or", "but", "nor", "so", "for", "yet",
-    "in", "on", "at", "to", "of", "with", "by", "from", "up", "down",
-    "out", "into", "through", "during", "before", "after", "above",
-    "below", "between", "this", "that", "these", "those", "it", "its",
-    "which", "who", "whom", "what", "how", "when", "where", "why",
-    "very", "quite", "rather", "really", "just", "also", "well",
-    "please", "kindly", "hereby",
-})
+_STOPWORDS: frozenset[str] = frozenset(
+    {
+        "a",
+        "an",
+        "the",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "being",
+        "have",
+        "has",
+        "had",
+        "do",
+        "does",
+        "did",
+        "will",
+        "would",
+        "could",
+        "should",
+        "may",
+        "might",
+        "shall",
+        "can",
+        "need",
+        "dare",
+        "ought",
+        "and",
+        "or",
+        "but",
+        "nor",
+        "so",
+        "for",
+        "yet",
+        "in",
+        "on",
+        "at",
+        "to",
+        "of",
+        "with",
+        "by",
+        "from",
+        "up",
+        "down",
+        "out",
+        "into",
+        "through",
+        "during",
+        "before",
+        "after",
+        "above",
+        "below",
+        "between",
+        "this",
+        "that",
+        "these",
+        "those",
+        "it",
+        "its",
+        "which",
+        "who",
+        "whom",
+        "what",
+        "how",
+        "when",
+        "where",
+        "why",
+        "very",
+        "quite",
+        "rather",
+        "really",
+        "just",
+        "also",
+        "well",
+        "please",
+        "kindly",
+        "hereby",
+    }
+)
 
 _FILLER_PHRASES: list[str] = [
     r"\bAs an AI assistant\b,?\s*",
@@ -114,7 +183,7 @@ def procut_prune(genome: Genome, max_tokens: int = 256) -> Genome:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

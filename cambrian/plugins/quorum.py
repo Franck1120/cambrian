@@ -145,20 +145,27 @@ class QuorumSensor:
             new_rate = current_rate * self._boost
             logger.debug(
                 "QuorumSensor: low diversity (H=%.3f < %.3f) → boosting rate %.3f→%.3f",
-                entropy, self._low_thresh, current_rate, new_rate,
+                entropy,
+                self._low_thresh,
+                current_rate,
+                new_rate,
             )
         elif entropy > self._high_thresh:
             # High diversity → reduce mutation to exploit
             new_rate = current_rate * self._decay
             logger.debug(
                 "QuorumSensor: high diversity (H=%.3f > %.3f) → decaying rate %.3f→%.3f",
-                entropy, self._high_thresh, current_rate, new_rate,
+                entropy,
+                self._high_thresh,
+                current_rate,
+                new_rate,
             )
         else:
             new_rate = current_rate
             logger.debug(
                 "QuorumSensor: balanced diversity (H=%.3f) → keeping rate %.3f",
-                entropy, current_rate,
+                entropy,
+                current_rate,
             )
 
         new_rate = max(self._min_rate, min(self._max_rate, new_rate))
@@ -172,7 +179,7 @@ class QuorumSensor:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

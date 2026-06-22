@@ -118,11 +118,7 @@ class CatalystSelector:
         fitness = agent.fitness or 0.0
         vocab = len(set(re.split(r"\W+", agent.genome.system_prompt.lower()))) / 200
         kw = len(agent.genome.strategy.split()) / 20
-        return (
-            self._fw * fitness
-            + self._vw * min(vocab, 1.0)
-            + self._sw * min(kw, 1.0)
-        )
+        return self._fw * fitness + self._vw * min(vocab, 1.0) + self._sw * min(kw, 1.0)
 
 
 # ---------------------------------------------------------------------------
@@ -178,8 +174,7 @@ class CatalysisEngine:
         """
         snippet = self._extract_snippet(catalyst.genome.system_prompt)
         augmented_prompt = (
-            f"{self._header}\n{snippet}\n\n"
-            f"[TARGET]\n{target.genome.system_prompt}"
+            f"{self._header}\n{snippet}\n\n[TARGET]\n{target.genome.system_prompt}"
         )
 
         # Temporarily patch the target's genome
@@ -231,7 +226,7 @@ class CatalysisEngine:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

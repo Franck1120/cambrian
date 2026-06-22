@@ -120,7 +120,9 @@ class EcosystemInteraction:
     """
 
     def __init__(self, config: EcosystemConfig | None = None) -> None:
-        self._config: EcosystemConfig = config if config is not None else EcosystemConfig()
+        self._config: EcosystemConfig = (
+            config if config is not None else EcosystemConfig()
+        )
         self._roles: dict[str, EcologicalRole] = {}
         self._events: list[EcosystemEvent] = []
 
@@ -184,7 +186,11 @@ class EcosystemInteraction:
         decomposers = set(a.agent_id for a in sorted_pop[n - bottom_n :])
 
         # Middle tier — agents not yet assigned
-        middle = [a for a in sorted_pop if a.agent_id not in predators and a.agent_id not in decomposers]
+        middle = [
+            a
+            for a in sorted_pop
+            if a.agent_id not in predators and a.agent_id not in decomposers
+        ]
         parasite_n = max(0, round(n * 0.2))
         parasite_n = min(parasite_n, len(middle))
         parasites = set(a.agent_id for a in random.sample(middle, parasite_n))
@@ -261,7 +267,8 @@ class EcosystemInteraction:
             elif role is EcologicalRole.PREDATOR:
                 # Collect all prey (other agents with fitness < threshold)
                 prey = [
-                    a for a in population
+                    a
+                    for a in population
                     if a.agent_id != aid
                     and fitness_snapshot[a.agent_id] < cfg.predator_hunt_threshold
                 ]
@@ -291,7 +298,8 @@ class EcosystemInteraction:
             elif role is EcologicalRole.DECOMPOSER:
                 # Collect recyclable agents (fitness < threshold, excluding self)
                 recyclable = [
-                    a for a in population
+                    a
+                    for a in population
                     if a.agent_id != aid
                     and fitness_snapshot[a.agent_id] < cfg.decomposer_recycle_threshold
                 ]
@@ -321,12 +329,15 @@ class EcosystemInteraction:
             elif role is EcologicalRole.PARASITE:
                 # Find eligible hosts (fitness > threshold, excluding self)
                 hosts = [
-                    a for a in population
+                    a
+                    for a in population
                     if a.agent_id != aid
                     and fitness_snapshot[a.agent_id] > cfg.parasite_host_threshold
                 ]
                 if hosts:
-                    strongest_host = max(hosts, key=lambda a: fitness_snapshot[a.agent_id])
+                    strongest_host = max(
+                        hosts, key=lambda a: fitness_snapshot[a.agent_id]
+                    )
                     # Parasite gains
                     round_events.append(
                         EcosystemEvent(
@@ -356,7 +367,9 @@ class EcosystemInteraction:
     # Applying events
     # ------------------------------------------------------------------
 
-    def apply_events(self, events: list[EcosystemEvent], population: list[Agent]) -> None:
+    def apply_events(
+        self, events: list[EcosystemEvent], population: list[Agent]
+    ) -> None:
         """Apply fitness deltas from *events* to agents in *population*.
 
         Fitness values are clamped to ``[0.0, 1.0]`` after adjustment. Agents
@@ -460,7 +473,7 @@ class EcosystemEvaluator(Evaluator):
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

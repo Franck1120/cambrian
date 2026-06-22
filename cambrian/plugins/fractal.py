@@ -484,7 +484,9 @@ class FractalEvolution:
                     evaluator=self._evaluator,
                     mutator=self._mutator,
                 )
-                population.seed(cycle_seed if scale is FractalScale.MACRO else scale_best_genome)
+                population.seed(
+                    cycle_seed if scale is FractalScale.MACRO else scale_best_genome
+                )
 
                 n_evals = 0
                 best_agent: Agent | None = None
@@ -522,7 +524,7 @@ class FractalEvolution:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

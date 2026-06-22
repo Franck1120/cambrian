@@ -78,9 +78,7 @@ class OpenAICompatBackend(LLMBackend):
     ) -> None:
         self._model = model
         self._base_url = (
-            base_url
-            or os.getenv("CAMBRIAN_BASE_URL")
-            or self.DEFAULT_BASE_URL
+            base_url or os.getenv("CAMBRIAN_BASE_URL") or self.DEFAULT_BASE_URL
         ).rstrip("/")
         self._api_key = (
             api_key
@@ -138,7 +136,7 @@ class OpenAICompatBackend(LLMBackend):
 
                 # Retryable errors
                 if response.status_code in (429, 500, 502, 503, 504):
-                    wait = 2 ** attempt
+                    wait = 2**attempt
                     time.sleep(wait)
                     last_error = RuntimeError(
                         f"HTTP {response.status_code}: {response.text[:200]}"
@@ -152,10 +150,10 @@ class OpenAICompatBackend(LLMBackend):
 
             except httpx.TimeoutException as exc:
                 last_error = exc
-                time.sleep(2 ** attempt)
+                time.sleep(2**attempt)
             except httpx.RequestError as exc:
                 last_error = exc
-                time.sleep(2 ** attempt)
+                time.sleep(2**attempt)
 
         raise RuntimeError(
             f"Backend call failed after {self._max_retries} attempts: {last_error}"
@@ -165,7 +163,7 @@ class OpenAICompatBackend(LLMBackend):
 def groq_backend(
     model: str = "llama-3.3-70b",
     api_key: str | None = None,
-    **kwargs: object,
+    **kwargs: Any,
 ) -> OpenAICompatBackend:
     """Create an :class:`OpenAICompatBackend` pre-configured for Groq.
 

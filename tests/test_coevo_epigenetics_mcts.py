@@ -10,7 +10,7 @@ import pytest
 
 from cambrian.agent import Agent, Genome
 from cambrian.archipelago import Archipelago, Island
-from cambrian.coevolution import CoEvolutionEngine, MAPElites
+from cambrian.coevolution import MAPElites
 from cambrian.epigenetics import (
     EpigenomicContext,
     EpigeneticLayer,
@@ -151,8 +151,12 @@ class TestArchipelago:
         assert arch.total_migrations == 0
 
     def test_seeded_rng_reproducible(self) -> None:
-        arch1 = Archipelago(engine_factory=MagicMock, n_islands=3, topology="random", seed=42)
-        arch2 = Archipelago(engine_factory=MagicMock, n_islands=3, topology="random", seed=42)
+        arch1 = Archipelago(
+            engine_factory=MagicMock, n_islands=3, topology="random", seed=42
+        )
+        arch2 = Archipelago(
+            engine_factory=MagicMock, n_islands=3, topology="random", seed=42
+        )
         # Same seed → same rng state (verify both construct without error)
         assert arch1.island_summaries() is not None
         assert arch2.island_summaries() is not None
@@ -196,7 +200,9 @@ class TestMAPElites:
     def test_coverage_increases_after_add(self) -> None:
         me = MAPElites()
         for i in range(6):
-            a = Agent(genome=Genome(system_prompt="x" * (i * 10 + 1), temperature=0.1 * i))
+            a = Agent(
+                genome=Genome(system_prompt="x" * (i * 10 + 1), temperature=0.1 * i)
+            )
             a.fitness = 0.5 + 0.05 * i
             me.add(a)
         assert me.coverage() > 0.0
@@ -288,13 +294,18 @@ class TestEpigeneticLayer:
         assert layer is not None
 
     def test_construction_with_rules(self) -> None:
-        rule = lambda g, ctx: "phase: early" if ctx.is_early else "phase: late"
+        def rule(g, ctx):
+            return "phase: early" if ctx.is_early else "phase: late"
+
         layer = EpigeneticLayer(rules=[rule])
         assert layer is not None
 
     def test_add_rule_appends(self) -> None:
         layer = EpigeneticLayer()
-        rule = lambda g, ctx: "custom annotation"
+
+        def rule(g, ctx):
+            return "custom annotation"
+
         layer.add_rule(rule)
         genome = Genome(system_prompt="Base.")
         ctx = EpigenomicContext(generation=0, total_generations=10)
@@ -337,7 +348,9 @@ class TestEpigeneticLayer:
         assert isinstance(result, Agent)
 
     def test_apply_does_not_modify_original(self) -> None:
-        rule = lambda g, ctx: "INJECTED"
+        def rule(g, ctx):
+            return "INJECTED"
+
         layer = EpigeneticLayer(rules=[rule])
         agent = _agent(prompt="Original prompt.")
         ctx = EpigenomicContext()
@@ -353,8 +366,11 @@ class TestEpigeneticLayer:
         layer = make_standard_layer()
         genome = Genome(system_prompt="You are an expert.")
         ctx = EpigenomicContext(
-            generation=2, task="Write Python code", total_generations=10,
-            population_mean_fitness=0.5, population_best_fitness=0.7,
+            generation=2,
+            task="Write Python code",
+            total_generations=10,
+            population_mean_fitness=0.5,
+            population_best_fitness=0.7,
         )
         result = layer.express(genome, ctx)
         assert isinstance(result, str)
@@ -398,7 +414,9 @@ class TestMCTSSelector:
         assert sel is not None
 
     def test_custom_params(self) -> None:
-        sel = MCTSSelector(mutator=_mutator(), exploration_constant=2.0, max_depth=4, max_children=5)
+        sel = MCTSSelector(
+            mutator=_mutator(), exploration_constant=2.0, max_depth=4, max_children=5
+        )
         assert sel is not None
 
     def test_register_returns_node(self) -> None:
@@ -459,7 +477,7 @@ class TestMCTSSelector:
     def test_best_path_returns_list(self) -> None:
         sel = self._sel()
         agent = _agent(fitness=0.5)
-        node = sel.register(agent)
+        sel.register(agent)
         sel.backpropagate(agent.id, 0.7)
         path = sel.best_path(agent.id)
         assert isinstance(path, list)

@@ -131,9 +131,7 @@ class RedTeamAgent:
         self._n = n_attacks
         self._temperature = temperature
 
-    def generate_attacks(
-        self, task: str, domain: str = "general"
-    ) -> list[str]:
+    def generate_attacks(self, task: str, domain: str = "general") -> list[str]:
         """Return a list of adversarial task variants."""
         system = _ATTACK_GEN_SYSTEM.format(n=self._n)
         user = _ATTACK_GEN_TEMPLATE.format(task=task, domain=domain, n=self._n)
@@ -162,6 +160,7 @@ class RedTeamAgent:
         if m:
             try:
                 import json
+
                 items = json.loads(m.group(0))
                 return [str(x) for x in items if isinstance(x, str)][: self._n]
             except Exception:  # noqa: BLE001
@@ -312,8 +311,7 @@ class RedTeamSession:
             else 0.0
         )
         robustness = (
-            self._normal_weight * normal_score
-            + (1 - self._normal_weight) * adv_mean
+            self._normal_weight * normal_score + (1 - self._normal_weight) * adv_mean
         )
 
         report = RobustnessReport(
@@ -328,7 +326,7 @@ class RedTeamSession:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

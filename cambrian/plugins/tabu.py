@@ -74,7 +74,7 @@ def _fingerprint(prompt: str, strategy: str = "") -> str:
     """
     tokens = re.split(r"\W+", (prompt + " " + strategy).lower())
     tokens = [t for t in tokens if t]
-    bigrams = [f"{tokens[i]}_{tokens[i+1]}" for i in range(len(tokens) - 1)]
+    bigrams = [f"{tokens[i]}_{tokens[i + 1]}" for i in range(len(tokens) - 1)]
     canonical = " ".join(sorted(set(bigrams)))
     return hashlib.sha256(canonical.encode()).hexdigest()[:16]
 
@@ -221,7 +221,7 @@ class TabuMutator:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

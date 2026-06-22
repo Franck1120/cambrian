@@ -127,21 +127,24 @@ class MetamorphosisController:
         self._backend: LLMBackend = backend
 
         self._configs: dict[MetamorphicPhase, PhaseConfig] = {
-            MetamorphicPhase.LARVA: larva_config or PhaseConfig(
+            MetamorphicPhase.LARVA: larva_config
+            or PhaseConfig(
                 phase=MetamorphicPhase.LARVA,
                 min_generations=3,
                 fitness_threshold=0.4,
                 mutation_rate_multiplier=1.5,
                 description="High exploration, broad mutation, no strategy constraints.",
             ),
-            MetamorphicPhase.CHRYSALIS: chrysalis_config or PhaseConfig(
+            MetamorphicPhase.CHRYSALIS: chrysalis_config
+            or PhaseConfig(
                 phase=MetamorphicPhase.CHRYSALIS,
                 min_generations=1,
                 fitness_threshold=0.6,
                 mutation_rate_multiplier=0.0,
                 description="Frozen mutation; LLM-driven internal reorganisation.",
             ),
-            MetamorphicPhase.IMAGO: imago_config or PhaseConfig(
+            MetamorphicPhase.IMAGO: imago_config
+            or PhaseConfig(
                 phase=MetamorphicPhase.IMAGO,
                 min_generations=0,
                 fitness_threshold=0.0,
@@ -425,7 +428,7 @@ class MetamorphicPopulation:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

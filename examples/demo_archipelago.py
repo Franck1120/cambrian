@@ -22,7 +22,6 @@ Usage
 from __future__ import annotations
 
 import json
-from typing import Any
 from unittest.mock import MagicMock
 
 from cambrian.agent import Agent, Genome
@@ -36,8 +35,16 @@ from cambrian.mutator import LLMMutator
 # ---------------------------------------------------------------------------
 
 _KEYWORDS = [
-    "step-by-step", "expert", "verify", "systematic", "analytical",
-    "precise", "structured", "rigorous", "methodical", "validate",
+    "step-by-step",
+    "expert",
+    "verify",
+    "systematic",
+    "analytical",
+    "precise",
+    "structured",
+    "rigorous",
+    "methodical",
+    "validate",
 ]
 
 
@@ -54,8 +61,10 @@ class KeywordEvaluator(Evaluator):
 # Mock backend — deterministically adds keywords to every genome it mutates
 # ---------------------------------------------------------------------------
 
+
 def _make_backend() -> MagicMock:
     """Return a mock backend that enriches prompts with performance keywords."""
+
     def generate(prompt: str) -> str:  # noqa: ARG001
         genome_dict = {
             "system_prompt": (
@@ -83,6 +92,7 @@ def _make_backend() -> MagicMock:
 # API (initialize_population, evaluate_population, evolve_generation).
 # ---------------------------------------------------------------------------
 
+
 class ArchipelagoEngine(EvolutionEngine):
     """EvolutionEngine subclass that exposes the private methods Archipelago needs."""
 
@@ -102,6 +112,7 @@ class ArchipelagoEngine(EvolutionEngine):
 # Engine factory
 # ---------------------------------------------------------------------------
 
+
 def make_engine() -> ArchipelagoEngine:
     """Factory called once per island by Archipelago."""
     backend = _make_backend()
@@ -118,6 +129,7 @@ def make_engine() -> ArchipelagoEngine:
 # ---------------------------------------------------------------------------
 # Archipelago demo
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     print("=" * 60)
@@ -142,7 +154,9 @@ def main() -> None:
     print("\nIslands: 3  |  Topology: ring  |  Migration every 2 generations\n")
 
     def on_migration(a: Archipelago, generation: int) -> None:
-        print(f"  [gen {generation:2d}] Migration #{a.total_migrations}  —  island snapshots:")
+        print(
+            f"  [gen {generation:2d}] Migration #{a.total_migrations}  —  island snapshots:"
+        )
         for s in a.island_summaries():
             best_f = s.get("best_fitness") or 0.0
             size = s.get("size", 0)

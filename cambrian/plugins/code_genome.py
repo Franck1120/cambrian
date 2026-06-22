@@ -270,10 +270,13 @@ class CodeMutator:
         Returns:
             New :class:`CodeAgent` with improved code genome.
         """
-        tc_text = "\n".join(
-            f"  input={tc.get('input', '')!r} → expected={tc.get('expected', '')!r}"
-            for tc in agent.genome.test_cases[:5]
-        ) or "  (no test cases provided)"
+        tc_text = (
+            "\n".join(
+                f"  input={tc.get('input', '')!r} → expected={tc.get('expected', '')!r}"
+                for tc in agent.genome.test_cases[:5]
+            )
+            or "  (no test cases provided)"
+        )
 
         prompt = _CODE_MUTATE_TEMPLATE.format(
             entry_point=agent.genome.entry_point,
@@ -305,7 +308,9 @@ class CodeMutator:
         child._fitness = None
         return child
 
-    def crossover(self, parent_a: CodeAgent, parent_b: CodeAgent, task: str = "") -> CodeAgent:
+    def crossover(
+        self, parent_a: CodeAgent, parent_b: CodeAgent, task: str = ""
+    ) -> CodeAgent:
         """Combine code from two parents to produce an offspring.
 
         Args:
@@ -318,13 +323,21 @@ class CodeMutator:
         """
         prompt = _CODE_CROSSOVER_TEMPLATE.format(
             code_a=parent_a.genome.code or "(empty)",
-            fitness_a=f"{parent_a.fitness:.4f}" if parent_a.fitness is not None else "0",
+            fitness_a=f"{parent_a.fitness:.4f}"
+            if parent_a.fitness is not None
+            else "0",
             code_b=parent_b.genome.code or "(empty)",
-            fitness_b=f"{parent_b.fitness:.4f}" if parent_b.fitness is not None else "0",
+            fitness_b=f"{parent_b.fitness:.4f}"
+            if parent_b.fitness is not None
+            else "0",
             task=task or "solve the problem",
         )
 
-        base = parent_a if (parent_a.fitness or 0.0) >= (parent_b.fitness or 0.0) else parent_b
+        base = (
+            parent_a
+            if (parent_a.fitness or 0.0) >= (parent_b.fitness or 0.0)
+            else parent_b
+        )
 
         try:
             raw = self._backend.generate(
@@ -422,15 +435,11 @@ class CodeEvaluator:
         # is valid Python regardless of what the test-case input contains.
         safe_inp = (
             inp.replace("\\", "\\\\")
-               .replace("'", "\\'")
-               .replace("\n", "\\n")
-               .replace("\r", "\\r")
+            .replace("'", "\\'")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
         )
-        return (
-            f"{code}\n\n"
-            f"_result = {entry_point}('{safe_inp}')\n"
-            f"print(_result)"
-        )
+        return f"{code}\n\n_result = {entry_point}('{safe_inp}')\nprint(_result)"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -520,7 +529,8 @@ class CodeEvolutionEngine:
             scores = [a.fitness or 0.0 for a in population]
             logger.info(
                 "CodeEvo gen %d/%d — best=%.4f mean=%.4f",
-                gen, n_generations,
+                gen,
+                n_generations,
                 max(scores) if scores else 0.0,
                 sum(scores) / max(len(scores), 1),
             )
@@ -530,7 +540,7 @@ class CodeEvolutionEngine:
         if self._best is None and population:
             self._best = max(population, key=lambda a: a.fitness or 0.0)
 
-        return self._best  # type: ignore[return-value]
+        return self._best
 
     # ── Internals ─────────────────────────────────────────────────────────────
 
@@ -554,11 +564,15 @@ class CodeEvolutionEngine:
             agent.fitness = score
             logger.debug(
                 "CodeAgent %s: fitness=%.4f (%.2fs)",
-                agent.id[:8], score, time.monotonic() - t0,
+                agent.id[:8],
+                score,
+                time.monotonic() - t0,
             )
         return population
 
-    def _next_generation(self, population: list[CodeAgent], task: str) -> list[CodeAgent]:
+    def _next_generation(
+        self, population: list[CodeAgent], task: str
+    ) -> list[CodeAgent]:
         population.sort(key=lambda a: a.fitness or 0.0, reverse=True)
         next_gen: list[CodeAgent] = list(population[: self._elite_n])
 

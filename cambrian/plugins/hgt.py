@@ -202,7 +202,9 @@ class HGTransfer:
 
     @staticmethod
     def _split_sentences(text: str) -> list[str]:
-        return [s.strip() for s in re.split(r"(?<=[.!?])\s+", text.strip()) if s.strip()]
+        return [
+            s.strip() for s in re.split(r"(?<=[.!?])\s+", text.strip()) if s.strip()
+        ]
 
 
 # ---------------------------------------------------------------------------
@@ -275,7 +277,7 @@ class HGTPool:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

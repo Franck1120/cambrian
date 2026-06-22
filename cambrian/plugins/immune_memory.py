@@ -90,7 +90,7 @@ class RecallResult:
 
     recalled: bool
     agent: Optional[Agent]
-    cell_type: str   # "b_cell" | "t_cell" | "none"
+    cell_type: str  # "b_cell" | "t_cell" | "none"
     similarity: float
     source_task: str
 
@@ -317,7 +317,7 @@ class ImmuneCortex:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

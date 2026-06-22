@@ -192,7 +192,9 @@ class SymbioticFuser:
         best_donor: Optional[Agent] = None
         best_dist = -1.0
         for agent in candidates_sorted[1:]:
-            d = self._prompt_distance(host.genome.system_prompt, agent.genome.system_prompt)
+            d = self._prompt_distance(
+                host.genome.system_prompt, agent.genome.system_prompt
+            )
             if d >= self._min_distance and d > best_dist:
                 best_dist = d
                 best_donor = agent
@@ -267,7 +269,7 @@ class SymbioticFuser:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

@@ -208,9 +208,7 @@ class HormesisAdapter:
         )
         return new_agent
 
-    def stimulate_population(
-        self, population: list[Agent], task: str
-    ) -> list[Agent]:
+    def stimulate_population(self, population: list[Agent], task: str) -> list[Agent]:
         """Apply stimulate() to every agent in *population*."""
         return [self.stimulate(a, task) for a in population]
 
@@ -232,9 +230,7 @@ class HormesisAdapter:
             new_agent.fitness = agent.fitness
         return new_agent
 
-    def _reprogram(
-        self, agent: Agent, fitness: float, stress: float, task: str
-    ) -> str:
+    def _reprogram(self, agent: Agent, fitness: float, stress: float, task: str) -> str:
         """Ask LLM for a completely new system prompt."""
         msg = _REPROGRAM_TEMPLATE.format(
             task=task,
@@ -250,7 +246,7 @@ class HormesisAdapter:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

@@ -165,9 +165,7 @@ class GlossaloliaReasoner:
         temp = temp_override if temp_override is not None else self._latent_temp
         user_msg = _LATENT_TEMPLATE.format(task=task)
         combined_system = (
-            f"{system_prompt}\n\n{_LATENT_SYSTEM}"
-            if system_prompt
-            else _LATENT_SYSTEM
+            f"{system_prompt}\n\n{_LATENT_SYSTEM}" if system_prompt else _LATENT_SYSTEM
         )
         try:
             latent = str(
@@ -248,7 +246,7 @@ class GlossaloliaEvaluator(Evaluator):
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 

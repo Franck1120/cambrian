@@ -27,9 +27,6 @@ Usage
 
 from __future__ import annotations
 
-import json
-import random
-from unittest.mock import MagicMock
 
 from cambrian.agent import Agent, Genome
 from cambrian.pareto import (
@@ -39,7 +36,6 @@ from cambrian.pareto import (
     brevity_objective,
     crowding_distance,
     fast_non_dominated_sort,
-    fitness_objective,
     nsga2_select,
 )
 
@@ -48,8 +44,16 @@ from cambrian.pareto import (
 # ---------------------------------------------------------------------------
 
 _QUALITY_WORDS = [
-    "step-by-step", "expert", "verify", "systematic", "analytical",
-    "precise", "structured", "rigorous", "methodical", "validate",
+    "step-by-step",
+    "expert",
+    "verify",
+    "systematic",
+    "analytical",
+    "precise",
+    "structured",
+    "rigorous",
+    "methodical",
+    "validate",
 ]
 
 
@@ -102,6 +106,7 @@ SEED_PROMPTS = [
 # Demo
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     print("=" * 65)
     print("Cambrian — Multi-objective evolution (Pareto / NSGA-II) demo")
@@ -146,7 +151,9 @@ def main() -> None:
         q = quality_score(a)
         b = brevity_score(a)
         tok = len(a.genome.system_prompt.split())
-        print(f"  quality={q:.2f}  brevity={b:.2f}  words={tok:3d}  |  {a.genome.system_prompt[:60]!r}")
+        print(
+            f"  quality={q:.2f}  brevity={b:.2f}  words={tok:3d}  |  {a.genome.system_prompt[:60]!r}"
+        )
 
     # Attach diversity bonuses
     attach_diversity_scores(population, vectors, objective_name="diversity", k=3)

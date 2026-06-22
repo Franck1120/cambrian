@@ -140,9 +140,7 @@ class ReflexionEvaluator:
         for cycle in range(self._n):
             critique, score = self._reflect(task, response)
             final_score = score
-            logger.debug(
-                "Reflexion cycle %d/%d: score=%.3f", cycle + 1, self._n, score
-            )
+            logger.debug("Reflexion cycle %d/%d: score=%.3f", cycle + 1, self._n, score)
 
             if score >= 1.0:
                 break  # Perfect — no need to revise
@@ -160,9 +158,7 @@ class ReflexionEvaluator:
 
     def _reflect(self, task: str, response: str) -> tuple[str, float]:
         """Ask the LLM to critique *response* and return (critique, score)."""
-        prompt = (
-            f"Task: {task}\n\nResponse to evaluate:\n{response}"
-        )
+        prompt = f"Task: {task}\n\nResponse to evaluate:\n{response}"
         try:
             raw = self._backend.generate(
                 prompt,
@@ -224,7 +220,7 @@ class ReflexionEvaluator:
 
 
 # ── Plugin registration ──────────────────────────────────────────────────────
-from typing import Any
+from typing import Any  # noqa: E402
 
 from cambrian.plugins.base import CambrianPlugin  # noqa: E402
 
