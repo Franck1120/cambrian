@@ -1,5 +1,6 @@
 # Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.hormesis — HormesisAdapter."""
+
 from __future__ import annotations
 
 from typing import Optional
@@ -28,7 +29,6 @@ def _backend(response: str = "reprogrammed") -> MagicMock:
     b = MagicMock()
     b.generate.return_value = response
     return b
-
 
 
 # ---------------------------------------------------------------------------
@@ -71,13 +71,17 @@ class TestStressLevel:
         assert a.stress_level(agent) == "mild"
 
     def test_moderate_stress(self) -> None:
-        a = HormesisAdapter(backend=_backend(), stress_threshold=0.5, severe_cutoff=0.66)
+        a = HormesisAdapter(
+            backend=_backend(), stress_threshold=0.5, severe_cutoff=0.66
+        )
         # fitness=0.3 → s = 1 - 0.3/0.5 = 0.4 ∈ [0.33, 0.66)
         agent = _make_agent(0.3)
         assert a.stress_level(agent) == "moderate"
 
     def test_severe_stress(self) -> None:
-        a = HormesisAdapter(backend=_backend(), stress_threshold=0.5, severe_cutoff=0.66)
+        a = HormesisAdapter(
+            backend=_backend(), stress_threshold=0.5, severe_cutoff=0.66
+        )
         # fitness=0.1 → s = 1 - 0.1/0.5 = 0.8 ≥ 0.66
         agent = _make_agent(0.1)
         assert a.stress_level(agent) == "severe"

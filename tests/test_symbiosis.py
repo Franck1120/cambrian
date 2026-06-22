@@ -1,5 +1,6 @@
 # Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.symbiosis — SymbioticFuser."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock
@@ -91,7 +92,9 @@ class TestPromptDistance:
 
 class TestCompatible:
     def test_both_above_threshold_and_distant(self) -> None:
-        fuser = SymbioticFuser(backend=_backend(), fitness_threshold=0.5, min_distance=0.4)
+        fuser = SymbioticFuser(
+            backend=_backend(), fitness_threshold=0.5, min_distance=0.4
+        )
         host = _make_agent("python expert math solver", 0.8)
         donor = _make_agent("creative writing novelist", 0.7)
         assert fuser._compatible(host, donor) is True
@@ -109,7 +112,9 @@ class TestCompatible:
         assert fuser._compatible(host, donor) is False
 
     def test_prompts_too_similar(self) -> None:
-        fuser = SymbioticFuser(backend=_backend(), fitness_threshold=0.5, min_distance=0.8)
+        fuser = SymbioticFuser(
+            backend=_backend(), fitness_threshold=0.5, min_distance=0.8
+        )
         host = _make_agent("python expert", 0.9)
         donor = _make_agent("python expert", 0.9)
         assert fuser._compatible(host, donor) is False
@@ -170,7 +175,9 @@ class TestFuse:
         assert pair.donor_fitness == 0.8
 
     def test_history_returns_copy(self) -> None:
-        fuser = SymbioticFuser(backend=_backend("m"), fitness_threshold=0.0, min_distance=0.0)
+        fuser = SymbioticFuser(
+            backend=_backend("m"), fitness_threshold=0.0, min_distance=0.0
+        )
         host = _make_agent("aaa bbb", 0.9)
         donor = _make_agent("xxx yyy", 0.8)
         fuser.fuse(host, donor, "t")

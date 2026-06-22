@@ -68,6 +68,7 @@ _SEED_PROMPT = (
 
 # ── Custom evaluator: checks FizzBuzz correctness ────────────────────────────
 
+
 class FizzBuzzEvaluator(CodeEvaluator):
     """Extends CodeEvaluator with FizzBuzz-specific output checking."""
 
@@ -87,6 +88,7 @@ class FizzBuzzEvaluator(CodeEvaluator):
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
+
 
 def main(args: argparse.Namespace) -> None:
     api_key = args.api_key or os.environ.get("OPENAI_API_KEY", "")
@@ -134,7 +136,9 @@ def main(args: argparse.Namespace) -> None:
         print(f"  Gen {gen:2d}  best={best:.4f}  mean={mean:.4f}")
 
     print("\nCambrian FizzBuzz Example")
-    print(f"Model: {args.model}  |  Population: {args.population}  |  Generations: {args.generations}")
+    print(
+        f"Model: {args.model}  |  Population: {args.population}  |  Generations: {args.generations}"
+    )
     print(f"Task: {_TASK[:80]}...")
     print()
 
@@ -157,6 +161,7 @@ def main(args: argparse.Namespace) -> None:
     if args.output:
         import json
         from pathlib import Path
+
         out = Path(args.output)
         out.write_text(json.dumps(best.genome.to_dict(), indent=2))
         print(f"\nBest genome saved to {out}")
@@ -170,8 +175,12 @@ if __name__ == "__main__":
         default=os.environ.get("CAMBRIAN_BASE_URL", "https://api.openai.com/v1"),
         help="OpenAI-compatible base URL",
     )
-    parser.add_argument("--api-key", default=None, help="API key (falls back to OPENAI_API_KEY)")
-    parser.add_argument("--generations", type=int, default=5, help="Number of generations")
+    parser.add_argument(
+        "--api-key", default=None, help="API key (falls back to OPENAI_API_KEY)"
+    )
+    parser.add_argument(
+        "--generations", type=int, default=5, help="Number of generations"
+    )
     parser.add_argument("--population", type=int, default=6, help="Population size")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--output", default=None, help="Path to save best genome JSON")

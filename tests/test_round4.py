@@ -34,11 +34,14 @@ class _EchoBackend:
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
         import re
+
         m = re.search(r"\{[\s\S]+\}", prompt)
         return m.group(0) if m else "{}"
 
 
-def _make_agent(prompt: str = "Test", fitness: float | None = None, temp: float = 0.7) -> Agent:
+def _make_agent(
+    prompt: str = "Test", fitness: float | None = None, temp: float = 0.7
+) -> Agent:
     g = Genome(system_prompt=prompt, temperature=temp)
     a = Agent(genome=g, backend=_EchoBackend())
     if fitness is not None:
@@ -281,7 +284,9 @@ class TestCoEvolutionEngine:
         engine = self._make_engine()
         gen_seeds = [Genome(system_prompt="Generate code.")]
         adv_seeds = [Genome(system_prompt="Find bugs.")]
-        best_gen, best_adv = engine.evolve(gen_seeds, adv_seeds, "task", n_generations=2)
+        best_gen, best_adv = engine.evolve(
+            gen_seeds, adv_seeds, "task", n_generations=2
+        )
         assert isinstance(best_gen, Agent)
         assert isinstance(best_adv, Agent)
 
@@ -590,7 +595,10 @@ class TestConstitutionalWrapper:
         assert "ConstitutionalWrapper" in repr(w)
 
     def test_build_constitutional_evaluator(self) -> None:
-        from cambrian.constitutional import ConstitutionalWrapper, build_constitutional_evaluator
+        from cambrian.constitutional import (
+            ConstitutionalWrapper,
+            build_constitutional_evaluator,
+        )
 
         ev = build_constitutional_evaluator(lambda a, t: 0.5, n_principles=3)
         assert isinstance(ev, ConstitutionalWrapper)
@@ -632,7 +640,7 @@ class TestParetoFront:
     def test_pareto_agents_method(self) -> None:
         from cambrian.stats import ParetoFront
 
-        agents = [_make_agent(f"{'p'*i}", fitness=0.5 + i * 0.1) for i in range(4)]
+        agents = [_make_agent(f"{'p' * i}", fitness=0.5 + i * 0.1) for i in range(4)]
         front = ParetoFront()
         front.compute(agents)
         pareto = front.pareto_agents()
@@ -654,7 +662,10 @@ class TestParetoFront:
 
         front = ParetoFront(objectives=["fitness", "temperature_score"])
         front.add_objective("temperature_score", lambda a: 1.0 - a.genome.temperature)
-        agents = [_make_agent(fitness=0.8, temp=0.3), _make_agent(fitness=0.8, temp=0.9)]
+        agents = [
+            _make_agent(fitness=0.8, temp=0.3),
+            _make_agent(fitness=0.8, temp=0.9),
+        ]
         front.compute(agents)
         s = front.summary()
         assert s["total"] == 2
@@ -675,8 +686,14 @@ class TestDiversityTracker:
 
         tracker = DiversityTracker()
         agents = [
-            Agent(genome=Genome(system_prompt="A", strategy="step-by-step", temperature=0.5)),
-            Agent(genome=Genome(system_prompt="B", strategy="concise", temperature=0.9)),
+            Agent(
+                genome=Genome(
+                    system_prompt="A", strategy="step-by-step", temperature=0.5
+                )
+            ),
+            Agent(
+                genome=Genome(system_prompt="B", strategy="concise", temperature=0.9)
+            ),
         ]
         agents[0].fitness = 0.6
         agents[1].fitness = 0.8
@@ -810,10 +827,12 @@ class TestE2EEvolution:
 
         class _ImprovingBackend:
             """Returns a genome with slightly increasing fitness."""
+
             model_name = "improving"
 
             def generate(self, prompt: str, **kwargs: Any) -> str:
                 import re
+
                 m = re.search(r"\{[\s\S]+\}", prompt)
                 if m:
                     try:
@@ -850,7 +869,9 @@ class TestE2EEvolution:
             gen_fitness_best.append(best)
 
         best = engine.evolve(
-            seed_genomes=[Genome(system_prompt="You are a helpful assistant.", temperature=0.9)],
+            seed_genomes=[
+                Genome(system_prompt="You are a helpful assistant.", temperature=0.9)
+            ],
             task="Improve temperature",
             n_generations=5,
             on_generation=_on_gen,
@@ -968,19 +989,26 @@ class TestDistillAgentCLI:
                 "You are a very helpful AI assistant. "
                 "Please make sure to answer carefully and completely. "
                 "It is important to provide accurate information. "
-            ) * 5,
+            )
+            * 5,
             model="gpt-4o",
         )
         agent_file = tmp_path / "best.json"
         agent_file.write_text(json.dumps(genome.to_dict()))
 
         runner = CliRunner()
-        result = runner.invoke(main, [
-            "distill-agent",
-            "--agent", str(agent_file),
-            "--target", "gemma-4-12b",
-            "--max-tokens", "60",
-        ])
+        result = runner.invoke(
+            main,
+            [
+                "distill-agent",
+                "--agent",
+                str(agent_file),
+                "--target",
+                "gemma-4-12b",
+                "--max-tokens",
+                "60",
+            ],
+        )
 
         assert result.exit_code == 0, result.output
         # Should have created distilled file
@@ -998,12 +1026,18 @@ class TestDistillAgentCLI:
         agent_file.write_text(json.dumps(genome.to_dict()))
 
         runner = CliRunner()
-        runner.invoke(main, [
-            "distill-agent",
-            "--agent", str(agent_file),
-            "--target", "small-model",
-            "--max-tokens", "30",
-        ])
+        runner.invoke(
+            main,
+            [
+                "distill-agent",
+                "--agent",
+                str(agent_file),
+                "--target",
+                "small-model",
+                "--max-tokens",
+                "30",
+            ],
+        )
 
         distilled_file = tmp_path / "big.distilled.small-model.json"
         if distilled_file.exists():
@@ -1022,12 +1056,18 @@ class TestDistillAgentCLI:
         out_file = tmp_path / "out.json"
 
         runner = CliRunner()
-        result = runner.invoke(main, [
-            "distill-agent",
-            "--agent", str(agent_file),
-            "--target", "llama3.2",
-            "--output", str(out_file),
-        ])
+        result = runner.invoke(
+            main,
+            [
+                "distill-agent",
+                "--agent",
+                str(agent_file),
+                "--target",
+                "llama3.2",
+                "--output",
+                str(out_file),
+            ],
+        )
 
         assert result.exit_code == 0
         assert out_file.exists()

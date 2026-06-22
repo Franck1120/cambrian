@@ -50,7 +50,12 @@ def _three_step_pipeline() -> Pipeline:
 
 def _pipeline_json(name: str = "p", n_steps: int = 2) -> str:
     steps = [
-        {"name": f"step{i}", "system_prompt": f"Step {i}.", "role": "transformer", "temperature": 0.7}
+        {
+            "name": f"step{i}",
+            "system_prompt": f"Step {i}.",
+            "role": "transformer",
+            "temperature": 0.7,
+        }
         for i in range(n_steps)
     ]
     return json.dumps({"name": name, "steps": steps})
@@ -69,7 +74,9 @@ class TestPipelineStep:
         assert 0.0 <= s.temperature <= 2.0
 
     def test_to_dict_round_trip(self) -> None:
-        s = PipelineStep(name="foo", system_prompt="bar", role="extractor", temperature=0.3)
+        s = PipelineStep(
+            name="foo", system_prompt="bar", role="extractor", temperature=0.3
+        )
         restored = PipelineStep.from_dict(s.to_dict())
         assert restored.name == s.name
         assert restored.system_prompt == s.system_prompt
@@ -238,10 +245,18 @@ class TestPipelineMutatorWithMock:
 
     def test_mutate_enforces_max_steps(self) -> None:
         # Return a pipeline with 10 steps — should be capped at max_steps=3
-        big = {"name": "big", "steps": [
-            {"name": f"s{i}", "system_prompt": "x", "role": "transformer", "temperature": 0.7}
-            for i in range(10)
-        ]}
+        big = {
+            "name": "big",
+            "steps": [
+                {
+                    "name": f"s{i}",
+                    "system_prompt": "x",
+                    "role": "transformer",
+                    "temperature": 0.7,
+                }
+                for i in range(10)
+            ],
+        }
         backend = _mock_backend(json.dumps(big))
         mutator = PipelineMutator(backend, max_steps=3)
         p = Pipeline(steps=[PipelineStep()])
@@ -348,10 +363,12 @@ class TestPipelineEvaluator:
         backend = MagicMock()
         backend.generate.side_effect = outputs
         ev = PipelineEvaluator(backend)
-        p = Pipeline(steps=[
-            PipelineStep(name="s1", system_prompt="sys1"),
-            PipelineStep(name="s2", system_prompt="sys2"),
-        ])
+        p = Pipeline(
+            steps=[
+                PipelineStep(name="s1", system_prompt="sys1"),
+                PipelineStep(name="s2", system_prompt="sys2"),
+            ]
+        )
         ev.evaluate(p, "initial-task")
         # Step 1: user="initial-task", system=sys1
         assert backend.generate.call_args_list[0][0][0] == "initial-task"
@@ -417,7 +434,9 @@ class TestPipelineEvolutionEngine:
 
     def test_elite_n_minimum_one(self) -> None:
         backend = _mock_backend("0.5")
-        engine = PipelineEvolutionEngine(backend=backend, population_size=3, elite_ratio=0.0)
+        engine = PipelineEvolutionEngine(
+            backend=backend, population_size=3, elite_ratio=0.0
+        )
         assert engine._elite_n == 1
 
     def test_evolve_returns_pipeline(self) -> None:

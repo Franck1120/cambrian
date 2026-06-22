@@ -1,5 +1,6 @@
 # Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.red_team — RedTeamAgent, RobustnessEvaluator, RedTeamSession."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock
@@ -60,9 +61,7 @@ class TestGenerateAttacks:
         assert attacks == ["a1", "a2", "a3"]
 
     def test_limits_to_n_attacks(self) -> None:
-        rta = RedTeamAgent(
-            backend=_backend('["a", "b", "c", "d", "e"]'), n_attacks=2
-        )
+        rta = RedTeamAgent(backend=_backend('["a", "b", "c", "d", "e"]'), n_attacks=2)
         attacks = rta.generate_attacks("task")
         assert len(attacks) == 2
 
@@ -162,18 +161,14 @@ class TestRedTeamSessionRun:
 
     def test_attack_results_stored(self) -> None:
         rta = RedTeamAgent(backend=_backend('["attack 1", "attack 2"]'), n_attacks=2)
-        session = RedTeamSession(
-            red_team_agent=rta, base_evaluator=_base_evaluator()
-        )
+        session = RedTeamSession(red_team_agent=rta, base_evaluator=_base_evaluator())
         report = session.run(_make_agent(), "task")
         assert len(report.attack_results) == 2
         assert all(isinstance(r, AttackResult) for r in report.attack_results)
 
     def test_reports_returns_copy(self) -> None:
         rta = RedTeamAgent(backend=_backend('["a"]'), n_attacks=1)
-        session = RedTeamSession(
-            red_team_agent=rta, base_evaluator=_base_evaluator()
-        )
+        session = RedTeamSession(red_team_agent=rta, base_evaluator=_base_evaluator())
         session.run(_make_agent(), "task")
         r1 = session.reports
         r1.clear()
@@ -183,9 +178,7 @@ class TestRedTeamSessionRun:
         rta = RedTeamAgent(backend=_backend('["a"]'), n_attacks=1)
         agent = _make_agent()
         agent.run = MagicMock(side_effect=RuntimeError("err"))  # type: ignore[method-assign]
-        session = RedTeamSession(
-            red_team_agent=rta, base_evaluator=_base_evaluator()
-        )
+        session = RedTeamSession(red_team_agent=rta, base_evaluator=_base_evaluator())
         report = session.run(agent, "task")
         # Empty response → score 0.0
         assert report.attack_results[0].robustness_score == 0.0

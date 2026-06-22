@@ -36,8 +36,18 @@ from cambrian.mutator import LLMMutator
 # Simulation helpers
 # ---------------------------------------------------------------------------
 
-_KEYWORDS = ["expert", "step-by-step", "systematic", "analytical", "verify",
-             "precise", "structured", "critical", "thorough", "methodical"]
+_KEYWORDS = [
+    "expert",
+    "step-by-step",
+    "systematic",
+    "analytical",
+    "verify",
+    "precise",
+    "structured",
+    "critical",
+    "thorough",
+    "methodical",
+]
 
 _BEST_PROMPT = " ".join(_KEYWORDS)
 
@@ -96,6 +106,7 @@ def _seeds(n: int) -> list[Genome]:
 # Benchmark runner
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class BenchmarkResult:
     label: str
@@ -118,7 +129,9 @@ def run_benchmark(pop_size: int, n_generations: int, label: str) -> BenchmarkRes
     tracemalloc.start()
     t0 = time.perf_counter()
 
-    best = engine.evolve(seed_genomes=seeds, task="benchmark task", n_generations=n_generations)
+    best = engine.evolve(
+        seed_genomes=seeds, task="benchmark task", n_generations=n_generations
+    )
 
     elapsed = time.perf_counter() - t0
     _, peak_bytes = tracemalloc.get_traced_memory()
@@ -159,10 +172,10 @@ def print_result(r: BenchmarkResult) -> None:
 # ---------------------------------------------------------------------------
 
 SCENARIOS = [
-    (10,  10,  "Small  — 10 agents × 10 gen"),
-    (20,  20,  "Medium — 20 agents × 20 gen"),
-    (20, 100,  "Large  — 20 agents × 100 gen"),
-    (50, 100,  "XLarge — 50 agents × 100 gen"),
+    (10, 10, "Small  — 10 agents × 10 gen"),
+    (20, 20, "Medium — 20 agents × 20 gen"),
+    (20, 100, "Large  — 20 agents × 100 gen"),
+    (50, 100, "XLarge — 50 agents × 100 gen"),
 ]
 
 
@@ -182,7 +195,9 @@ def main() -> None:
     print("\n\n" + "=" * 52)
     print("  RESULTS SUMMARY")
     print("=" * 52)
-    print(f"  {'Scenario':<32}  {'Time':>7}  {'Evals/s':>9}  {'Mem':>7}  {'Fitness':>7}")
+    print(
+        f"  {'Scenario':<32}  {'Time':>7}  {'Evals/s':>9}  {'Mem':>7}  {'Fitness':>7}"
+    )
     print("  " + "-" * 66)
     for r in results:
         print(
@@ -196,9 +211,7 @@ def main() -> None:
     for r in results:
         # 20×100 should finish in under 30s even on slow CI
         if r.n_generations >= 100 and r.pop_size <= 20:
-            assert r.elapsed_s < 30.0, (
-                f"{r.label}: took {r.elapsed_s:.2f}s (limit 30s)"
-            )
+            assert r.elapsed_s < 30.0, f"{r.label}: took {r.elapsed_s:.2f}s (limit 30s)"
         assert r.throughput_evals_per_s > 50, (
             f"{r.label}: throughput {r.throughput_evals_per_s:.0f} evals/s (min 50)"
         )

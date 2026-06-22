@@ -289,7 +289,7 @@ class TestCodeEvaluator:
             entry_point="solution",
             test_cases=[
                 {"input": "hello", "expected": "olleh"},  # fail
-                {"input": "", "expected": ""},             # pass
+                {"input": "", "expected": ""},  # pass
             ],
         )
         ev = CodeEvaluator()
@@ -413,7 +413,9 @@ class TestCodeEvolutionEngine:
 
     def test_elite_n_minimum_one(self) -> None:
         backend = _mock_backend()
-        engine = CodeEvolutionEngine(backend=backend, population_size=3, elite_ratio=0.0)
+        engine = CodeEvolutionEngine(
+            backend=backend, population_size=3, elite_ratio=0.0
+        )
         assert engine._elite_n == 1
 
     def test_best_property_initially_none(self) -> None:
@@ -466,7 +468,9 @@ class TestCodeEvolutionEngine:
 
     def test_test_cases_override_seed(self) -> None:
         backend = _mock_backend("def solution(s): return s[::-1]")
-        engine = CodeEvolutionEngine(backend=backend, population_size=2, timeout=5.0, seed=0)
+        engine = CodeEvolutionEngine(
+            backend=backend, population_size=2, timeout=5.0, seed=0
+        )
         seed = CodeGenome(
             code="def solution(s): return s[::-1]",
             entry_point="solution",

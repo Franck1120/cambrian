@@ -29,18 +29,28 @@ from cambrian.quorum import QuorumSensor
 # ---------------------------------------------------------------------------
 
 _KEYWORDS = [
-    "expert", "step-by-step", "systematic", "analytical", "verify",
-    "precise", "structured", "rigorous", "methodical", "validate",
+    "expert",
+    "step-by-step",
+    "systematic",
+    "analytical",
+    "verify",
+    "precise",
+    "structured",
+    "rigorous",
+    "methodical",
+    "validate",
 ]
 
-_BEST_GENOME = json.dumps({
-    "system_prompt": " ".join(_KEYWORDS),
-    "strategy": "step-by-step",
-    "temperature": 0.7,
-    "model": "gpt-4o-mini",
-    "tools": [],
-    "few_shot_examples": [],
-})
+_BEST_GENOME = json.dumps(
+    {
+        "system_prompt": " ".join(_KEYWORDS),
+        "strategy": "step-by-step",
+        "temperature": 0.7,
+        "model": "gpt-4o-mini",
+        "tools": [],
+        "few_shot_examples": [],
+    }
+)
 
 
 def _mock_backend() -> MagicMock:
@@ -56,7 +66,9 @@ class _KeywordEvaluator(Evaluator):
         return min(1.0, 0.1 + hits * 0.09)
 
 
-def _add_agents_to_memory(memory: EvolutionaryMemory, population: list[Agent], gen: int) -> None:
+def _add_agents_to_memory(
+    memory: EvolutionaryMemory, population: list[Agent], gen: int
+) -> None:
     """Helper: add agents to memory using the correct add_agent API."""
     for agent in population:
         memory.add_agent(
@@ -70,6 +82,7 @@ def _add_agents_to_memory(memory: EvolutionaryMemory, population: list[Agent], g
 # ---------------------------------------------------------------------------
 # Integration tests
 # ---------------------------------------------------------------------------
+
 
 class TestQuorumDreamApoptosisIntegration:
     """Full integration: evolution loop + quorum + dream + apoptosis."""
@@ -169,9 +182,9 @@ class TestQuorumDreamApoptosisIntegration:
         dream = DreamPhase(backend=backend, memory=memory, interval=3, min_fitness=0.0)
         results = [dream.should_dream(gen) for gen in range(1, 10)]
         # Should dream at gen 3, 6, 9
-        assert results[2] is True   # gen 3
-        assert results[5] is True   # gen 6
-        assert results[8] is True   # gen 9
+        assert results[2] is True  # gen 3
+        assert results[5] is True  # gen 6
+        assert results[8] is True  # gen 9
         assert results[0] is False  # gen 1
 
     def test_apoptosis_prunes_below_floor_after_grace(self) -> None:
@@ -183,10 +196,10 @@ class TestQuorumDreamApoptosisIntegration:
             grace_period=grace,
         )
         agents = [Agent(genome=Genome(system_prompt=f"agent {i}")) for i in range(4)]
-        agents[0].fitness = 0.1   # below floor
-        agents[1].fitness = 0.8   # above floor
-        agents[2].fitness = 0.2   # below floor
-        agents[3].fitness = 0.9   # above floor
+        agents[0].fitness = 0.1  # below floor
+        agents[1].fitness = 0.8  # above floor
+        agents[2].fitness = 0.2  # below floor
+        agents[3].fitness = 0.9  # above floor
 
         # Record enough times to exceed grace period
         for _ in range(grace + 1):

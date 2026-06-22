@@ -86,9 +86,7 @@ def fingerprint(agent: Agent) -> str:
     genome = agent.genome
     normalised_prompt = re.sub(r"\s+", " ", genome.system_prompt).strip().lower()
     temp_bucket = round(genome.temperature, 1)
-    raw = (
-        f"{normalised_prompt}|{genome.strategy}|{temp_bucket:.1f}|{genome.model}"
-    )
+    raw = f"{normalised_prompt}|{genome.strategy}|{temp_bucket:.1f}|{genome.model}"
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 
@@ -203,8 +201,7 @@ class ImmuneMemory:
         if cell is None:
             return False
         return (
-            cell.best_fitness < self._threshold
-            and cell.eval_count >= self._min_evals
+            cell.best_fitness < self._threshold and cell.eval_count >= self._min_evals
         )
 
     def recall_score(self, agent: Agent) -> float | None:
@@ -248,7 +245,9 @@ class ImmuneMemory:
         Returns:
             List of :class:`ImmuneCellRecord` sorted by descending best_fitness.
         """
-        return sorted(self._cells.values(), key=lambda c: c.best_fitness, reverse=True)[:n]
+        return sorted(self._cells.values(), key=lambda c: c.best_fitness, reverse=True)[
+            :n
+        ]
 
     def to_dict(self) -> dict[str, Any]:
         """Serialise memory to a plain dict."""
@@ -277,7 +276,4 @@ class ImmuneMemory:
         del self._cells[weakest_fp]
 
     def __repr__(self) -> str:
-        return (
-            f"ImmuneMemory(cells={self.memory_size}, "
-            f"threshold={self._threshold})"
-        )
+        return f"ImmuneMemory(cells={self.memory_size}, threshold={self._threshold})"

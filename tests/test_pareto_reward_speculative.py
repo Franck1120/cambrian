@@ -60,7 +60,9 @@ def _population(n: int = 4) -> list[Agent]:
 
 
 def _vec(agent: Agent, fitness: float = 0.5, brevity: float = 0.5) -> ObjectiveVector:
-    return ObjectiveVector(agent_id=agent.id, scores={"fitness": fitness, "brevity": brevity})
+    return ObjectiveVector(
+        agent_id=agent.id, scores={"fitness": fitness, "brevity": brevity}
+    )
 
 
 def _score(agent: Agent, task: str) -> float:
@@ -142,7 +144,9 @@ class TestObjectiveFunctions:
 class TestFastNonDominatedSort:
     def test_returns_list_of_lists(self) -> None:
         agents = _population(3)
-        vecs = [_vec(a, fitness=0.2 * (i + 1), brevity=0.5) for i, a in enumerate(agents)]
+        vecs = [
+            _vec(a, fitness=0.2 * (i + 1), brevity=0.5) for i, a in enumerate(agents)
+        ]
         fronts = fast_non_dominated_sort(vecs)
         assert isinstance(fronts, list)
         assert all(isinstance(f, list) for f in fronts)
@@ -366,6 +370,7 @@ class TestClipShaper:
     def test_clips_below_min(self) -> None:
         def below_zero(agent: Agent, task: str) -> float:
             return -0.5
+
         shaper = ClipShaper(base_evaluator=below_zero, min_val=0.0, max_val=1.0)
         result = shaper(_agent(), "task")
         assert result >= 0.0

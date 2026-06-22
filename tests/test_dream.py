@@ -148,11 +148,13 @@ class TestParseOffspring:
         assert len(result) == 2
 
     def test_single_object_wraps_to_list(self) -> None:
-        raw = json.dumps({
-            "system_prompt": "Be helpful.",
-            "strategy": "direct",
-            "temperature": 0.7,
-        })
+        raw = json.dumps(
+            {
+                "system_prompt": "Be helpful.",
+                "strategy": "direct",
+                "temperature": 0.7,
+            }
+        )
         result = DreamPhase._parse_offspring(raw, 1)
         assert len(result) == 1
         assert result[0]["system_prompt"] == "Be helpful."
@@ -195,10 +197,20 @@ class TestDream:
 
     def test_temperature_clamped_to_valid_range(self) -> None:
         mem = _mock_memory([_ancestor(1)])
-        raw = json.dumps([
-            {"system_prompt": "p1", "strategy": "s1", "temperature": 5.0},  # too high
-            {"system_prompt": "p2", "strategy": "s2", "temperature": -1.0},  # too low
-        ])
+        raw = json.dumps(
+            [
+                {
+                    "system_prompt": "p1",
+                    "strategy": "s1",
+                    "temperature": 5.0,
+                },  # too high
+                {
+                    "system_prompt": "p2",
+                    "strategy": "s2",
+                    "temperature": -1.0,
+                },  # too low
+            ]
+        )
         backend = _mock_backend(raw)
         dp = DreamPhase(backend, mem)
         result = dp.dream("task", n_offspring=2)
@@ -250,7 +262,10 @@ class TestDream:
         dp.dream("some task", n_offspring=1)
         call_kwargs = backend.generate.call_args[1]
         assert "system" in call_kwargs
-        assert "dream" in call_kwargs["system"].lower() or "recombination" in call_kwargs["system"].lower()
+        assert (
+            "dream" in call_kwargs["system"].lower()
+            or "recombination" in call_kwargs["system"].lower()
+        )
 
     def test_system_prompt_used_from_genome_snapshot(self) -> None:
         from cambrian.agent import Genome
@@ -258,9 +273,15 @@ class TestDream:
         ancestor = _ancestor(1, 0.95)
         ancestor["genome"]["system_prompt"] = "Think step by step."
         mem = _mock_memory([ancestor])
-        raw = json.dumps([
-            {"system_prompt": "Dream-inspired prompt.", "strategy": "cot", "temperature": 0.8}
-        ])
+        raw = json.dumps(
+            [
+                {
+                    "system_prompt": "Dream-inspired prompt.",
+                    "strategy": "cot",
+                    "temperature": 0.8,
+                }
+            ]
+        )
         backend = _mock_backend(raw)
         dp = DreamPhase(backend, mem)
         result = dp.dream("task", n_offspring=1)

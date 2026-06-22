@@ -162,7 +162,9 @@ class TestUpdate:
         )
         rate = 0.8
         for i in range(5):
-            rate = sensor.update([0.5] * 5, current_rate=rate)  # converged → boost each time
+            rate = sensor.update(
+                [0.5] * 5, current_rate=rate
+            )  # converged → boost each time
         assert len(sensor.history) == 5
         # Rate should have grown (or hit max)
         assert rate >= 0.8

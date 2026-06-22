@@ -183,11 +183,7 @@ class JSONLogger:
         best_f = max(valid) if valid else 0.0
         mean_f = sum(valid) / n if n else 0.0
         min_f = min(valid) if valid else 0.0
-        std_f = (
-            (sum((f - mean_f) ** 2 for f in valid) / n) ** 0.5
-            if n > 1
-            else 0.0
-        )
+        std_f = (sum((f - mean_f) ** 2 for f in valid) / n) ** 0.5 if n > 1 else 0.0
 
         entry: dict[str, Any] = {
             "ts": time.time(),

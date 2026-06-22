@@ -1,5 +1,6 @@
 # Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.annealing — AnnealingSchedule and AnnealingSelector."""
+
 from __future__ import annotations
 
 import random
@@ -52,15 +53,21 @@ class TestTemperatureCurves:
         assert pytest.approx(s2.temperature(5), abs=1e-9) == 1.5
 
     def test_exponential_starts_at_T_max(self) -> None:
-        s = AnnealingSchedule(T_max=2.0, T_min=0.01, n_steps=10, schedule_type="exponential")
+        s = AnnealingSchedule(
+            T_max=2.0, T_min=0.01, n_steps=10, schedule_type="exponential"
+        )
         assert pytest.approx(s.temperature(0), abs=1e-9) == 2.0
 
     def test_exponential_ends_at_T_min(self) -> None:
-        s = AnnealingSchedule(T_max=2.0, T_min=0.01, n_steps=10, schedule_type="exponential")
+        s = AnnealingSchedule(
+            T_max=2.0, T_min=0.01, n_steps=10, schedule_type="exponential"
+        )
         assert pytest.approx(s.temperature(10), abs=1e-6) == 0.01
 
     def test_exponential_monotone_decreasing(self) -> None:
-        s = AnnealingSchedule(T_max=2.0, T_min=0.01, n_steps=10, schedule_type="exponential")
+        s = AnnealingSchedule(
+            T_max=2.0, T_min=0.01, n_steps=10, schedule_type="exponential"
+        )
         temps = [s.temperature(t) for t in range(11)]
         for i in range(len(temps) - 1):
             assert temps[i] >= temps[i + 1]

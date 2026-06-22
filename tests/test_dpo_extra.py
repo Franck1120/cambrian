@@ -113,20 +113,30 @@ class TestDPOSelector:
         result = selector.apply(population, "task")
         after = {a.id: (a.fitness or 0.0) for a in result}
         # At least one agent should have had its fitness modified
-        any_changed = any(abs(after.get(aid, 0.0) - before.get(aid, 0.0)) > 1e-9 for aid in before)
+        any_changed = any(
+            abs(after.get(aid, 0.0) - before.get(aid, 0.0)) > 1e-9 for aid in before
+        )
         assert any_changed
 
     def test_compute_dpo_reward_is_float(self) -> None:
         selector = DPOSelector()
-        pair = DPOPair(chosen=_agent(fitness=0.8), rejected=_agent(fitness=0.3),
-                       task="task", margin=0.5)
+        pair = DPOPair(
+            chosen=_agent(fitness=0.8),
+            rejected=_agent(fitness=0.3),
+            task="task",
+            margin=0.5,
+        )
         reward = selector.compute_dpo_reward(pair)
         assert isinstance(reward, float)
 
     def test_compute_dpo_reward_positive_on_good_pair(self) -> None:
         selector = DPOSelector(beta=0.1)
-        pair = DPOPair(chosen=_agent(fitness=0.9), rejected=_agent(fitness=0.2),
-                       task="task", margin=0.7)
+        pair = DPOPair(
+            chosen=_agent(fitness=0.9),
+            rejected=_agent(fitness=0.2),
+            task="task",
+            margin=0.7,
+        )
         reward = selector.compute_dpo_reward(pair)
         # High margin pair should produce positive reward
         assert isinstance(reward, float)

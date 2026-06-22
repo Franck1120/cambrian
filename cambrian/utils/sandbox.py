@@ -24,18 +24,20 @@ from dataclasses import dataclass
 
 # Environment variables forwarded to the sandbox subprocess.
 # Everything NOT in this set (including all API keys) is stripped.
-_SANDBOX_SAFE_KEYS: frozenset[str] = frozenset({
-    "PATH",
-    "PYTHONPATH",
-    "SYSTEMROOT",   # Windows: required for subprocess to start
-    "TEMP",
-    "TMP",
-    "TMPDIR",       # Unix fallback
-    "HOME",         # some libraries need this
-    "LANG",
-    "LC_ALL",
-    "LC_CTYPE",
-})
+_SANDBOX_SAFE_KEYS: frozenset[str] = frozenset(
+    {
+        "PATH",
+        "PYTHONPATH",
+        "SYSTEMROOT",  # Windows: required for subprocess to start
+        "TEMP",
+        "TMP",
+        "TMPDIR",  # Unix fallback
+        "HOME",  # some libraries need this
+        "LANG",
+        "LC_ALL",
+        "LC_CTYPE",
+    }
+)
 
 
 @dataclass

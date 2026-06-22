@@ -147,8 +147,7 @@ def on_generation(gen: int, population: list[Agent]) -> None:
     best = max(scores)
     mean = sum(scores) / len(scores)
     gen_stats.append({"gen": gen, "best": best, "mean": mean})
-    print(f"  Gen {gen:2d}  best={best:.4f}  mean={mean:.4f}  "
-          f"pop={len(population)}")
+    print(f"  Gen {gen:2d}  best={best:.4f}  mean={mean:.4f}  pop={len(population)}")
 
 
 print("Evolution progress:")
@@ -172,7 +171,9 @@ print("=" * 70)
 print("Results:")
 print(f"  Initial best fitness : {initial_best:.4f}")
 print(f"  Final best fitness   : {final_best:.4f}")
-print(f"  Total improvement    : +{improvement:.4f} ({improvement / initial_best * 100:.1f}%)")
+print(
+    f"  Total improvement    : +{improvement:.4f} ({improvement / initial_best * 100:.1f}%)"
+)
 print()
 print("  Best agent genome (first 80 chars):")
 print(f"  {best_agent.genome.system_prompt[:80]!r}")

@@ -45,7 +45,9 @@ def _make_agent(
     temperature: float = 0.7,
     fitness: float | None = None,
 ) -> Agent:
-    genome = Genome(system_prompt=system_prompt, strategy=strategy, temperature=temperature)
+    genome = Genome(
+        system_prompt=system_prompt, strategy=strategy, temperature=temperature
+    )
     agent = Agent(genome=genome, backend=_EchoBackend())
     if fitness is not None:
         agent.fitness = fitness
@@ -74,6 +76,7 @@ class TestStigmergyTrace:
 class TestEvolutionaryMemoryTraces:
     def _make_memory(self) -> Any:
         from cambrian.memory import EvolutionaryMemory
+
         return EvolutionaryMemory(name="test")
 
     def test_add_trace_increases_count(self) -> None:
@@ -154,12 +157,14 @@ class TestMutatorStigmergy:
 
             def generate(self, prompt: str, **kwargs: Any) -> str:
                 captured_prompts.append(prompt)
-                return json.dumps({
-                    "system_prompt": "improved",
-                    "strategy": "step-by-step",
-                    "temperature": 0.7,
-                    "model": "gpt-4o-mini",
-                })
+                return json.dumps(
+                    {
+                        "system_prompt": "improved",
+                        "strategy": "step-by-step",
+                        "temperature": 0.7,
+                        "model": "gpt-4o-mini",
+                    }
+                )
 
         mem = EvolutionaryMemory()
         mem.add_trace("a1", "Always be concise and precise.", 0.92)
@@ -174,7 +179,10 @@ class TestMutatorStigmergy:
         mutator.mutate(agent, task="solve task")
 
         assert captured_prompts, "No prompt was captured"
-        assert "Stigmergy" in captured_prompts[0] or "stigmergy" in captured_prompts[0].lower()
+        assert (
+            "Stigmergy" in captured_prompts[0]
+            or "stigmergy" in captured_prompts[0].lower()
+        )
         assert "Always be concise" in captured_prompts[0]
 
 
@@ -316,9 +324,7 @@ class TestMakeStandardLayer:
 
         layer = make_standard_layer()
         genome = Genome()
-        ctx = EpigenomicContext(
-            generation=5, extra={"strategy_entropy": 0.1}
-        )
+        ctx = EpigenomicContext(generation=5, extra={"strategy_entropy": 0.1})
         result = layer.express(genome, ctx)
         assert "diversity" in result.lower() or "novel" in result.lower()
 
@@ -586,7 +592,9 @@ class TestBaldwinEvaluator:
     def test_repr(self) -> None:
         from cambrian.evaluators.baldwin import BaldwinEvaluator
 
-        ev = BaldwinEvaluator(base_evaluator=lambda a, t: 0.5, n_trials=3, baldwin_bonus=0.1)
+        ev = BaldwinEvaluator(
+            base_evaluator=lambda a, t: 0.5, n_trials=3, baldwin_bonus=0.1
+        )
         assert "n_trials=3" in repr(ev)
         assert "0.1" in repr(ev)
 
@@ -620,21 +628,27 @@ class TestGeminiBackend:
         from cambrian.backends.gemini import GeminiBackend
 
         # Patching google.genai import to avoid ImportError
-        with patch.dict("sys.modules", {"google": MagicMock(), "google.genai": MagicMock()}):
+        with patch.dict(
+            "sys.modules", {"google": MagicMock(), "google.genai": MagicMock()}
+        ):
             backend = GeminiBackend()
             assert backend.model_name == "gemini-2.0-flash"
 
     def test_custom_model(self) -> None:
         from cambrian.backends.gemini import GeminiBackend
 
-        with patch.dict("sys.modules", {"google": MagicMock(), "google.genai": MagicMock()}):
+        with patch.dict(
+            "sys.modules", {"google": MagicMock(), "google.genai": MagicMock()}
+        ):
             backend = GeminiBackend(model="gemini-1.5-pro")
             assert backend.model_name == "gemini-1.5-pro"
 
     def test_repr(self) -> None:
         from cambrian.backends.gemini import GeminiBackend
 
-        with patch.dict("sys.modules", {"google": MagicMock(), "google.genai": MagicMock()}):
+        with patch.dict(
+            "sys.modules", {"google": MagicMock(), "google.genai": MagicMock()}
+        ):
             backend = GeminiBackend(model="gemini-2.0-flash")
             assert "gemini-2.0-flash" in repr(backend)
 
@@ -666,11 +680,14 @@ class TestGeminiBackend:
         mock_google = MagicMock()
         mock_google.genai = mock_genai  # attribute chain path
 
-        with patch.dict("sys.modules", {
-            "google": mock_google,
-            "google.genai": mock_genai,
-            "google.genai.types": mock_types,
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "google": mock_google,
+                "google.genai": mock_genai,
+                "google.genai.types": mock_types,
+            },
+        ):
             backend = GeminiBackend(api_key="test-key")
             result = backend.generate("Write hello.")
 
@@ -683,6 +700,7 @@ class TestGeminiBackend:
 class TestDashboardModule:
     def test_module_importable(self) -> None:
         import cambrian.dashboard as dash
+
         assert callable(dash.run_dashboard)
         assert callable(dash._build_app)
 
@@ -713,6 +731,7 @@ class TestDashboardModule:
         with patch.dict("sys.modules", {"streamlit": mock_st}):
             import importlib
             import cambrian.dashboard as dash
+
             importlib.reload(dash)
             dash._build_app("/nonexistent/path/to/log.json")
 
@@ -728,12 +747,16 @@ class TestDashboardModule:
             {
                 "generation": 0,
                 "agents": [
-                    {"id": "a1", "fitness": 0.6, "genome": {
-                        "system_prompt": "Hello.",
-                        "model": "gpt-4o-mini",
-                        "temperature": 0.7,
-                        "strategy": "step-by-step",
-                    }},
+                    {
+                        "id": "a1",
+                        "fitness": 0.6,
+                        "genome": {
+                            "system_prompt": "Hello.",
+                            "model": "gpt-4o-mini",
+                            "temperature": 0.7,
+                            "strategy": "step-by-step",
+                        },
+                    },
                 ],
             }
         ]
@@ -760,6 +783,7 @@ class TestDashboardModule:
             with patch.dict("sys.modules", {"streamlit": mock_st}):
                 import importlib
                 import cambrian.dashboard as dash
+
                 importlib.reload(dash)
                 dash._build_app(tmp_path)
         finally:
@@ -803,7 +827,9 @@ class TestCLIDashboardCommand:
         try:
             runner = CliRunner()
             # dashboard with missing log file but streamlit missing — gets ClickException
-            result = runner.invoke(main, ["dashboard", "--no-browser", "--log-file", "no.json"])
+            result = runner.invoke(
+                main, ["dashboard", "--no-browser", "--log-file", "no.json"]
+            )
             # Either ImportError (no streamlit) or other — should not crash with traceback
             assert result.exit_code != 0 or "no.json" in result.output
         finally:
@@ -819,6 +845,7 @@ class TestMypyStrictRound5:
 
     def test_stigmergy_imports(self) -> None:
         from cambrian.memory import StigmergyTrace, EvolutionaryMemory
+
         assert StigmergyTrace
         assert EvolutionaryMemory
 
@@ -828,21 +855,25 @@ class TestMypyStrictRound5:
             EpigenomicContext,
             make_standard_layer,
         )
+
         assert EpigeneticLayer
         assert EpigenomicContext
         assert make_standard_layer
 
     def test_immune_imports(self) -> None:
         from cambrian.immune import ImmuneMemory, fingerprint, ImmuneCellRecord
+
         assert ImmuneMemory
         assert fingerprint
         assert ImmuneCellRecord
 
     def test_baldwin_imports(self) -> None:
         from cambrian.evaluators.baldwin import BaldwinEvaluator
+
         assert BaldwinEvaluator
 
     def test_gemini_imports_without_sdk(self) -> None:
         # Should be importable at module level (lazy SDK import in generate())
         import cambrian.backends.gemini as gm
+
         assert gm.GeminiBackend

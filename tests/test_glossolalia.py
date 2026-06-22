@@ -1,5 +1,6 @@
 # Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.glossolalia — GlossaloliaReasoner and GlossaloliaEvaluator."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock
@@ -74,7 +75,9 @@ class TestReason:
     def test_latent_temperature_used(self) -> None:
         b = MagicMock()
         b.generate.side_effect = ["lat", "syn"]
-        r = GlossaloliaReasoner(backend=b, latent_temperature=1.5, synth_temperature=0.3)
+        r = GlossaloliaReasoner(
+            backend=b, latent_temperature=1.5, synth_temperature=0.3
+        )
         r.reason("task")
         calls = b.generate.call_args_list
         assert calls[0][1]["temperature"] == 1.5

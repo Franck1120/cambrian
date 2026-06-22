@@ -10,6 +10,7 @@ Covers boundary conditions and less-obvious behaviour across:
 - hgt (HGTPool best_for cross-domain fallback)
 - transgenerational (multi-generation decay chain)
 """
+
 from __future__ import annotations
 
 import pytest
@@ -219,15 +220,21 @@ class TestNeuromodulationEdgeCases:
 
 class TestAnnealingEdgeCases:
     def test_cosine_at_zero_is_t_max(self) -> None:
-        sched = AnnealingSchedule(T_max=1.0, T_min=0.1, n_steps=10, schedule_type="cosine")
+        sched = AnnealingSchedule(
+            T_max=1.0, T_min=0.1, n_steps=10, schedule_type="cosine"
+        )
         assert sched.temperature(0) == pytest.approx(1.0)
 
     def test_cosine_at_n_steps_is_t_min(self) -> None:
-        sched = AnnealingSchedule(T_max=1.0, T_min=0.1, n_steps=10, schedule_type="cosine")
+        sched = AnnealingSchedule(
+            T_max=1.0, T_min=0.1, n_steps=10, schedule_type="cosine"
+        )
         assert sched.temperature(10) == pytest.approx(0.1, abs=1e-6)
 
     def test_exponential_monotonically_decreasing(self) -> None:
-        sched = AnnealingSchedule(T_max=1.0, T_min=0.01, n_steps=20, schedule_type="exponential")
+        sched = AnnealingSchedule(
+            T_max=1.0, T_min=0.01, n_steps=20, schedule_type="exponential"
+        )
         temps = [sched.temperature(t) for t in range(21)]
         assert all(temps[i] >= temps[i + 1] for i in range(20))
 

@@ -260,7 +260,11 @@ class TournamentRecord:
 
     def win_rate(self, agent_id: str) -> float:
         """Win rate for *agent_id* in ``[0.0, 1.0]``."""
-        total = self.wins.get(agent_id, 0) + self.losses.get(agent_id, 0) + self.draws.get(agent_id, 0)
+        total = (
+            self.wins.get(agent_id, 0)
+            + self.losses.get(agent_id, 0)
+            + self.draws.get(agent_id, 0)
+        )
         if total == 0:
             return 0.0
         return self.wins.get(agent_id, 0) / total
@@ -314,8 +318,12 @@ def run_tournament(
             record.matches.append(result)
 
             # Tally
-            record.total_score[a.id] = record.total_score.get(a.id, 0.0) + result.score_a
-            record.total_score[b.id] = record.total_score.get(b.id, 0.0) + result.score_b
+            record.total_score[a.id] = (
+                record.total_score.get(a.id, 0.0) + result.score_a
+            )
+            record.total_score[b.id] = (
+                record.total_score.get(b.id, 0.0) + result.score_b
+            )
 
             if result.is_draw:
                 record.draws[a.id] = record.draws.get(a.id, 0) + 1

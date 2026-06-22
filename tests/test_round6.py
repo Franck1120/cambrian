@@ -22,6 +22,7 @@ import pytest
 
 def _make_genome(**kwargs: Any):  # type: ignore[no-untyped-def]
     from cambrian.agent import Genome
+
     defaults = dict(
         system_prompt="You solve problems step by step.",
         strategy="chain-of-thought",
@@ -34,6 +35,7 @@ def _make_genome(**kwargs: Any):  # type: ignore[no-untyped-def]
 
 def _make_agent(fitness: float = 0.5, **kwargs: Any):  # type: ignore[no-untyped-def]
     from cambrian.agent import Agent
+
     backend = MagicMock()
     backend.generate.return_value = "answer"
     agent = Agent(genome=_make_genome(**kwargs), backend=backend)
@@ -49,34 +51,40 @@ def _make_agent(fitness: float = 0.5, **kwargs: Any):  # type: ignore[no-untyped
 class TestAgentCard:
     def test_matches_domain(self):
         from cambrian.a2a import AgentCard
+
         card = AgentCard(domains=["python", "code"], confidence=0.8)
         assert card.matches("Write a python function")
         assert not card.matches("Compose a haiku")
 
     def test_matches_confidence_threshold(self):
         from cambrian.a2a import AgentCard
+
         card = AgentCard(domains=["code"], confidence=0.3)
         assert not card.matches("code review", threshold=0.5)
 
     def test_relevance_score_zero_for_no_match(self):
         from cambrian.a2a import AgentCard
+
         card = AgentCard(domains=["math"], confidence=0.9)
         assert card.relevance_score("write a poem") == 0.0
 
     def test_relevance_score_partial_match(self):
         from cambrian.a2a import AgentCard
+
         card = AgentCard(domains=["python", "math", "logic"], confidence=1.0)
         score = card.relevance_score("write a python script")
         assert 0.0 < score < 1.0
 
     def test_relevance_score_full_match(self):
         from cambrian.a2a import AgentCard
+
         card = AgentCard(domains=["python"], confidence=1.0)
         score = card.relevance_score("write a python function")
         assert score == 1.0
 
     def test_empty_domains_returns_zero(self):
         from cambrian.a2a import AgentCard
+
         card = AgentCard(domains=[], confidence=0.8)
         assert card.relevance_score("anything") == 0.0
 
@@ -84,8 +92,13 @@ class TestAgentCard:
 class TestAgentNetwork:
     def _network_with_agents(self):
         from cambrian.a2a import AgentCard, AgentNetwork
+
         net = AgentNetwork()
-        for fitness, domains in [(0.9, ["python"]), (0.7, ["math"]), (0.5, ["writing"])]:
+        for fitness, domains in [
+            (0.9, ["python"]),
+            (0.7, ["math"]),
+            (0.5, ["writing"]),
+        ]:
             agent = _make_agent(fitness=fitness)
             card = AgentCard(domains=domains, confidence=fitness)
             net.register(agent, card)
@@ -93,12 +106,14 @@ class TestAgentNetwork:
 
     def test_register_and_size(self):
         from cambrian.a2a import AgentNetwork
+
         net = AgentNetwork()
         net.register(_make_agent())
         assert net.network_size == 1
 
     def test_unregister(self):
         from cambrian.a2a import AgentNetwork
+
         net = AgentNetwork()
         agent = _make_agent()
         net.register(agent)
@@ -120,6 +135,7 @@ class TestAgentNetwork:
 
     def test_route_empty_network_returns_none(self):
         from cambrian.a2a import AgentNetwork
+
         net = AgentNetwork()
         assert net.route("task") is None
 
@@ -131,6 +147,7 @@ class TestAgentNetwork:
 
     def test_delegate_no_agents_gives_error_metadata(self):
         from cambrian.a2a import AgentNetwork
+
         net = AgentNetwork()
         msg = net.delegate("task")
         assert "error" in msg.metadata
@@ -147,6 +164,7 @@ class TestAgentNetwork:
 
     def test_chain_pipelines_output(self):
         from cambrian.a2a import AgentNetwork
+
         net = AgentNetwork()
         a1 = _make_agent()
         a2 = _make_agent()
@@ -160,18 +178,21 @@ class TestAgentNetwork:
 
     def test_chain_raises_on_empty(self):
         from cambrian.a2a import AgentNetwork
+
         net = AgentNetwork()
         with pytest.raises(ValueError, match="at least one"):
             net.chain("task", agent_ids=[])
 
     def test_chain_raises_on_too_many_hops(self):
         from cambrian.a2a import AgentNetwork
+
         net = AgentNetwork(max_hops=2)
         with pytest.raises(ValueError, match="max_hops"):
             net.chain("task", agent_ids=["a", "b", "c"])
 
     def test_majority_vote_returns_most_common(self):
         from cambrian.a2a import AgentNetwork
+
         net = AgentNetwork()
         for _ in range(3):
             a = _make_agent()
@@ -196,6 +217,7 @@ class TestAgentNetwork:
 
     def test_register_population(self):
         from cambrian.a2a import AgentNetwork
+
         net = AgentNetwork()
         agents = [_make_agent(fitness=0.5 + i * 0.1) for i in range(4)]
         net.register_population(agents)
@@ -203,10 +225,9 @@ class TestAgentNetwork:
 
     def test_auto_card_generation(self):
         from cambrian.a2a import AgentNetwork
+
         net = AgentNetwork()
-        agent = _make_agent(
-            system_prompt="You are a Python coding assistant."
-        )
+        agent = _make_agent(system_prompt="You are a Python coding assistant.")
         net.register_population([agent])
         assert net.network_size == 1
 
@@ -219,11 +240,13 @@ class TestAgentNetwork:
 class TestCLITool:
     def test_name_validation(self):
         from cambrian.cli_tools import CLITool
+
         with pytest.raises(ValueError, match="alphanumeric"):
             CLITool(name="bad-name", command_template="echo {input}")
 
     def test_run_success(self):
         from cambrian.cli_tools import CLITool
+
         tool = CLITool(
             name="echo_tool",
             command_template="echo hello",
@@ -235,12 +258,14 @@ class TestCLITool:
 
     def test_run_timeout(self):
         from cambrian.cli_tools import CLITool
+
         tool = CLITool(name="slow_tool", command_template="echo {input}", timeout=0.001)
         result = tool.run("x")
         assert isinstance(result.output, str)
 
     def test_template_error(self):
         from cambrian.cli_tools import CLITool
+
         tool = CLITool(name="bad_tpl", command_template="{bad_key}")
         result = tool.run("anything")
         assert not result.ok
@@ -248,12 +273,14 @@ class TestCLITool:
 
     def test_call_shorthand(self):
         from cambrian.cli_tools import CLITool
+
         tool = CLITool(name="echotool", command_template="echo {input}", shell=True)
         out = tool("world")
         assert isinstance(out, str)
 
     def test_call_count_increments(self):
         from cambrian.cli_tools import CLITool
+
         tool = CLITool(name="counter", command_template="echo {input}", shell=True)
         tool.run("a")
         tool.run("b")
@@ -261,6 +288,7 @@ class TestCLITool:
 
     def test_max_output_chars_truncation(self):
         from cambrian.cli_tools import CLITool
+
         tool = CLITool(
             name="big_echo",
             command_template="echo {input}",
@@ -274,12 +302,14 @@ class TestCLITool:
 class TestCLIToolkit:
     def _make_toolkit(self):
         from cambrian.cli_tools import CLITool, CLIToolkit
+
         toolkit = CLIToolkit()
         toolkit.add(CLITool(name="echo_t", command_template="echo {input}", shell=True))
         return toolkit
 
     def test_add_and_get(self):
         from cambrian.cli_tools import CLITool, CLIToolkit
+
         tk = CLIToolkit()
         tool = CLITool(name="mytool", command_template="echo {input}", shell=True)
         tk.add(tool)
@@ -287,6 +317,7 @@ class TestCLIToolkit:
 
     def test_get_missing_returns_none(self):
         from cambrian.cli_tools import CLIToolkit
+
         tk = CLIToolkit()
         assert tk.get("nonexistent") is None
 
@@ -322,11 +353,13 @@ class TestCLIToolkit:
 
     def test_make_python_tool_factory(self):
         from cambrian.cli_tools import make_python_tool
+
         tool = make_python_tool()
         assert tool.name == "python_exec"
 
     def test_make_shell_tool_factory(self):
         from cambrian.cli_tools import make_shell_tool
+
         tool = make_shell_tool()
         assert tool.name == "shell"
 
@@ -339,6 +372,7 @@ class TestCLIToolkit:
 class TestObjectiveVector:
     def test_dominates_simple(self):
         from cambrian.pareto import ObjectiveVector
+
         v1 = ObjectiveVector("a", scores={"x": 0.9, "y": 0.8})
         v2 = ObjectiveVector("b", scores={"x": 0.5, "y": 0.5})
         assert v1.dominates(v2)
@@ -346,6 +380,7 @@ class TestObjectiveVector:
 
     def test_no_dominance_when_tradeoff(self):
         from cambrian.pareto import ObjectiveVector
+
         v1 = ObjectiveVector("a", scores={"x": 0.9, "y": 0.1})
         v2 = ObjectiveVector("b", scores={"x": 0.1, "y": 0.9})
         assert not v1.dominates(v2)
@@ -353,6 +388,7 @@ class TestObjectiveVector:
 
     def test_equal_scores_no_dominance(self):
         from cambrian.pareto import ObjectiveVector
+
         v1 = ObjectiveVector("a", scores={"x": 0.5})
         v2 = ObjectiveVector("b", scores={"x": 0.5})
         assert not v1.dominates(v2)
@@ -361,6 +397,7 @@ class TestObjectiveVector:
 class TestParetoFront:
     def test_add_dominated_rejected(self):
         from cambrian.pareto import ObjectiveVector, ParetoFront
+
         front = ParetoFront()
         v1 = ObjectiveVector("a", scores={"f": 0.9})
         v2 = ObjectiveVector("b", scores={"f": 0.5})
@@ -370,6 +407,7 @@ class TestParetoFront:
 
     def test_new_dominant_evicts_old(self):
         from cambrian.pareto import ObjectiveVector, ParetoFront
+
         front = ParetoFront()
         v1 = ObjectiveVector("a", scores={"f": 0.5})
         v2 = ObjectiveVector("b", scores={"f": 0.9})
@@ -380,6 +418,7 @@ class TestParetoFront:
 
     def test_tradeoff_both_admitted(self):
         from cambrian.pareto import ObjectiveVector, ParetoFront
+
         front = ParetoFront()
         v1 = ObjectiveVector("a", scores={"x": 0.9, "y": 0.1})
         v2 = ObjectiveVector("b", scores={"x": 0.1, "y": 0.9})
@@ -389,6 +428,7 @@ class TestParetoFront:
 
     def test_agents_method(self):
         from cambrian.pareto import ObjectiveVector, ParetoFront
+
         front = ParetoFront()
         a1 = _make_agent(fitness=0.9)
         v1 = ObjectiveVector(a1.id, scores={"f": 0.9})
@@ -400,6 +440,7 @@ class TestParetoFront:
 class TestNSGAII:
     def _make_vectors(self):
         from cambrian.pareto import ObjectiveVector
+
         return [
             ObjectiveVector("a", scores={"perf": 0.9, "brevity": 0.3}),
             ObjectiveVector("b", scores={"perf": 0.7, "brevity": 0.7}),
@@ -409,6 +450,7 @@ class TestNSGAII:
 
     def test_non_dominated_sort_ranks(self):
         from cambrian.pareto import fast_non_dominated_sort
+
         vecs = self._make_vectors()
         fronts = fast_non_dominated_sort(vecs)
         # d is dominated by all others
@@ -418,6 +460,7 @@ class TestNSGAII:
 
     def test_crowding_distance_boundaries_are_inf(self):
         from cambrian.pareto import ObjectiveVector, crowding_distance
+
         front = [
             ObjectiveVector("a", scores={"f": 0.1}),
             ObjectiveVector("b", scores={"f": 0.5}),
@@ -430,6 +473,7 @@ class TestNSGAII:
 
     def test_nsga2_select_returns_target_size(self):
         from cambrian.pareto import nsga2_select
+
         vecs = self._make_vectors()
         population = [_make_agent() for _ in vecs]
         for agent, vec in zip(population, vecs):
@@ -439,11 +483,13 @@ class TestNSGAII:
 
     def test_fitness_objective(self):
         from cambrian.pareto import fitness_objective
+
         agent = _make_agent(fitness=0.75)
         assert fitness_objective(agent) == 0.75
 
     def test_brevity_objective(self):
         from cambrian.pareto import brevity_objective
+
         short_agent = _make_agent(system_prompt="Hi")
         long_agent = _make_agent(system_prompt="x" * 10000)
         assert brevity_objective(short_agent) > brevity_objective(long_agent)
@@ -451,6 +497,7 @@ class TestNSGAII:
 
     def test_attach_diversity_scores(self):
         from cambrian.pareto import ObjectiveVector, attach_diversity_scores
+
         agents = [
             _make_agent(system_prompt="Python expert agent."),
             _make_agent(system_prompt="Math genius assistant."),
@@ -461,6 +508,7 @@ class TestNSGAII:
 
     def test_empty_population_returns_empty(self):
         from cambrian.pareto import nsga2_select
+
         assert nsga2_select([], [], target_size=5) == []
 
 
@@ -472,6 +520,7 @@ class TestNSGAII:
 class TestIsland:
     def test_best_agent(self):
         from cambrian.archipelago import Island
+
         island = Island(island_id=0)
         a1 = _make_agent(fitness=0.3)
         a2 = _make_agent(fitness=0.8)
@@ -480,6 +529,7 @@ class TestIsland:
 
     def test_top_agents(self):
         from cambrian.archipelago import Island
+
         island = Island(island_id=0)
         agents = [_make_agent(fitness=i * 0.1) for i in range(5)]
         island.population = agents
@@ -489,6 +539,7 @@ class TestIsland:
 
     def test_receive_migrants_replaces_weakest(self):
         from cambrian.archipelago import Island
+
         island = Island(island_id=0)
         weaklings = [_make_agent(fitness=0.1) for _ in range(3)]
         island.population = weaklings
@@ -499,6 +550,7 @@ class TestIsland:
 
     def test_best_agent_none_when_empty(self):
         from cambrian.archipelago import Island
+
         island = Island(island_id=0)
         assert island.best_agent() is None
 
@@ -526,22 +578,26 @@ class TestArchipelago:
 
     def test_topology_validation(self):
         from cambrian.archipelago import Archipelago
+
         with pytest.raises(ValueError, match="topology"):
             Archipelago(engine_factory=MagicMock, topology="invalid")
 
     def test_migration_rate_validation(self):
         from cambrian.archipelago import Archipelago
+
         with pytest.raises(ValueError, match="migration_rate"):
             Archipelago(engine_factory=MagicMock, migration_rate=1.5)
 
     def test_neighbours_ring(self):
         from cambrian.archipelago import Archipelago
+
         arch = Archipelago(engine_factory=MagicMock, n_islands=4, topology="ring")
         assert arch._neighbours(0) == [1]
         assert arch._neighbours(3) == [0]
 
     def test_neighbours_all_to_all(self):
         from cambrian.archipelago import Archipelago
+
         arch = Archipelago(engine_factory=MagicMock, n_islands=4, topology="all_to_all")
         neighbours = arch._neighbours(0)
         assert sorted(neighbours) == [1, 2, 3]
@@ -570,18 +626,21 @@ class TestArchipelago:
 class TestSpeculativeResult:
     def test_best_fitness(self):
         from cambrian.speculative import SpeculativeResult
+
         winner = _make_agent(fitness=0.9)
         r = SpeculativeResult(winner=winner, fitness_values=[0.5, 0.9, 0.7], k=3)
         assert r.best_fitness == 0.9
 
     def test_mean_fitness(self):
         from cambrian.speculative import SpeculativeResult
+
         winner = _make_agent(fitness=0.9)
         r = SpeculativeResult(winner=winner, fitness_values=[0.5, 0.9, None], k=3)
         assert r.mean_fitness == pytest.approx(0.7, abs=0.01)
 
     def test_improvement_over_mean(self):
         from cambrian.speculative import SpeculativeResult
+
         winner = _make_agent(fitness=0.9)
         r = SpeculativeResult(winner=winner, fitness_values=[0.7, 0.9], k=2)
         assert r.improvement_over_mean == pytest.approx(0.1, abs=0.01)
@@ -681,11 +740,13 @@ class TestSpeculativeMutator:
 
     def test_k_candidates_property(self):
         from cambrian.speculative import SpeculativeMutator
+
         m = SpeculativeMutator(backend=MagicMock(), k_candidates=5)
         assert m.k_candidates == 5
 
     def test_repr(self):
         from cambrian.speculative import SpeculativeMutator
+
         m = SpeculativeMutator(backend=MagicMock(), k_candidates=3)
         assert "SpeculativeMutator" in repr(m)
         assert "k=3" in repr(m)
@@ -699,16 +760,19 @@ class TestSpeculativeMutator:
 class TestClipShaper:
     def test_clips_high(self):
         from cambrian.reward_shaping import ClipShaper
+
         shaper = ClipShaper(lambda a, t: 1.5)
         assert shaper(_make_agent(), "t") == 1.0
 
     def test_clips_low(self):
         from cambrian.reward_shaping import ClipShaper
+
         shaper = ClipShaper(lambda a, t: -0.5)
         assert shaper(_make_agent(), "t") == 0.0
 
     def test_passes_through_in_range(self):
         from cambrian.reward_shaping import ClipShaper
+
         shaper = ClipShaper(lambda a, t: 0.6)
         assert shaper(_make_agent(), "t") == pytest.approx(0.6)
 
@@ -716,6 +780,7 @@ class TestClipShaper:
 class TestNormalisationShaper:
     def test_minmax_in_zero_one(self):
         from cambrian.reward_shaping import NormalisationShaper
+
         scores = [0.1, 0.3, 0.5, 0.7, 0.9]
         shaper = NormalisationShaper(lambda a, t: 0.5, method="minmax")
         agent = _make_agent()
@@ -726,6 +791,7 @@ class TestNormalisationShaper:
 
     def test_zscore_centers_data(self):
         from cambrian.reward_shaping import NormalisationShaper
+
         shaper = NormalisationShaper(lambda a, t: 0.5, method="zscore")
         for _ in range(10):
             shaper._window.append(0.5)
@@ -734,11 +800,13 @@ class TestNormalisationShaper:
 
     def test_invalid_method_raises(self):
         from cambrian.reward_shaping import NormalisationShaper
+
         with pytest.raises(ValueError, match="method"):
             NormalisationShaper(lambda a, t: 0.0, method="bad")
 
     def test_reset_clears_window(self):
         from cambrian.reward_shaping import NormalisationShaper
+
         shaper = NormalisationShaper(lambda a, t: 0.5)
         shaper._window.extend([0.1, 0.9])
         shaper.reset()
@@ -748,6 +816,7 @@ class TestNormalisationShaper:
 class TestPotentialShaper:
     def test_brevity_bonus_for_shorter_prompt(self):
         from cambrian.reward_shaping import PotentialShaper
+
         shaper = PotentialShaper(lambda a, t: 0.5)
         short_agent = _make_agent(system_prompt="Hi")
         long_agent = _make_agent(system_prompt="x" * 5000)
@@ -761,6 +830,7 @@ class TestPotentialShaper:
 class TestRankShaper:
     def test_rank_population_returns_fractions(self):
         from cambrian.reward_shaping import RankShaper
+
         shaper = RankShaper()
         agents = [_make_agent(fitness=f) for f in [0.1, 0.5, 0.9]]
         scores = [0.1, 0.5, 0.9]
@@ -771,12 +841,14 @@ class TestRankShaper:
 
     def test_single_agent_call(self):
         from cambrian.reward_shaping import RankShaper
+
         shaper = RankShaper(base_evaluator=lambda a, t: 0.7)
         result = shaper(_make_agent(), "task")
         assert 0.0 <= result <= 1.0
 
     def test_no_base_evaluator_raises(self):
         from cambrian.reward_shaping import RankShaper
+
         shaper = RankShaper()
         with pytest.raises(RuntimeError):
             shaper(_make_agent(), "task")
@@ -785,13 +857,17 @@ class TestRankShaper:
 class TestCuriosityShaper:
     def test_novel_agent_gets_bonus(self):
         from cambrian.reward_shaping import CuriosityShaper
+
         shaper = CuriosityShaper(lambda a, t: 0.5, scale=0.2)
-        agent = _make_agent(system_prompt="Completely unique prompt that has not been seen.")
+        agent = _make_agent(
+            system_prompt="Completely unique prompt that has not been seen."
+        )
         result = shaper(agent, "task")
         assert result >= 0.5
 
     def test_repeated_agent_lower_bonus(self):
         from cambrian.reward_shaping import CuriosityShaper
+
         shaper = CuriosityShaper(lambda a, t: 0.5, scale=0.2)
         prompt = "This prompt will be repeated multiple times."
         for _ in range(5):
@@ -803,17 +879,20 @@ class TestCuriosityShaper:
 class TestBuildShapedEvaluator:
     def test_clip_spec(self):
         from cambrian.reward_shaping import build_shaped_evaluator
+
         composed = build_shaped_evaluator(lambda a, t: 2.0, "clip")
         assert composed(_make_agent(), "task") == 1.0
 
     def test_chained_spec(self):
         from cambrian.reward_shaping import build_shaped_evaluator
+
         composed = build_shaped_evaluator(lambda a, t: 0.5, "clip+curiosity")
         result = composed(_make_agent(), "task")
         assert isinstance(result, float)
 
     def test_invalid_spec_raises(self):
         from cambrian.reward_shaping import build_shaped_evaluator
+
         with pytest.raises(ValueError, match="Unknown shaper"):
             build_shaped_evaluator(lambda a, t: 0.0, "magic")
 
@@ -826,6 +905,7 @@ class TestBuildShapedEvaluator:
 class TestExport:
     def test_export_genome_json_and_load(self):
         from cambrian.export import export_genome_json, load_genome_json
+
         agent = _make_agent(fitness=0.8)
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "genome.json"
@@ -840,11 +920,13 @@ class TestExport:
 
     def test_load_genome_json_missing_file(self):
         from cambrian.export import load_genome_json
+
         with pytest.raises(FileNotFoundError):
             load_genome_json("/nonexistent/path/genome.json")
 
     def test_export_standalone(self):
         from cambrian.export import export_standalone
+
         agent = _make_agent()
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "agent.py"
@@ -856,6 +938,7 @@ class TestExport:
 
     def test_export_mcp(self):
         from cambrian.export import export_mcp
+
         agent = _make_agent()
         with tempfile.TemporaryDirectory() as tmp:
             out = export_mcp(agent, tmp)
@@ -866,6 +949,7 @@ class TestExport:
 
     def test_export_api(self):
         from cambrian.export import export_api
+
         agent = _make_agent()
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "api.py"
@@ -877,6 +961,7 @@ class TestExport:
 
     def test_standalone_contains_model(self):
         from cambrian.export import export_standalone
+
         agent = _make_agent(model="gpt-4o")
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "agent.py"
@@ -886,6 +971,7 @@ class TestExport:
 
     def test_mcp_manifest_has_run_agent_tool(self):
         from cambrian.export import export_mcp
+
         agent = _make_agent()
         with tempfile.TemporaryDirectory() as tmp:
             export_mcp(agent, tmp)
@@ -913,14 +999,18 @@ class TestCLIRunCommand:
             export_genome_json(agent, genome_path)
 
             runner = CliRunner()
-            with patch("cambrian.backends.openai_compat.OpenAICompatBackend.generate",
-                       return_value="The answer is 42."):
+            with patch(
+                "cambrian.backends.openai_compat.OpenAICompatBackend.generate",
+                return_value="The answer is 42.",
+            ):
                 result = runner.invoke(
                     main,
                     [
                         "run",
-                        "--agent", str(genome_path),
-                        "--api-key", "test-key",
+                        "--agent",
+                        str(genome_path),
+                        "--api-key",
+                        "test-key",
                         "What is 6 times 7?",
                     ],
                 )
@@ -939,15 +1029,20 @@ class TestCLIRunCommand:
             export_genome_json(agent, genome_path)
 
             runner = CliRunner()
-            with patch("cambrian.backends.openai_compat.OpenAICompatBackend.generate",
-                       return_value="json answer"):
+            with patch(
+                "cambrian.backends.openai_compat.OpenAICompatBackend.generate",
+                return_value="json answer",
+            ):
                 result = runner.invoke(
                     main,
                     [
                         "run",
-                        "--agent", str(genome_path),
-                        "--api-key", "test-key",
-                        "--format", "json",
+                        "--agent",
+                        str(genome_path),
+                        "--api-key",
+                        "test-key",
+                        "--format",
+                        "json",
                         "What is 6 times 7?",
                     ],
                 )

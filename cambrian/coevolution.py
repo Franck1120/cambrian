@@ -178,7 +178,9 @@ class CoEvolutionEngine:
         """
         logger.info(
             "CoEvolution start: pop=%d, gens=%d, task=%r",
-            self._pop_size, n_generations, task[:60],
+            self._pop_size,
+            n_generations,
+            task[:60],
         )
 
         generators = self._init_population(generator_seeds, "gen")
@@ -205,14 +207,21 @@ class CoEvolutionEngine:
             adv_best = max((a.fitness or 0.0) for a in adversaries)
             logger.info(
                 "CoEvo gen %d/%d — gen_best=%.4f adv_best=%.4f",
-                gen, n_generations, gen_best, adv_best,
+                gen,
+                n_generations,
+                gen_best,
+                adv_best,
             )
 
             if on_generation:
                 on_generation(gen, generators, adversaries)
 
-        best_gen = self._best_generator or max(generators, key=lambda a: a.fitness or 0.0)
-        best_adv = self._best_adversary or max(adversaries, key=lambda a: a.fitness or 0.0)
+        best_gen = self._best_generator or max(
+            generators, key=lambda a: a.fitness or 0.0
+        )
+        best_adv = self._best_adversary or max(
+            adversaries, key=lambda a: a.fitness or 0.0
+        )
         return best_gen, best_adv
 
     # ── Internals ─────────────────────────────────────────────────────────────
@@ -224,7 +233,9 @@ class CoEvolutionEngine:
             genome = seeds[i % len(seeds)]
             if i >= len(seeds):
                 data = genome.to_dict()
-                data["temperature"] = max(0.1, min(1.5, data["temperature"] + random.uniform(-0.15, 0.15)))
+                data["temperature"] = max(
+                    0.1, min(1.5, data["temperature"] + random.uniform(-0.15, 0.15))
+                )
                 genome = Genome.from_dict(data)
             pop.append(Agent(genome=genome, backend=self._backend))
         return pop
@@ -246,7 +257,9 @@ class CoEvolutionEngine:
                 base_score = 0.0
 
             # Adversarial challenge score
-            challengers = random.sample(adversaries, min(self._n_challenges, len(adversaries)))
+            challengers = random.sample(
+                adversaries, min(self._n_challenges, len(adversaries))
+            )
             break_scores: list[float] = []
             for adv_agent in challengers:
                 try:
@@ -262,7 +275,10 @@ class CoEvolutionEngine:
 
             logger.debug(
                 "Generator %s: base=%.4f break_rate=%.3f final=%.4f (%.2fs)",
-                gen_agent.id[:8], base_score, break_rate, final,
+                gen_agent.id[:8],
+                base_score,
+                break_rate,
+                final,
                 time.monotonic() - t0,
             )
             self._gen_archive.add(gen_agent)
@@ -277,7 +293,9 @@ class CoEvolutionEngine:
             if adv_agent.fitness is not None:
                 continue
 
-            targets = random.sample(generators, min(self._n_challenges, len(generators)))
+            targets = random.sample(
+                generators, min(self._n_challenges, len(generators))
+            )
             break_scores: list[float] = []
             for gen_agent in targets:
                 try:
@@ -287,12 +305,16 @@ class CoEvolutionEngine:
                     score = 0.0
                 break_scores.append(score)
 
-            adv_agent.fitness = sum(break_scores) / len(break_scores) if break_scores else 0.0
+            adv_agent.fitness = (
+                sum(break_scores) / len(break_scores) if break_scores else 0.0
+            )
             self._adv_archive.add(adv_agent)
 
         return adversaries
 
-    def _evolve_team(self, population: list[Agent], mutator: LLMMutator, task: str) -> list[Agent]:
+    def _evolve_team(
+        self, population: list[Agent], mutator: LLMMutator, task: str
+    ) -> list[Agent]:
         """Produce next generation for one team via elitism + mutation."""
         population.sort(key=lambda a: a.fitness or 0.0, reverse=True)
         next_gen: list[Agent] = list(population[: self._elite_n])
@@ -314,12 +336,16 @@ class CoEvolutionEngine:
         for a in generators:
             if a.fitness is None:
                 continue
-            if self._best_generator is None or a.fitness > (self._best_generator.fitness or 0.0):
+            if self._best_generator is None or a.fitness > (
+                self._best_generator.fitness or 0.0
+            ):
                 self._best_generator = a
         for a in adversaries:
             if a.fitness is None:
                 continue
-            if self._best_adversary is None or a.fitness > (self._best_adversary.fitness or 0.0):
+            if self._best_adversary is None or a.fitness > (
+                self._best_adversary.fitness or 0.0
+            ):
                 self._best_adversary = a
 
     def __repr__(self) -> str:

@@ -1,5 +1,6 @@
 # Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.hgt — HGTransfer, HGTPool, HGTPlasmid."""
+
 from __future__ import annotations
 
 import random

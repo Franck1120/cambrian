@@ -61,6 +61,7 @@ class ToolSpec:
 
     def to_cli_tool(self) -> "CLITool":
         from cambrian.cli_tools import CLITool
+
         return CLITool(
             name=self.name,
             command_template=self.command_template,
@@ -111,7 +112,9 @@ class Genome:
     def from_dict(cls, data: dict[str, Any]) -> "Genome":
         """Deserialise a genome from a plain dictionary."""
         raw_specs = data.get("tool_specs", [])
-        tool_specs = [ToolSpec.from_dict(ts) for ts in raw_specs if isinstance(ts, dict)]
+        tool_specs = [
+            ToolSpec.from_dict(ts) for ts in raw_specs if isinstance(ts, dict)
+        ]
         return cls(
             system_prompt=data.get("system_prompt", "You are a helpful AI assistant."),
             tools=data.get("tools", []),
@@ -188,7 +191,7 @@ class Agent:
         # Inject Lamarckian few-shot examples into the system context
         if self.genome.few_shot_examples:
             examples_text = "\n".join(
-                f"Example {i+1} (score {ex.get('score', '?')}):\n"
+                f"Example {i + 1} (score {ex.get('score', '?')}):\n"
                 f"  Task: {ex.get('task', '')}\n"
                 f"  Response: {ex.get('response', '')}"
                 for i, ex in enumerate(self.genome.few_shot_examples[:3])

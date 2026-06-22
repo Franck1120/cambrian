@@ -120,14 +120,19 @@ class BaldwinEvaluator(Evaluator):
             except Exception as exc:
                 logger.warning(
                     "BaldwinEvaluator trial %d raised %s: %s — using 0.0",
-                    trial + 1, type(exc).__name__, exc,
+                    trial + 1,
+                    type(exc).__name__,
+                    exc,
                 )
                 score = 0.0
 
             scores.append(score)
             logger.debug(
                 "Baldwin trial %d/%d score=%.4f agent=%s",
-                trial + 1, self._n_trials, score, agent.id[:8],
+                trial + 1,
+                self._n_trials,
+                score,
+                agent.id[:8],
             )
 
             # Build feedback task for next trial (not needed after last trial)

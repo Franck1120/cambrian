@@ -1,5 +1,6 @@
 # Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.catalysis — CatalysisEngine and CatalystSelector."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock
@@ -15,7 +16,9 @@ from cambrian.catalysis import CatalysisEngine, CatalystSelector, CatalysisEvent
 # ---------------------------------------------------------------------------
 
 
-def _make_agent(fitness: float | None = None, prompt: str = "agent prompt here") -> Agent:
+def _make_agent(
+    fitness: float | None = None, prompt: str = "agent prompt here"
+) -> Agent:
     g = Genome(system_prompt=prompt)
     a = Agent(genome=g)
     if fitness is not None:

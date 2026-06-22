@@ -87,6 +87,7 @@ def _make_mock_backend() -> MagicMock:
 # Keyword-based evaluator
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class _KeywordEvaluator(Evaluator):
     """Score agents by keyword presence in their system prompt.
 
@@ -99,9 +100,7 @@ class _KeywordEvaluator(Evaluator):
         prompt_lower = agent.genome.system_prompt.lower()
         base = 0.3
         bonus = sum(
-            weight
-            for kw, weight in _KEYWORD_SCORE.items()
-            if kw in prompt_lower
+            weight for kw, weight in _KEYWORD_SCORE.items() if kw in prompt_lower
         )
         # Cap at 1.0
         return min(1.0, base + bonus)
@@ -122,7 +121,9 @@ class TestRealEvolutionCycle:
     def seed_genomes(self) -> list[Genome]:
         return [
             Genome(system_prompt="You are a helpful assistant.", temperature=0.5),
-            Genome(system_prompt="Answer questions clearly and concisely.", temperature=0.6),
+            Genome(
+                system_prompt="Answer questions clearly and concisely.", temperature=0.6
+            ),
             Genome(system_prompt="You are a general AI assistant.", temperature=0.55),
         ]
 
@@ -201,7 +202,7 @@ class TestRealEvolutionCycle:
         for i in range(1, len(gen_bests)):
             assert gen_bests[i] >= gen_bests[i - 1] - 1e-9, (
                 f"Fitness regressed at generation {i}: "
-                f"{gen_bests[i-1]:.4f} → {gen_bests[i]:.4f}"
+                f"{gen_bests[i - 1]:.4f} → {gen_bests[i]:.4f}"
             )
 
     def test_population_size_maintained(

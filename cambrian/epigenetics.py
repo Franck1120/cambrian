@@ -235,7 +235,15 @@ def _rule_fitness_signal(genome: Genome, ctx: EpigenomicContext) -> str | None:
 def _rule_task_mode(genome: Genome, ctx: EpigenomicContext) -> str | None:
     """Detect task type and inject a mode hint."""
     task_lower = ctx.task.lower()
-    coding_keywords = {"python", "code", "function", "implement", "algorithm", "sort", "search"}
+    coding_keywords = {
+        "python",
+        "code",
+        "function",
+        "implement",
+        "algorithm",
+        "sort",
+        "search",
+    }
     reasoning_keywords = {"reason", "explain", "why", "logic", "proof", "infer"}
     creative_keywords = {"write", "story", "poem", "creative", "imagine", "describe"}
 

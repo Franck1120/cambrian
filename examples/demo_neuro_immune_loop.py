@@ -55,11 +55,11 @@ rng = random.Random(42)
 
 TASKS = [
     "Solve a quadratic equation step by step",
-    "Prove the quadratic formula from first principles",   # similar to task 0
+    "Prove the quadratic formula from first principles",  # similar to task 0
     "Write a Python function to parse JSON",
-    "Debug a JSON parsing error in Python",                # similar to task 2
+    "Debug a JSON parsing error in Python",  # similar to task 2
     "Explain gradient descent intuitively",
-    "Derive the gradient of cross-entropy loss",           # similar to task 4
+    "Derive the gradient of cross-entropy loss",  # similar to task 4
 ]
 
 PROMPTS = [
@@ -111,9 +111,7 @@ for ep, task in enumerate(TASKS):
         continue
 
     # -- Step 2: Build population ----------------------------------------
-    population = [
-        _agent(_simulate_fitness(p, rng), p) for p in rng.sample(PROMPTS, 3)
-    ]
+    population = [_agent(_simulate_fitness(p, rng), p) for p in rng.sample(PROMPTS, 3)]
 
     # -- Step 3: Neuromodulator adjusts hyperparams ----------------------
     state = bank.modulate(population, generation=ep)

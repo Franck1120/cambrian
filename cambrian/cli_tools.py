@@ -267,7 +267,7 @@ class CLIToolkit:
 
     def __init__(self, tools: list[CLITool] | None = None) -> None:
         self._tools: dict[str, CLITool] = {}
-        for tool in (tools or []):
+        for tool in tools or []:
             self.add(tool)
 
     def add(self, tool: CLITool) -> None:
@@ -318,13 +318,15 @@ class CLIToolkit:
             input_text = match.group(2).strip()
             tool = self._tools.get(tool_name)
             if tool is None:
-                results.append(CLIToolResult(
-                    tool_name=tool_name,
-                    input_text=input_text,
-                    output=f"[unknown tool: {tool_name!r}]",
-                    exit_code=-1,
-                    ok=False,
-                ))
+                results.append(
+                    CLIToolResult(
+                        tool_name=tool_name,
+                        input_text=input_text,
+                        output=f"[unknown tool: {tool_name!r}]",
+                        exit_code=-1,
+                        ok=False,
+                    )
+                )
             else:
                 results.append(tool.run(input_text))
         return results
@@ -341,6 +343,7 @@ class CLIToolkit:
         Returns:
             Augmented text with tool results embedded.
         """
+
         def _replace(match: re.Match[str]) -> str:
             tool_name = match.group(1).strip()
             input_text = match.group(2).strip()

@@ -149,7 +149,9 @@ class TestCodeEvaluatorEdgeCases:
     def _evaluator(self) -> CodeEvaluator:
         return CodeEvaluator(timeout=5.0)
 
-    def _agent(self, code: str, test_cases: list[dict[str, str]] | None = None) -> CodeAgent:
+    def _agent(
+        self, code: str, test_cases: list[dict[str, str]] | None = None
+    ) -> CodeAgent:
         genome = CodeGenome(code=code, test_cases=test_cases or [])
         return CodeAgent(genome=genome)
 
@@ -180,8 +182,8 @@ class TestCodeEvaluatorEdgeCases:
         # Half the test cases will pass (input="2" → "4" ✓, input="3" → "9" ✗)
         code = "def solution(x): return str(int(x) * 2)"
         test_cases = [
-            {"input": "2", "expected": "4"},   # passes
-            {"input": "3", "expected": "9"},   # fails (3*2=6, not 9)
+            {"input": "2", "expected": "4"},  # passes
+            {"input": "3", "expected": "9"},  # fails (3*2=6, not 9)
         ]
         agent = self._agent(code, test_cases)
         score = evaluator.evaluate(agent)

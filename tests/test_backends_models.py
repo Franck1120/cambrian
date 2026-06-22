@@ -129,7 +129,9 @@ class TestGroqBackendFactory:
         backend = groq_backend(api_key="explicit-key")
         assert backend._api_key == "explicit-key"
 
-    def test_missing_key_defaults_to_empty(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_missing_key_defaults_to_empty(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.delenv("GROQ_API_KEY", raising=False)
         backend = groq_backend(api_key=None)
         assert backend._api_key == ""
@@ -194,10 +196,12 @@ class TestBackendsExports:
 
     def test_cli_proxy_importable_from_package(self) -> None:
         from cambrian.backends import CLIProxyBackend as Imported
+
         assert Imported is CLIProxyBackend
 
     def test_all_contains_cli_proxy(self) -> None:
         import cambrian.backends as backends_pkg
+
         assert "CLIProxyBackend" in backends_pkg.__all__
 
 

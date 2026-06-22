@@ -78,7 +78,9 @@ class VarianceAwareEvaluator(Evaluator):
         aggregate: str = "mean",
     ) -> None:
         if len(evaluators) < 2:
-            raise ValueError("VarianceAwareEvaluator requires at least 2 sub-evaluators.")
+            raise ValueError(
+                "VarianceAwareEvaluator requires at least 2 sub-evaluators."
+            )
         if weights is not None and len(weights) != len(evaluators):
             raise ValueError("weights and evaluators must have the same length.")
         if aggregate not in ("mean", "min"):
@@ -108,7 +110,9 @@ class VarianceAwareEvaluator(Evaluator):
             except Exception as exc:
                 logger.warning(
                     "Sub-evaluator %d raised %s: %s — using 0.0",
-                    i, type(exc).__name__, exc,
+                    i,
+                    type(exc).__name__,
+                    exc,
                 )
                 s = 0.0
             sub_scores.append(s)
@@ -127,8 +131,11 @@ class VarianceAwareEvaluator(Evaluator):
         result = max(0.0, min(1.0, penalised))
         logger.debug(
             "VarianceAware: sub=%s weighted=%.4f var=%.4f penalty=%.4f result=%.4f",
-            [f"{s:.3f}" for s in sub_scores], weighted, var,
-            self._penalty * var, result,
+            [f"{s:.3f}" for s in sub_scores],
+            weighted,
+            var,
+            self._penalty * var,
+            result,
         )
         return result
 

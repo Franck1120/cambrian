@@ -180,8 +180,11 @@ class AgentNetwork:
         """
         self._agents[agent.id] = agent
         self._cards[agent.id] = card or AgentCard()
-        logger.debug("A2ANetwork: registered agent %s (domains=%s)",
-                     agent.id[:8], (card.domains if card else []))
+        logger.debug(
+            "A2ANetwork: registered agent %s (domains=%s)",
+            agent.id[:8],
+            (card.domains if card else []),
+        )
 
     def unregister(self, agent_id: str) -> None:
         """Remove an agent from the network.
@@ -272,7 +275,9 @@ class AgentNetwork:
         Returns:
             :class:`A2AMessage` with ``result`` filled.
         """
-        agent = self.route(task, exclude=exclude or [sender_id], require_fitness=require_fitness)
+        agent = self.route(
+            task, exclude=exclude or [sender_id], require_fitness=require_fitness
+        )
         if agent is None:
             msg = A2AMessage(
                 sender_id=sender_id,
@@ -302,7 +307,9 @@ class AgentNetwork:
         self._log.append(msg)
         logger.debug(
             "A2A delegate: %s→%s latency=%.0fms",
-            sender_id[:8], agent.id[:8], latency,
+            sender_id[:8],
+            agent.id[:8],
+            latency,
         )
         return msg
 
@@ -327,7 +334,8 @@ class AgentNetwork:
             List of :class:`A2AMessage` objects, one per responding agent.
         """
         agents = [
-            a for aid, a in self._agents.items()
+            a
+            for aid, a in self._agents.items()
             if aid != sender_id and (a.fitness or 0.0) >= require_fitness
         ]
         agents.sort(key=lambda a: a.fitness or 0.0, reverse=True)
@@ -462,7 +470,9 @@ class AgentNetwork:
         return {
             "network_size": self.network_size,
             "messages": total,
-            "mean_latency_ms": round(sum(latencies) / len(latencies), 1) if latencies else 0.0,
+            "mean_latency_ms": round(sum(latencies) / len(latencies), 1)
+            if latencies
+            else 0.0,
             "unique_recipients": len({m.recipient_id for m in self._log}),
         }
 
@@ -473,15 +483,22 @@ class AgentNetwork:
         """Generate a basic AgentCard from the agent's genome keywords."""
         text = (agent.genome.system_prompt + " " + agent.genome.strategy).lower()
         domain_keywords = [
-            "code", "python", "math", "logic", "writing", "analysis",
-            "reasoning", "creative", "search", "data", "sql", "test",
+            "code",
+            "python",
+            "math",
+            "logic",
+            "writing",
+            "analysis",
+            "reasoning",
+            "creative",
+            "search",
+            "data",
+            "sql",
+            "test",
         ]
         domains = [kw for kw in domain_keywords if kw in text]
         confidence = min(0.9, 0.3 + (agent.fitness or 0.0) * 0.6)
         return AgentCard(domains=domains or ["general"], confidence=confidence)
 
     def __repr__(self) -> str:
-        return (
-            f"AgentNetwork(agents={self.network_size}, "
-            f"messages={len(self._log)})"
-        )
+        return f"AgentNetwork(agents={self.network_size}, messages={len(self._log)})"

@@ -128,7 +128,9 @@ class DreamPhase:
         Returns:
             ``True`` when ``generation > 0`` and ``generation % interval == 0``.
         """
-        return generation > 0 and self._interval > 0 and generation % self._interval == 0
+        return (
+            generation > 0 and self._interval > 0 and generation % self._interval == 0
+        )
 
     def dream(self, task: str, n_offspring: int = 3) -> "list[Genome]":
         """Generate novel genomes by recombining the top lineage experiences.
@@ -143,7 +145,9 @@ class DreamPhase:
         """
         from cambrian.agent import Genome as _Genome
 
-        top = self._memory.get_top_ancestors(n=self._top_n, min_fitness=self._min_fitness)
+        top = self._memory.get_top_ancestors(
+            n=self._top_n, min_fitness=self._min_fitness
+        )
         if not top:
             logger.debug("DreamPhase: no ancestors in lineage — skipping")
             return []
@@ -156,7 +160,9 @@ class DreamPhase:
         )
 
         try:
-            raw = self._backend.generate(prompt, system=_DREAM_SYSTEM, temperature=self._temp)
+            raw = self._backend.generate(
+                prompt, system=_DREAM_SYSTEM, temperature=self._temp
+            )
             offspring_dicts = self._parse_offspring(raw, n_offspring)
         except Exception as exc:
             logger.warning("DreamPhase LLM call failed: %s", exc)
@@ -174,7 +180,9 @@ class DreamPhase:
 
         logger.info(
             "DreamPhase #%d: generated %d offspring from %d ancestors",
-            self._dream_count, len(genomes), len(top),
+            self._dream_count,
+            len(genomes),
+            len(top),
         )
         return genomes
 
@@ -241,7 +249,9 @@ class DreamPhase:
             except Exception:
                 pass
 
-        logger.warning("DreamPhase: failed to parse %d offspring from LLM response", n_offspring)
+        logger.warning(
+            "DreamPhase: failed to parse %d offspring from LLM response", n_offspring
+        )
         return []
 
 

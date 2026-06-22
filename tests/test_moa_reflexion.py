@@ -93,7 +93,11 @@ class TestMixtureOfAgents:
     def test_aggregator_failure_returns_longest_response(self) -> None:
         agents = [_agent(), _agent()]
         backend = MagicMock()
-        backend.generate.side_effect = ["short", "much longer response here", RuntimeError("agg fail")]
+        backend.generate.side_effect = [
+            "short",
+            "much longer response here",
+            RuntimeError("agg fail"),
+        ]
         moa = MixtureOfAgents(agents=agents, backend=backend)
         result = moa.run("task")
         assert result == "much longer response here"
@@ -164,6 +168,7 @@ class TestQuantumTunneler:
 
     def test_tunneled_genome_strategy_from_list(self) -> None:
         from cambrian.moa import _STRATEGIES
+
         tunneler = QuantumTunneler(tunnel_prob=1.0)
         agent = _agent()
         for _ in range(20):
@@ -303,7 +308,11 @@ class TestReflexionEvaluator:
     def test_revision_failure_keeps_current_response(self) -> None:
         reflect_raw = "CRITIQUE:\n- Weak\n\nSCORE: 0.3"
         backend = MagicMock()
-        backend.generate.side_effect = ["initial", reflect_raw, RuntimeError("revise fail")]
+        backend.generate.side_effect = [
+            "initial",
+            reflect_raw,
+            RuntimeError("revise fail"),
+        ]
         ev = ReflexionEvaluator(backend=backend, n_reflections=1)
         response, score = ev.evaluate(_agent(), task="task")
         assert response == "initial"

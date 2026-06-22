@@ -91,7 +91,10 @@ class TestQuorumApoptosisNeuro:
         )
 
     def _pop(self, fitnesses: list[float]) -> list[Agent]:
-        return [_agent(f"Strategy {i} with systematic approach.", f) for i, f in enumerate(fitnesses)]
+        return [
+            _agent(f"Strategy {i} with systematic approach.", f)
+            for i, f in enumerate(fitnesses)
+        ]
 
     def test_quorum_boosts_rate_at_low_entropy(self) -> None:
         scores = [0.8, 0.81, 0.82, 0.83, 0.84]  # very uniform → low entropy
@@ -254,7 +257,7 @@ class TestImmuneNeuroZeitgeber:
             "Sort list using quicksort algorithm",
             "Parse JSON data with Python",
             "Solve quadratic equations complex roots",  # similar to ep 0
-            "Debug JSON parse error in Python",         # similar to ep 3
+            "Debug JSON parse error in Python",  # similar to ep 3
         ]
         prompts = [
             "Expert mathematician with step-by-step proofs.",
@@ -269,10 +272,7 @@ class TestImmuneNeuroZeitgeber:
             if recall.recalled:
                 continue
 
-            pop = [
-                _agent(rng.choice(prompts), rng.uniform(0.4, 0.9))
-                for _ in range(3)
-            ]
+            pop = [_agent(rng.choice(prompts), rng.uniform(0.4, 0.9)) for _ in range(3)]
 
             state = self.bank.modulate(pop, generation=ep)
             mr, thr = self.scheduler.tick()
@@ -286,6 +286,7 @@ class TestImmuneNeuroZeitgeber:
 
     def test_zeitgeber_full_period_restores_phase(self) -> None:
         from cambrian.zeitgeber import ZeitgeberClock
+
         clock = ZeitgeberClock(period=4, amplitude=0.3)
         ef0 = clock.exploration_factor()
         for _ in range(4):  # advance a full period
@@ -312,7 +313,9 @@ class TestTabuAnnealingBoosting:
         from cambrian.mutator import LLMMutator
         from cambrian.tabu import TabuList, TabuMutator
 
-        backend = _mock_backend("You are a refined expert agent with improved strategy.")
+        backend = _mock_backend(
+            "You are a refined expert agent with improved strategy."
+        )
         base_mutator = LLMMutator(backend=backend, mutation_temperature=0.5)
 
         self.tabu_list = TabuList(max_size=5)
@@ -322,7 +325,9 @@ class TestTabuAnnealingBoosting:
             max_retries=3,
         )
 
-        schedule = AnnealingSchedule(T_max=1.0, T_min=0.01, n_steps=20, schedule_type="exponential")
+        schedule = AnnealingSchedule(
+            T_max=1.0, T_min=0.01, n_steps=20, schedule_type="exponential"
+        )
         self.annealing = AnnealingSelector(schedule)
 
         a1 = _agent("Expert solver using analytical reasoning techniques.", 0.8)
@@ -338,7 +343,10 @@ class TestTabuAnnealingBoosting:
         assert self.tabu_list.is_tabu(agent)
 
     def test_tabu_list_max_size_fifo_eviction(self) -> None:
-        agents = [_agent(f"Unique agent strategy variant {i} extra distinctive words.", 0.5) for i in range(7)]
+        agents = [
+            _agent(f"Unique agent strategy variant {i} extra distinctive words.", 0.5)
+            for i in range(7)
+        ]
         for a in agents:
             self.tabu_list.add(a)
         assert not self.tabu_list.is_tabu(agents[0])  # evicted
@@ -347,17 +355,22 @@ class TestTabuAnnealingBoosting:
 
     def test_annealing_always_accepts_improvement(self) -> None:
         accepted = sum(
-            1 for _ in range(20)
+            1
+            for _ in range(20)
             if self.annealing.step(current_fitness=0.5, candidate_fitness=0.8)
         )
         assert accepted == 20
 
     def test_annealing_sometimes_accepts_regression_at_high_temp(self) -> None:
         from cambrian.annealing import AnnealingSchedule, AnnealingSelector
-        hot_schedule = AnnealingSchedule(T_max=10.0, T_min=9.9, n_steps=100, schedule_type="linear")
+
+        hot_schedule = AnnealingSchedule(
+            T_max=10.0, T_min=9.9, n_steps=100, schedule_type="linear"
+        )
         hot_selector = AnnealingSelector(hot_schedule)
         accepted = sum(
-            1 for _ in range(100)
+            1
+            for _ in range(100)
             if hot_selector.step(current_fitness=0.8, candidate_fitness=0.3)
         )
         # T≈10, delta=0.5, P=exp(-0.5/10)≈0.95 → almost always accept
@@ -398,10 +411,16 @@ class TestTabuAnnealingBoosting:
     def test_combined_multi_step_loop(self) -> None:
         """5 steps: cycling through tabu, annealing, ensemble weight adaptation."""
         from cambrian.annealing import AnnealingSchedule, AnnealingSelector
-        schedule = AnnealingSchedule(T_max=1.0, T_min=0.05, n_steps=5, schedule_type="cosine")
+
+        schedule = AnnealingSchedule(
+            T_max=1.0, T_min=0.05, n_steps=5, schedule_type="cosine"
+        )
         selector = AnnealingSelector(schedule)
 
-        candidates = [_agent(f"Strategy {i} with extended context approach.", 0.5 + i * 0.05) for i in range(5)]
+        candidates = [
+            _agent(f"Strategy {i} with extended context approach.", 0.5 + i * 0.05)
+            for i in range(5)
+        ]
         current_fitness = 0.5
 
         for cand in candidates:
@@ -489,14 +508,18 @@ class TestTransgenerationalHGTSymbiosis:
 
     def test_symbiotic_fuser_rejects_low_fitness_donor(self) -> None:
         host = _agent("Expert analytical agent with domain knowledge.", 0.9)
-        donor = _agent("Poor agent with minimal capability.", 0.3)  # below threshold=0.6
+        donor = _agent(
+            "Poor agent with minimal capability.", 0.3
+        )  # below threshold=0.6
         fused = self.fuser.fuse(host, donor, task="Solve problem")
         assert fused is None
 
     def test_symbiotic_fuser_requires_both_above_threshold(self) -> None:
         # Both above threshold but may be rejected if prompts too similar
         host = _agent("Analytical expert with systematic proven approach.", 0.85)
-        donor = _agent("Creative lateral thinker with novel experimental approach.", 0.80)
+        donor = _agent(
+            "Creative lateral thinker with novel experimental approach.", 0.80
+        )
         # fuse may return Agent or None depending on distance check
         fused = self.fuser.fuse(host, donor, task="Optimisation task")
         assert fused is None or isinstance(fused.genome.system_prompt, str)
@@ -523,7 +546,8 @@ class TestTransgenerationalHGTSymbiosis:
 
         # HGT direct transfer
         donor2 = _agent(
-            "Creative lateral solution designer with abstract thinking and analysis.", 0.8
+            "Creative lateral solution designer with abstract thinking and analysis.",
+            0.8,
         )
         offspring = self.hgt.transfer(parent, donor2)
         if offspring is not None:
@@ -565,6 +589,7 @@ class TestWorldModelSelfPlayMeta:
 
     def test_world_model_returns_default_before_experience(self) -> None:
         from cambrian.world_model import WorldModelPrediction
+
         pred = self.world_model.predict("Solve a brand new task")
         assert isinstance(pred, WorldModelPrediction)
         assert 0.0 <= pred.predicted_score <= 1.0
@@ -606,7 +631,10 @@ class TestWorldModelSelfPlayMeta:
         """3 generations: world model predicts, self-play ranks pairs,
         hyperparams are perturbed."""
         rng = random.Random(0)
-        pop = [_agent(f"Agent strategy variant {i} systematic.", 0.3 + i * 0.1) for i in range(5)]
+        pop = [
+            _agent(f"Agent strategy variant {i} systematic.", 0.3 + i * 0.1)
+            for i in range(5)
+        ]
 
         for gen in range(3):
             # World model: update with each agent's task experience
@@ -675,7 +703,9 @@ class TestCascadeReflexionBestOfN:
     def test_best_of_n_picks_keyword_matching_candidate(self) -> None:
         from cambrian.inference_scaling import BestOfN, KeywordScorer
 
-        backend = _mock_backend_seq(["the result is forty-two", "answer is 42", "unknown"])
+        backend = _mock_backend_seq(
+            ["the result is forty-two", "answer is 42", "unknown"]
+        )
         scorer = KeywordScorer(keywords=["42"])
         bon = BestOfN(backend=backend, n=3, scorer=scorer)
         result, score = bon.run(system="You are a math expert.", user="What is 6x7?")
@@ -695,10 +725,10 @@ class TestCascadeReflexionBestOfN:
 
         backend = _mock_backend_seq(
             [
-                "The answer is 42.",                          # generate
-                "CRITIQUE: Perfect answer\nSCORE: 0.99",      # critique
-                "The answer is definitively 42.",              # revise
-                "CRITIQUE: Excellent\nSCORE: 1.00",           # critique 2
+                "The answer is 42.",  # generate
+                "CRITIQUE: Perfect answer\nSCORE: 0.99",  # critique
+                "The answer is definitively 42.",  # revise
+                "CRITIQUE: Excellent\nSCORE: 1.00",  # critique 2
             ]
         )
         ref = ReflexionEvaluator(backend=backend, n_reflections=2)

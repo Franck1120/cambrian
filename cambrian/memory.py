@@ -28,6 +28,7 @@ from typing import Any
 
 try:
     import networkx as nx
+
     _NX_AVAILABLE = True
 except ImportError:  # pragma: no cover
     _NX_AVAILABLE = False
@@ -101,7 +102,7 @@ class EvolutionaryMemory:
             fitness=fitness,
             genome=genome_snapshot,
         )
-        for parent_id in (parents or []):
+        for parent_id in parents or []:
             if self._graph.has_node(parent_id):
                 self._graph.add_edge(parent_id, agent_id)
         self._agent_count += 1
@@ -236,14 +237,8 @@ class EvolutionaryMemory:
         """Serialise the full lineage graph to a JSON string."""
         data = {
             "name": self.name,
-            "nodes": [
-                {"id": n, **attrs}
-                for n, attrs in self._graph.nodes(data=True)
-            ],
-            "edges": [
-                {"from": u, "to": v}
-                for u, v in self._graph.edges()
-            ],
+            "nodes": [{"id": n, **attrs} for n, attrs in self._graph.nodes(data=True)],
+            "edges": [{"from": u, "to": v} for u, v in self._graph.edges()],
         }
         return json.dumps(data, indent=2, default=str)
 

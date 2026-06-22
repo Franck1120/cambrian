@@ -127,6 +127,7 @@ class TestMorphEvent:
 
     def test_morph_event_is_dataclass(self) -> None:
         import dataclasses
+
         assert dataclasses.is_dataclass(MorphEvent)
 
 
@@ -201,7 +202,9 @@ class TestMutationRateMultiplier:
         imago_agent = _make_agent()
         ctrl._agent_phase[larva_agent.agent_id] = MetamorphicPhase.LARVA
         ctrl._agent_phase[imago_agent.agent_id] = MetamorphicPhase.IMAGO
-        assert ctrl.mutation_rate_multiplier(larva_agent) > ctrl.mutation_rate_multiplier(imago_agent)
+        assert ctrl.mutation_rate_multiplier(
+            larva_agent
+        ) > ctrl.mutation_rate_multiplier(imago_agent)
 
     def test_chrysalis_multiplier_is_zero(self) -> None:
         ctrl = _make_controller()
@@ -533,7 +536,9 @@ class TestMetamorphicPopulation:
         pop.register(slow_agent)
         all_events: list[MorphEvent] = []
         for i in range(3):
-            all_events.extend(pop.tick([fast_agent, slow_agent], generation=i, task="task"))
+            all_events.extend(
+                pop.tick([fast_agent, slow_agent], generation=i, task="task")
+            )
         # fast_agent should have transitioned; slow_agent should not
         assert any(e.agent_id == fast_agent.agent_id for e in all_events)
         assert not any(e.agent_id == slow_agent.agent_id for e in all_events)

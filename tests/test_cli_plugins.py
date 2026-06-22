@@ -23,16 +23,19 @@ from cambrian.cli import main
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _mock_genome_json(prompt: str = "expert step-by-step analytical prompt") -> str:
     """Return a valid genome JSON string for mocking backend responses."""
-    return json.dumps({
-        "system_prompt": prompt,
-        "strategy": "step-by-step",
-        "temperature": 0.7,
-        "model": "gpt-4o-mini",
-        "tools": [],
-        "few_shot_examples": [],
-    })
+    return json.dumps(
+        {
+            "system_prompt": prompt,
+            "strategy": "step-by-step",
+            "temperature": 0.7,
+            "model": "gpt-4o-mini",
+            "tools": [],
+            "few_shot_examples": [],
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -121,7 +124,10 @@ class TestEvolvePluginOptions:
         """--enable help text mentions comma-separated plugins."""
         runner = CliRunner()
         result = runner.invoke(main, ["evolve", "--help"])
-        assert "Comma-separated" in result.output or "comma-separated" in result.output.lower()
+        assert (
+            "Comma-separated" in result.output
+            or "comma-separated" in result.output.lower()
+        )
 
     def test_evolve_help_config_description(self) -> None:
         """--config help text mentions YAML."""
@@ -142,10 +148,11 @@ class TestEvolveEnableFlag:
         """--enable dream,tabu calls PluginRegistry.enable with those names."""
         runner = CliRunner()
 
-        with patch("cambrian.cli._make_backend") as mk_backend, \
-             patch("cambrian.cli.EvolutionEngine") as MockEngine, \
-             patch("cambrian.plugin_registry.PluginRegistry") as MockRegistry:
-
+        with (
+            patch("cambrian.cli._make_backend") as mk_backend,
+            patch("cambrian.cli.EvolutionEngine") as MockEngine,
+            patch("cambrian.plugin_registry.PluginRegistry") as MockRegistry,
+        ):
             # Mock backend
             backend = MagicMock()
             backend.generate = MagicMock(return_value=_mock_genome_json())
@@ -153,6 +160,7 @@ class TestEvolveEnableFlag:
 
             # Mock engine
             from cambrian.agent import Agent, Genome
+
             best = Agent(genome=Genome(system_prompt="evolved"))
             best.fitness = 0.5
             mock_engine = MagicMock()
@@ -163,13 +171,21 @@ class TestEvolveEnableFlag:
             mock_reg = MagicMock()
             MockRegistry.return_value = mock_reg
 
-            result = runner.invoke(main, [
-                "evolve", "test task",
-                "--api-key", "fake-key",
-                "--generations", "1",
-                "--population", "2",
-                "--enable", "dream,tabu",
-            ])
+            result = runner.invoke(
+                main,
+                [
+                    "evolve",
+                    "test task",
+                    "--api-key",
+                    "fake-key",
+                    "--generations",
+                    "1",
+                    "--population",
+                    "2",
+                    "--enable",
+                    "dream,tabu",
+                ],
+            )
 
         assert result.exit_code == 0, result.output
         # Verify enable() was called with the parsed names
@@ -179,15 +195,17 @@ class TestEvolveEnableFlag:
         """--enable ' dream , tabu ' strips whitespace from plugin names."""
         runner = CliRunner()
 
-        with patch("cambrian.cli._make_backend") as mk_backend, \
-             patch("cambrian.cli.EvolutionEngine") as MockEngine, \
-             patch("cambrian.plugin_registry.PluginRegistry") as MockRegistry:
-
+        with (
+            patch("cambrian.cli._make_backend") as mk_backend,
+            patch("cambrian.cli.EvolutionEngine") as MockEngine,
+            patch("cambrian.plugin_registry.PluginRegistry") as MockRegistry,
+        ):
             backend = MagicMock()
             backend.generate = MagicMock(return_value=_mock_genome_json())
             mk_backend.return_value = backend
 
             from cambrian.agent import Agent, Genome
+
             best = Agent(genome=Genome(system_prompt="evolved"))
             best.fitness = 0.5
             mock_engine = MagicMock()
@@ -197,12 +215,19 @@ class TestEvolveEnableFlag:
             mock_reg = MagicMock()
             MockRegistry.return_value = mock_reg
 
-            result = runner.invoke(main, [
-                "evolve", "test task",
-                "--api-key", "fake-key",
-                "--generations", "1",
-                "--enable", " dream , tabu ",
-            ])
+            result = runner.invoke(
+                main,
+                [
+                    "evolve",
+                    "test task",
+                    "--api-key",
+                    "fake-key",
+                    "--generations",
+                    "1",
+                    "--enable",
+                    " dream , tabu ",
+                ],
+            )
 
         assert result.exit_code == 0, result.output
         mock_reg.enable.assert_called_once_with(["dream", "tabu"], mock_engine)
@@ -211,15 +236,17 @@ class TestEvolveEnableFlag:
         """--enable prints a warning but does not crash if registry.enable fails."""
         runner = CliRunner()
 
-        with patch("cambrian.cli._make_backend") as mk_backend, \
-             patch("cambrian.cli.EvolutionEngine") as MockEngine, \
-             patch("cambrian.plugin_registry.PluginRegistry") as MockRegistry:
-
+        with (
+            patch("cambrian.cli._make_backend") as mk_backend,
+            patch("cambrian.cli.EvolutionEngine") as MockEngine,
+            patch("cambrian.plugin_registry.PluginRegistry") as MockRegistry,
+        ):
             backend = MagicMock()
             backend.generate = MagicMock(return_value=_mock_genome_json())
             mk_backend.return_value = backend
 
             from cambrian.agent import Agent, Genome
+
             best = Agent(genome=Genome(system_prompt="evolved"))
             best.fitness = 0.5
             mock_engine = MagicMock()
@@ -230,12 +257,19 @@ class TestEvolveEnableFlag:
             mock_reg.enable.side_effect = ValueError("plugin not found")
             MockRegistry.return_value = mock_reg
 
-            result = runner.invoke(main, [
-                "evolve", "test task",
-                "--api-key", "fake-key",
-                "--generations", "1",
-                "--enable", "nonexistent",
-            ])
+            result = runner.invoke(
+                main,
+                [
+                    "evolve",
+                    "test task",
+                    "--api-key",
+                    "fake-key",
+                    "--generations",
+                    "1",
+                    "--enable",
+                    "nonexistent",
+                ],
+            )
 
         assert result.exit_code == 0, result.output
         assert "Warning" in result.output
@@ -256,15 +290,17 @@ class TestEvolveConfigFlag:
 
         runner = CliRunner()
 
-        with patch("cambrian.cli._make_backend") as mk_backend, \
-             patch("cambrian.cli.EvolutionEngine") as MockEngine, \
-             patch("cambrian.plugin_registry.PluginRegistry") as MockRegistry:
-
+        with (
+            patch("cambrian.cli._make_backend") as mk_backend,
+            patch("cambrian.cli.EvolutionEngine") as MockEngine,
+            patch("cambrian.plugin_registry.PluginRegistry") as MockRegistry,
+        ):
             backend = MagicMock()
             backend.generate = MagicMock(return_value=_mock_genome_json())
             mk_backend.return_value = backend
 
             from cambrian.agent import Agent, Genome
+
             best = Agent(genome=Genome(system_prompt="evolved"))
             best.fitness = 0.5
             mock_engine = MagicMock()
@@ -275,12 +311,19 @@ class TestEvolveConfigFlag:
             mock_reg.active_plugins = ["dream", "tabu"]
             MockRegistry.return_value = mock_reg
 
-            result = runner.invoke(main, [
-                "evolve", "test task",
-                "--api-key", "fake-key",
-                "--generations", "1",
-                "--config", str(config_file),
-            ])
+            result = runner.invoke(
+                main,
+                [
+                    "evolve",
+                    "test task",
+                    "--api-key",
+                    "fake-key",
+                    "--generations",
+                    "1",
+                    "--config",
+                    str(config_file),
+                ],
+            )
 
         assert result.exit_code == 0, result.output
         mock_reg.load_from_yaml.assert_called_once_with(str(config_file), mock_engine)
@@ -289,26 +332,35 @@ class TestEvolveConfigFlag:
         """--config with a missing file is silently skipped (no crash)."""
         runner = CliRunner()
 
-        with patch("cambrian.cli._make_backend") as mk_backend, \
-             patch("cambrian.cli.EvolutionEngine") as MockEngine:
-
+        with (
+            patch("cambrian.cli._make_backend") as mk_backend,
+            patch("cambrian.cli.EvolutionEngine") as MockEngine,
+        ):
             backend = MagicMock()
             backend.generate = MagicMock(return_value=_mock_genome_json())
             mk_backend.return_value = backend
 
             from cambrian.agent import Agent, Genome
+
             best = Agent(genome=Genome(system_prompt="evolved"))
             best.fitness = 0.5
             mock_engine = MagicMock()
             mock_engine.evolve.return_value = best
             MockEngine.return_value = mock_engine
 
-            result = runner.invoke(main, [
-                "evolve", "test task",
-                "--api-key", "fake-key",
-                "--generations", "1",
-                "--config", str(tmp_path / "nope.yaml"),
-            ])
+            result = runner.invoke(
+                main,
+                [
+                    "evolve",
+                    "test task",
+                    "--api-key",
+                    "fake-key",
+                    "--generations",
+                    "1",
+                    "--config",
+                    str(tmp_path / "nope.yaml"),
+                ],
+            )
 
         # Should complete without error -- file doesn't exist so it's skipped
         assert result.exit_code == 0, result.output
@@ -320,15 +372,17 @@ class TestEvolveConfigFlag:
 
         runner = CliRunner()
 
-        with patch("cambrian.cli._make_backend") as mk_backend, \
-             patch("cambrian.cli.EvolutionEngine") as MockEngine, \
-             patch("cambrian.plugin_registry.PluginRegistry") as MockRegistry:
-
+        with (
+            patch("cambrian.cli._make_backend") as mk_backend,
+            patch("cambrian.cli.EvolutionEngine") as MockEngine,
+            patch("cambrian.plugin_registry.PluginRegistry") as MockRegistry,
+        ):
             backend = MagicMock()
             backend.generate = MagicMock(return_value=_mock_genome_json())
             mk_backend.return_value = backend
 
             from cambrian.agent import Agent, Genome
+
             best = Agent(genome=Genome(system_prompt="evolved"))
             best.fitness = 0.5
             mock_engine = MagicMock()
@@ -339,12 +393,19 @@ class TestEvolveConfigFlag:
             mock_reg.load_from_yaml.side_effect = RuntimeError("bad yaml")
             MockRegistry.return_value = mock_reg
 
-            result = runner.invoke(main, [
-                "evolve", "test task",
-                "--api-key", "fake-key",
-                "--generations", "1",
-                "--config", str(config_file),
-            ])
+            result = runner.invoke(
+                main,
+                [
+                    "evolve",
+                    "test task",
+                    "--api-key",
+                    "fake-key",
+                    "--generations",
+                    "1",
+                    "--config",
+                    str(config_file),
+                ],
+            )
 
         assert result.exit_code == 0, result.output
         assert "Warning" in result.output
@@ -356,15 +417,17 @@ class TestEvolveConfigFlag:
 
         runner = CliRunner()
 
-        with patch("cambrian.cli._make_backend") as mk_backend, \
-             patch("cambrian.cli.EvolutionEngine") as MockEngine, \
-             patch("cambrian.plugin_registry.PluginRegistry") as MockRegistry:
-
+        with (
+            patch("cambrian.cli._make_backend") as mk_backend,
+            patch("cambrian.cli.EvolutionEngine") as MockEngine,
+            patch("cambrian.plugin_registry.PluginRegistry") as MockRegistry,
+        ):
             backend = MagicMock()
             backend.generate = MagicMock(return_value=_mock_genome_json())
             mk_backend.return_value = backend
 
             from cambrian.agent import Agent, Genome
+
             best = Agent(genome=Genome(system_prompt="evolved"))
             best.fitness = 0.5
             mock_engine = MagicMock()
@@ -375,13 +438,21 @@ class TestEvolveConfigFlag:
             mock_reg.active_plugins = ["dream"]
             MockRegistry.return_value = mock_reg
 
-            result = runner.invoke(main, [
-                "evolve", "test task",
-                "--api-key", "fake-key",
-                "--generations", "1",
-                "--config", str(config_file),
-                "--enable", "tabu",
-            ])
+            result = runner.invoke(
+                main,
+                [
+                    "evolve",
+                    "test task",
+                    "--api-key",
+                    "fake-key",
+                    "--generations",
+                    "1",
+                    "--config",
+                    str(config_file),
+                    "--enable",
+                    "tabu",
+                ],
+            )
 
         assert result.exit_code == 0, result.output
         # Both load_from_yaml AND enable should have been called

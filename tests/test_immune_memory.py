@@ -1,5 +1,6 @@
 # Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.immune_memory — BCellMemory, TCellMemory, ImmuneCortex."""
+
 from __future__ import annotations
 
 import pytest
@@ -330,7 +331,7 @@ class TestImmuneCortexRecall:
         cortex = ImmuneCortex(
             b_threshold=0.5,
             t_threshold=0.5,
-            b_similarity=0.99,   # very high B-cell threshold → no B match
+            b_similarity=0.99,  # very high B-cell threshold → no B match
             t_min_similarity=0.1,
         )
         agent = _make_agent(fitness=0.7, prompt="algebra expert")

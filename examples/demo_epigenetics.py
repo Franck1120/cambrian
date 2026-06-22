@@ -59,7 +59,8 @@ def main() -> None:
 
     show_expressed(
         "Standard layer — generation 0 (early phase)",
-        genome, std,
+        genome,
+        std,
         EpigenomicContext(
             generation=0,
             task="Debug a Python script.",
@@ -71,7 +72,8 @@ def main() -> None:
 
     show_expressed(
         "Standard layer — generation 10 (mid phase)",
-        genome, std,
+        genome,
+        std,
         EpigenomicContext(
             generation=10,
             task="Debug a Python script.",
@@ -83,7 +85,8 @@ def main() -> None:
 
     show_expressed(
         "Standard layer — generation 19 (late phase)",
-        genome, std,
+        genome,
+        std,
         EpigenomicContext(
             generation=19,
             task="Debug a Python script.",
@@ -113,7 +116,8 @@ def main() -> None:
             # Rule 3: late-stage refinement nudge
             lambda g, ctx: (
                 "[Refinement] Focus on polishing correctness, not exploration."
-                if ctx.is_late else None
+                if ctx.is_late
+                else None
             ),
         ],
         separator="\n\n<!-- epigenetics -->\n",
@@ -121,7 +125,8 @@ def main() -> None:
 
     show_expressed(
         "Custom layer — early, low fitness (stagnation warning fires)",
-        genome, custom,
+        genome,
+        custom,
         EpigenomicContext(
             generation=1,
             task="Solve the travelling salesman problem.",
@@ -133,7 +138,8 @@ def main() -> None:
 
     show_expressed(
         "Custom layer — late, high fitness (refinement nudge fires)",
-        genome, custom,
+        genome,
+        custom,
         EpigenomicContext(
             generation=9,
             task="Solve the travelling salesman problem.",
@@ -150,7 +156,9 @@ def main() -> None:
     print("=" * 60)
 
     original_agent = Agent(genome=genome)
-    ctx = EpigenomicContext(generation=5, task="Write a unit test.", total_generations=10)
+    ctx = EpigenomicContext(
+        generation=5, task="Write a unit test.", total_generations=10
+    )
     expressed_agent = std.apply(original_agent, ctx)
 
     print(f"\nOriginal prompt : {original_agent.genome.system_prompt!r}")

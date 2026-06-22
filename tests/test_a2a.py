@@ -179,7 +179,9 @@ class TestAgentNetworkRouting:
         math_agent = _agent("math expert", fitness=0.6)
         prose_agent = _agent("prose writer", fitness=0.9)
         net.register(math_agent, AgentCard(domains=["math", "algebra"], confidence=0.9))
-        net.register(prose_agent, AgentCard(domains=["writing", "prose"], confidence=0.5))
+        net.register(
+            prose_agent, AgentCard(domains=["writing", "prose"], confidence=0.5)
+        )
         result = net.route("solve a math algebra problem")
         assert result is math_agent
 

@@ -1,5 +1,6 @@
 # Copyright 2026 Cambrian Authors. SPDX-License-Identifier: MIT
 """Tests for cambrian.ensemble — AgentEnsemble and BoostingEnsemble."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock
@@ -170,7 +171,9 @@ class TestBoostingEnsembleWeights:
         a1 = _make_agent("wrong")
         a2 = _make_agent("wrong")
         e = BoostingEnsemble(
-            [a1, a2], boost_factor=1.5, decay_factor=0.0  # decay to 0
+            [a1, a2],
+            boost_factor=1.5,
+            decay_factor=0.0,  # decay to 0
         )
         e.query("task", correct_answer="correct")
         # All weights → 0, should reset uniform
